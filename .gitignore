@@ -7,7 +7,7 @@ Thumbs.db
 .dsh-ops-*.lock
 
 # local runtime state
-.userdata/
+.userdata*/
 app.log
 pet-capture.png
 shot-*.png
