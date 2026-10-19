@@ -34,6 +34,18 @@ $env:ELECTRON_MIRROR='https://npmmirror.com/mirrors/electron/'
 npm install --registry=https://registry.npmmirror.com
 ```
 
+## 打包
+
+```bash
+npm run dist      # electron-builder portable，输出 dist/DeskPet-<version>-portable.exe
+```
+
+便携版无需安装，双击 exe 即可运行；数据默认写在 exe 同级 `desk-pet-data\`（可用 `DESKPET_DATA_DIR` 覆盖），整个文件夹可以搬走。
+
+- exe 带图标与版本信息（ProductName / FileVersion / Copyright 等）。
+- 未签名 exe 可能被 SmartScreen 提示「已保护你的电脑」：点「更多信息 → 仍要运行」，或对 exe 签名。
+- 本机打包绕坑（32 位 NSIS mmap、火绒拦临时目录）见 [`M6-PACKAGING.md`](M6-PACKAGING.md)。
+
 ## 使用
 
 | 操作 | 行为 |
@@ -72,7 +84,7 @@ npm install --registry=https://registry.npmmirror.com
 
 角色图片：建议 610×610、透明背景、主体脚底贴底边；导入时会自动缩放到最长边 610px。
 
-数据目录：`%APPDATA%\desk-pet\`（`settings.json`、`roles.json`、`roles/*.png`、`weather-cache.json`）。
+数据目录：普通运行在 `%APPDATA%\desk-pet\`；便携版默认在 exe 同级 `desk-pet-data\`；均可用 `DESKPET_DATA_DIR` 覆盖。文件：`settings.json`、`roles.json`、`roles/*.png`、`weather-cache.json`、`sounds.json`、`sounds/*`。
 
 ## 开发
 
@@ -87,7 +99,9 @@ lib/
 └── weather.js    Open-Meteo 天气与城市搜索
 tools/
 ├── smoke.js      无界面测试
-└── make-assets.py 生成 icon/tray
+└── make-assets.py 生成 icon/tray/ico
+build/
+└── icon.ico      Windows 多尺寸图标（make-assets.py 生成）
 ```
 
 设计要点：

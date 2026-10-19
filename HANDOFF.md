@@ -8,7 +8,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 
 - 仓库：<https://github.com/liuhaolh6/desk-pet>（public，main 分支）
 - 本地目录：`D:\project\deskpet`
-- 版本：`0.1.0`，已推送 2 个提交
+- 版本：`0.2.0`，已推送 7 个提交
 - 早期那套「DSH 挂件版」实现已移出仓库，归档在 `D:\project\deskpet-dsh-plugin`（需要参考角色/气泡系统时可以翻）
 
 ## 2. 现在能用的功能（都真机验证过）
@@ -23,7 +23,9 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 | 天气：Open-Meteo、城市搜索、磁盘缓存、断网降级 | ✅ |
 | 喝水：间隔提醒、今日杯数、免打扰、隐藏时系统通知 | ✅ |
 | 设置：名字、大小、置顶、自启、模式、城市、刷新、间隔、气泡、音效 | ✅ |
-| `npm test`（7 项，存储 / 角色 / 天气码） | ✅ |
+| 气泡模块化编辑器 / 音效库（M7/M8） | ✅ |
+| M6 打包：portable exe（图标 / 版本信息 / 便携数据目录） | ✅ 产物 `dist/DeskPet-0.2.0-portable.exe`；启动已验证，托盘对象已创建（图标未显示，见 §5.12） |
+| `npm test`（19 项，存储 / 角色 / 天气码 / 气泡布局 / 音效） | ✅ |
 
 ## 3. 关键决策（别推翻，除非有理由）
 
@@ -32,14 +34,16 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 3. **渲染进程不碰文件**：角色图走自定义协议，落盘全在主进程。
 4. **仓库不放个人照片**：默认角色是 `tools/make-default.py` 生成的占位图。
 5. **数据目录可覆盖**：`DESKPET_DATA_DIR`，因为受限环境写不了 `%APPDATA%`。
+6. **打包用 portable，不做安装器**：`electron-builder` 的 `portable` target，双击即用；数据优先写在 exe 同级 `desk-pet-data/`，整个文件夹可搬走。
+7. **0.2.0 = M6 发布版本**：图标在 `build/icon.ico`，exe 版本信息由 `package.json` 的 `version` / `author` / `description` 生成。
 
 ## 4. 待办（按建议顺序）
 
 | 里程碑 | 内容 | 备注 |
 |---|---|---|
-| **M6 打包** | electron-builder 出 portable exe，图标、版本信息、可选开机自启 | 需要下载 electron-builder 及 winCodeSign 等依赖，走 npmmirror |
+| **M6 打包** | electron-builder 出 portable exe，图标、版本信息、可选开机自启 | ✅ 已完成，产物 `dist/DeskPet-0.2.0-portable.exe`；记录见 `M6-PACKAGING.md` |
 | **M7 气泡编辑器** | 多行排版、逐模块样式、拖拽排序、模块库 | ✅ 已完成，见第 8 节 |
-| **M8 音效库** | 自定义片段、音量、试听 | 当前只有内置「叮」 |
+| **M8 音效库** | 自定义片段、音量、试听 | ✅ 已完成，见第 9 节 |
 | **M9 多显示器** | 记住每块屏的位置、贴边吸附 | 现在位置是绝对坐标，换屏会被夹住 |
 | 小改进 | 天气卡文案换行（现在「80% 湿度」可能断行）、托盘的「暂停提醒」开关 | 低优先 |
 
@@ -53,6 +57,23 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 5. **前端脚本顶部不能再加 `'use strict'`**：文件开头 `'use strict'` 紧跟 `(function(){...})()` 会被解析成调用字符串，整个渲染进程报 `"use strict" is not a function`。
 6. **截图抓不到右下角的宠物窗口**：本机屏幕捕获对那个区域的分层窗口不生效（原因未查明，疑似覆盖层）。要验证渲染请用 `webContents.capturePage()`，或把宠物拖到屏幕左上再截。
 7. **双击会被拆成两次单击**：已加 240ms 去抖，别再改回去。
+8. **32 位 NSIS 编译大包会崩**：数据块超过约 16 MB 时 `makensis` 报
+   `Internal compiler error #12345: error creating mmap the size of ...`。
+   3.0.4.1 / 1.2.1（3.12）的 32 位编译器都会中招。本机改用 64 位 NSIS 编译器包装：
+   `.tools/nsis-custom/makensis.cmd` + `ELECTRON_BUILDER_NSIS_DIR`，详见 `M6-PACKAGING.md` §3.1。
+9. **未签名 exe 会被 SmartScreen / 安全软件拦**：双击出现「Windows 已保护你的电脑」；
+   本机 Lenovo Anti-Virus（火绒引擎）还会把未签名进程写 `%LOCALAPPDATA%\Temp` 拦成 `ACCESS_DENIED`，
+   NSIS portable 报 `Error writing temporary file. Make sure your temp folder is valid.`
+   → 签名/加白名单；测试时把 `TEMP`/`TMP` 指到可写目录（如 `D:\project\deskpet\.tmp-runtime`），
+   并用普通用户令牌启动（计划任务/Explorer）。
+10. **`ELECTRON_RUN_AS_NODE=1`**：DSH 会话环境自带；直接启动打包/开发 Electron 会变成 Node 模式
+    （`bad option: --no-sandbox`）。测试前 `Remove-Item Env:ELECTRON_RUN_AS_NODE` 或设空。
+11. **从 DSH 前台启动 GUI 会挂住工具调用**：工具会等整棵进程树。用计划任务/WMI/Explorer 分离启动，
+    不要在前台直接跑桌宠。
+12. **托盘图标在本机不显示**：`Tray` 对象和菜单创建成功（日志 `tray created empty=false menu=...`），
+    但 Windows 11 通知区和溢出区都看不到图标，`tray.getBounds()` 为 `0,0,0,0`。
+    宠物窗口、右键菜单、设置窗口正常。疑似 Win11 26200 + 安全软件；待签名或干净机器复验，
+    M6 的「托盘可用」只验证到对象/菜单创建。
 
 ## 6. 快速开始
 
@@ -69,7 +90,13 @@ $env:DESKPET_DATA_DIR='D:\project\deskpet\.userdata'
 
 # 正常桌面：npm start
 npm test
+
+# 打包 portable（普通桌面环境）
+npm run dist
+# 本机（32 位 NSIS 限制）：见 M6-PACKAGING.md §3，用 64 位 NSIS 包装
 ```
+
+- 打包：`npm run dist` → `dist/DeskPet-<version>-portable.exe`；本机绕坑见 `M6-PACKAGING.md`。
 
 - 数据：`settings.json`、`roles.json`、`roles/*.png`、`weather-cache.json`
 - 环境变量：`DESKPET_DATA_DIR`（数据目录）、`DESKPET_OPAQUE=1`（关透明，排查渲染）、`DESKPET_OPEN_SETTINGS=1`（启动即开设置）
@@ -85,7 +112,9 @@ npm test
 | `lib/store.js` | 配置/角色/缓存的原子读写（可脱离 Electron 测试） |
 | `lib/weather.js` | Open-Meteo 天气与城市搜索 |
 | `tools/smoke.js` | `npm test` |
-| `tools/make-assets.py` | 生成 icon/tray/default |
+| `tools/make-assets.py` | 生成 icon/tray/ico/default |
+| `build/icon.ico` | Windows 多尺寸图标（make-assets.py 生成） |
+| `M6-PACKAGING.md` | M6 portable 打包记录 / 验证 / 本机限制 |
 
 ## 8. 最近变更（M7 气泡模块化编辑器）
 
@@ -113,6 +142,6 @@ npm test
 
 ## 10. 新对话开场白（直接粘贴）
 
-> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md` 和 `PLAN.md`，
-> 然后做 M6：用 electron-builder 打出 portable exe（带图标、版本信息），
-> 并验证双击能启动、托盘可用。已知坑见 HANDOFF 第 5 节。
+> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`PLAN.md` 和 `M6-PACKAGING.md`。
+> M6 portable 打包、M7 气泡编辑器、M8 音效库都已完成；下一步做 M9（多显示器记忆与贴边吸附）。
+> 已知坑见 HANDOFF 第 5 节。
