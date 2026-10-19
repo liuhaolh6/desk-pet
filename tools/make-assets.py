@@ -1,4 +1,4 @@
-"""Generate icon.png (256) and tray.png (32) for the app.
+"""Generate icon.png (256), tray.png (32) and build/icon.ico for the app.
 
 Run:  python tools/make-assets.py
 """
@@ -8,6 +8,7 @@ from PIL import Image, ImageDraw
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSETS = os.path.join(ROOT, "assets")
+BUILD = os.path.join(ROOT, "build")
 
 INK = (32, 49, 112, 255)
 WHITE = (255, 255, 255, 255)
@@ -48,13 +49,20 @@ def draw_pet(size, padding_ratio=0.06, badge=True):
 
 def main():
     os.makedirs(ASSETS, exist_ok=True)
+    os.makedirs(BUILD, exist_ok=True)
     icon = draw_pet(256, 0.04)
     icon.save(os.path.join(ASSETS, "icon.png"))
+    # electron-builder wants a multi-resolution .ico (256px maximum) as the
+    # Windows executable icon / installer icon.
+    icon.save(
+        os.path.join(BUILD, "icon.ico"),
+        sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)],
+    )
     tray_img = draw_pet(32, 0.0)
     tray_img.save(os.path.join(ASSETS, "tray.png"))
     # Windows tray reads 16px well; keep a larger source for HiDPI
     draw_pet(64, 0.02).save(os.path.join(ASSETS, "tray@2x.png"))
-    print("wrote icon.png, tray.png")
+    print("wrote icon.png, icon.ico, tray.png")
 
 
 if __name__ == "__main__":

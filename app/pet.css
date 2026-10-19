@@ -24,9 +24,10 @@ body {
 
 #pet {
   position: absolute;
-  left: 0;
+  left: 50%;
   bottom: 0;
-  width: 100%;
+  transform: translateX(-50%);
+  width: var(--pet-size);
   height: var(--pet-size);
   object-fit: contain;
   object-position: bottom center;
@@ -79,6 +80,20 @@ body {
   border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   transform: rotate(45deg);
+}
+
+.bubble-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: baseline;
+  justify-content: center;
+  margin: 1px 0;
+}
+
+.bubble-mod {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .title {

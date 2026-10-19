@@ -134,6 +134,7 @@
       save({ bubble: { phrases } }, true)
     })
     $('sound').addEventListener('change', (ev) => save({ sound: { enabled: ev.target.checked } }, true))
+    $('editorBtn').addEventListener('click', () => api.openEditor())
 
     $('searchBtn').addEventListener('click', () => search($('city').value))
     $('city').addEventListener('keydown', (ev) => { if (ev.key === 'Enter') search($('city').value) })

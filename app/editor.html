@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>气泡编辑器</title>
+  <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+  <header>
+    <h1>气泡编辑器</h1>
+    <div id="tabs" class="tabs"></div>
+    <span class="spacer"></span>
+    <button id="resetBtn" type="button">还原默认</button>
+    <button id="saveBtn" class="primary" type="button">保存</button>
+    <button id="closeBtn" type="button">关闭</button>
+  </header>
+
+  <div class="body">
+    <section class="canvas">
+      <p class="tip">拖动模块上的 ⠿ 排序；点模块在右侧改类型与样式；模块之间拖到圆点上插入。</p>
+      <div id="rows" class="rows"></div>
+      <button id="addRowBtn" class="dashed" type="button">+ 添加一行</button>
+    </section>
+
+    <aside class="side">
+      <div id="inspector" class="panel"></div>
+      <div class="panel">
+        <h3>模块库</h3>
+        <div id="library" class="library-list"></div>
+        <button id="saveLibBtn" class="dashed" type="button">把当前模块存入库</button>
+      </div>
+    </aside>
+  </div>
+
+  <section class="preview">
+    <div class="preview-label">预览</div>
+    <div id="preview" class="bubble-preview"></div>
+  </section>
+
+  <div id="status" class="status"></div>
+
+  <script src="bubble-model.js"></script>
+  <script src="editor.js"></script>
+</body>
+</html>

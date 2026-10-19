@@ -38,7 +38,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 | 里程碑 | 内容 | 备注 |
 |---|---|---|
 | **M6 打包** | electron-builder 出 portable exe，图标、版本信息、可选开机自启 | 需要下载 electron-builder 及 winCodeSign 等依赖，走 npmmirror |
-| **M7 气泡编辑器** | 多行排版、逐模块样式、拖拽排序、模块库 | 可参考 `deskpet-dsh-plugin/assets/pet-widget.js` 的现成实现 |
+| **M7 气泡编辑器** | 多行排版、逐模块样式、拖拽排序、模块库 | ✅ 已完成，见第 8 节 |
 | **M8 音效库** | 自定义片段、音量、试听 | 当前只有内置「叮」 |
 | **M9 多显示器** | 记住每块屏的位置、贴边吸附 | 现在位置是绝对坐标，换屏会被夹住 |
 | 小改进 | 天气卡文案换行（现在「80% 湿度」可能断行）、托盘的「暂停提醒」开关 | 低优先 |
@@ -87,7 +87,19 @@ npm test
 | `tools/smoke.js` | `npm test` |
 | `tools/make-assets.py` | 生成 icon/tray/default |
 
-## 8. 新对话开场白（直接粘贴）
+## 8. 最近变更（M7 气泡模块化编辑器）
+
+- 新增 `app/bubble-model.js`：卡片 → 行 → 模块的数据模型，纯函数、可被 Node 测试（`tools/smoke.js` 已覆盖 6 项）。
+  模块类型：固定文字、随机语句、名字、天气（图标/城市/温度/描述/高低温/降水/湿度/更新时间/离线提示）、今日杯数、下次提醒、时间、日期。
+- 新增 `app/editor.html/css/js`：气泡编辑器窗口——卡片页签、行/模块编辑、拖拽排序、字号/加粗/斜体/文字色/底色、模块库、实时预览、卡片顺序（即点击顺序）。
+- `app/pet.js` 改为按 `settings.bubble.layout` 渲染；`app/pet.html` 引入模型脚本。
+- 入口：托盘菜单 / 角色右键菜单「编辑气泡…」，或设置窗口里的「编辑气泡…」按钮。
+- 窗口横向加宽 `WIN_PAD=54`，角色水平居中，气泡可见宽度变大（以前被 220px 窗口掐得很碎）。
+- 新增 `DESKPET_OPEN_EDITOR=1` 便于调试时直接打开编辑器。
+
+注意：气泡布局存在 `settings.bubble.layout`；不存则用默认布局；`normalizeLayout` 对损坏数据 fail-soft 回默认，不会让挂件白屏。
+
+## 9. 新对话开场白（直接粘贴）
 
 > 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md` 和 `PLAN.md`，
 > 然后做 M6：用 electron-builder 打出 portable exe（带图标、版本信息），

@@ -11,3 +11,11 @@ Thumbs.db
 app.log
 pet-capture.png
 shot-*.png
+
+# local build tooling caches (sandboxed npm / electron-builder)
+.npm-cache/
+.builder-cache/
+
+# local build toolchain / extraction dirs (M6 packaging)
+.tools/
+.tmp-*/

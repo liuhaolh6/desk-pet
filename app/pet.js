@@ -1,11 +1,12 @@
 /**
- * Pet renderer: sprite, speech bubble, click queue, drag, sounds.
+ * Pet renderer: sprite, speech bubble (modular), click queue, drag, sounds.
  *
- * The window is transparent and only as large as the pet (plus whatever height
- * the bubble needs), so `setBubble` tells main to grow/shrink it upwards.
+ * Bubble content is data: `settings.bubble.layout` (see bubble-model.js) holds
+ * cards made of rows of modules. The editor window edits that same structure.
  */
 (function () {
   const api = window.deskPet
+  const model = window.DeskPetBubble
   const pet = document.getElementById('pet')
   const bubble = document.getElementById('bubble')
 
@@ -13,8 +14,10 @@
     settings: null,
     roles: [],
     weather: null,
+    layout: null,
     queue: [],
     queueIndex: 0,
+    currentCard: null,
     timer: 0,
     drag: null,
   }
@@ -34,12 +37,6 @@
     const now = new Date()
     const mins = now.getHours() * 60 + now.getMinutes()
     return from < to ? (mins >= from && mins < to) : (mins >= from || mins < to)
-  }
-
-  function fmtTime(ts) {
-    if (!ts) return ''
-    const d = new Date(ts)
-    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
   }
 
   function el(tag, className, text) {
@@ -73,6 +70,7 @@
   function applySettings(settings) {
     if (!settings) return
     state.settings = settings
+    state.layout = model.normalizeLayout(settings.bubble && settings.bubble.layout)
     const size = clamp(Number(settings.size) || 220, 80, 480)
     document.documentElement.style.setProperty('--pet-size', size + 'px')
     pet.alt = settings.name || '桌宠'
@@ -81,11 +79,13 @@
     if (pet.getAttribute('src') !== src) pet.setAttribute('src', src)
   }
 
-  function currentSize() {
-    return clamp(Number(state.settings && state.settings.size) || 220, 80, 480)
+  // ---------------------------------------------------------------- queue
+  function cupsToday() {
+    const w = (state.settings && state.settings.water) || {}
+    const t = w.today || {}
+    return t.date === todayKey() ? Number(t.cups) || 0 : 0
   }
 
-  // ---------------------------------------------------------------- queue
   function waterDue() {
     const s = state.settings
     if (!s || s.mode === 'quiet') return false
@@ -96,27 +96,31 @@
     return Date.now() - last >= (Number(w.intervalMinutes) || 60) * 60000
   }
 
-  function cupsToday() {
-    const w = (state.settings && state.settings.water) || {}
-    const t = w.today || {}
-    return t.date === todayKey() ? Number(t.cups) || 0 : 0
-  }
-
   function weatherAllowed() {
     const b = (state.settings && state.settings.bubble) || {}
     return Date.now() - (Number(b.lastWeatherShownAt) || 0) >= (Number(b.cooldownMinutes) || 30) * 60000
   }
 
+  /** The queue stores card ids; each card decides whether it is "due" now. */
+  function available(cardId) {
+    if (cardId === 'weather') return weatherAllowed()
+    if (cardId === 'water') return waterDue()
+    return true
+  }
+
   function buildQueue() {
-    const order = (state.settings.bubble && state.settings.bubble.queue) || ['weather', 'water', 'random']
-    const out = []
-    for (const kind of order) {
-      if (kind === 'weather' && weatherAllowed()) out.push('weather')
-      else if (kind === 'water' && waterDue()) out.push('water')
-      else if (kind === 'random') out.push('random')
+    const ids = (state.layout && state.layout.queue) || []
+    const cards = (state.layout && state.layout.cards) || []
+    const out = ids.filter((id) => cards.some((c) => c.id === id) && available(id))
+    if (!out.length) {
+      const fallback = cards.find((c) => c.id === 'random') || cards[0]
+      if (fallback) out.push(fallback.id)
     }
-    if (!out.length) out.push('random')
     return out
+  }
+
+  function cardById(id) {
+    return ((state.layout && state.layout.cards) || []).find((c) => c.id === id) || null
   }
 
   // --------------------------------------------------------------- bubble
@@ -129,20 +133,23 @@
     api.setBubble(extra > 0, extra)
   }
 
+  function measureBubble() {
+    return Math.ceil(bubble.getBoundingClientRect().height) + 14
+  }
+
   function showBubble(node) {
     clearTimer()
     bubble.innerHTML = ''
     bubble.appendChild(node)
     bubble.classList.add('show')
-    // measure after layout, then let the window grow so the bubble is visible
-    const height = Math.ceil(bubble.getBoundingClientRect().height) + 14
-    resizeForBubble(height)
+    resizeForBubble(measureBubble())
     const sec = Number(state.settings.bubble && state.settings.bubble.autoHideSeconds) || 0
     if (sec > 0) state.timer = setTimeout(hideBubble, sec * 1000)
   }
 
   function hideBubble() {
     clearTimer()
+    state.currentCard = null
     bubble.classList.remove('show')
     resizeForBubble(0)
   }
@@ -151,74 +158,68 @@
     if (!bubble.classList.contains('show')) {
       state.queue = buildQueue()
       state.queueIndex = 0
-      render(state.queue[0])
+      renderCurrent()
       return
     }
     state.queueIndex += 1
     if (state.queueIndex >= state.queue.length) { hideBubble(); return }
-    render(state.queue[state.queueIndex])
+    renderCurrent()
   }
 
-  function render(kind) {
-    if (kind === 'weather') return renderWeather()
-    if (kind === 'water') return renderWater()
-    return renderRandom()
+  function renderCurrent() {
+    const id = state.queue[state.queueIndex]
+    const card = cardById(id)
+    if (!card) return hideBubble()
+    renderCard(card, id)
   }
 
-  function renderWeather() {
+  function contextFor(card) {
+    const s = state.settings
+    const w = s.water || {}
+    return {
+      weather: state.weather,
+      phrases: (s.bubble && s.bubble.phrases) || [],
+      name: s.name,
+      cups: card.id === 'water' ? cupsToday() + 1 : cupsToday(),
+      nextAt: (Number(w.lastDrinkAt) || 0) + (Number(w.intervalMinutes) || 60) * 60000,
+    }
+  }
+
+  function renderCard(card, cardId) {
+    state.currentCard = cardId
+    const ctx = contextFor(card)
     const frame = el('div')
-    frame.appendChild(el('div', 'title', '🌤️ 天气'))
-    const body = el('div', 'sub', '正在获取…')
-    frame.appendChild(body)
-    const w = state.settings.weather || {}
+    let rows = model.pruneRows(model.resolveCard(card, ctx))
+    if (!rows.length) rows = [[{ text: '…', css: '' }]]
+
+    rows.forEach((row) => {
+      const line = el('div', 'bubble-row')
+      row.forEach((item) => {
+        const span = el('span', 'bubble-mod', item.text)
+        if (item.css) span.setAttribute('style', item.css)
+        line.appendChild(span)
+      })
+      frame.appendChild(line)
+    })
+
+    if (card.action) frame.appendChild(actionButtons())
     showBubble(frame)
 
-    if (state.weather && state.weather.ok) paintWeather(body, state.weather)
-    else if (!w.lat && !w.lon) {
-      body.textContent = '还没设置城市'
-      const actions = el('div', 'actions')
-      const go = el('button', 'primary', '去设置')
-      go.onclick = () => { hideBubble(); api.openSettings() }
-      actions.appendChild(go)
-      frame.appendChild(actions)
-      const height = Math.ceil(frame.getBoundingClientRect().height) + 20
-      resizeForBubble(Math.max(height, 80))
-      return
+    if (cardId === 'weather') {
+      const b = Object.assign({}, state.settings.bubble, { lastWeatherShownAt: Date.now() })
+      api.setSettings({ bubble: b }).catch(() => {})
+      api.refreshWeather().then((data) => {
+        if (!data) return
+        state.weather = data
+        if (state.currentCard === 'weather' && bubble.classList.contains('show')) {
+          renderCard(card, cardId)
+        }
+      }).catch(() => {})
     }
-
-    api.refreshWeather().then((data) => {
-      if (!data) return
-      state.weather = data
-      if (!bubble.classList.contains('show')) return
-      if (data.ok) {
-        body.innerHTML = ''
-        paintWeather(body, data)
-        const height = Math.ceil(bubble.getBoundingClientRect().height) + 14
-        resizeForBubble(height)
-      } else {
-        body.textContent = '天气取不到：' + (data.message || '未知原因')
-      }
-    }).catch(() => { body.textContent = '天气服务连不上' })
-
-    const b = Object.assign({}, state.settings.bubble, { lastWeatherShownAt: Date.now() })
-    api.setSettings({ bubble: b }).catch(() => {})
+    beep(660, 80, 0.18)
   }
 
-  function paintWeather(body, data) {
-    body.innerHTML = ''
-    const head = el('div', 'title')
-    head.textContent = (data.icon || '🌤️') + ' ' + (data.city || '当前') + ' ' + data.temp + '°'
-    body.appendChild(head)
-    body.appendChild(el('div', '', data.text + '，今日 ' + data.low + '~' + data.high + '°'))
-    if (Number(data.precip) > 0) body.appendChild(el('div', '', '降水概率 ' + data.precip + '%'))
-    body.appendChild(el('div', 'hint', (data.stale ? '离线缓存 · ' : '') +
-      '更新于 ' + fmtTime(data.updatedAt) + ' · ' + data.humidity + '% 湿度'))
-  }
-
-  function renderWater() {
-    const frame = el('div')
-    frame.appendChild(el('div', 'title', '💧 该喝水啦'))
-    frame.appendChild(el('div', 'sub', '今天第 ' + (cupsToday() + 1) + ' 杯，慢慢喝'))
+  function actionButtons() {
     const actions = el('div', 'actions')
     const done = el('button', 'primary', '喝过了')
     done.onclick = () => {
@@ -231,18 +232,7 @@
     later.onclick = hideBubble
     actions.appendChild(done)
     actions.appendChild(later)
-    frame.appendChild(actions)
-    showBubble(frame)
-    beep(660, 80, 0.18)
-  }
-
-  function renderRandom() {
-    const phrases = (state.settings.bubble && state.settings.bubble.phrases) || ['我在呢～']
-    const frame = el('div')
-    frame.appendChild(el('div', 'title', '💬 ' + (state.settings.name || '桌宠')))
-    frame.appendChild(el('div', '', phrases[Math.floor(Math.random() * phrases.length)] || '我在呢～'))
-    showBubble(frame)
-    beep(660, 80, 0.18)
+    return actions
   }
 
   // ------------------------------------------------------------------ input
@@ -276,8 +266,8 @@
     pet.addEventListener('pointerup', endDrag)
     pet.addEventListener('pointercancel', endDrag)
 
-    // Single click advances the queue, double click opens settings. The short
-    // debounce keeps a double click from advancing twice.
+    // Single click advances, double click opens settings; the debounce keeps a
+    // double click from advancing twice.
     let clickTimer = 0
     pet.addEventListener('click', () => {
       if (pet.classList.contains('dragging')) return
@@ -297,9 +287,6 @@
   }
 
   // ------------------------------------------------------------------- boot
-  pet.addEventListener('load', () => console.log('pet image loaded', pet.naturalWidth + 'x' + pet.naturalHeight, pet.getAttribute('src')))
-  pet.addEventListener('error', () => console.log('pet image failed', pet.getAttribute('src')))
-
   async function boot() {
     wirePet()
     try {
@@ -314,16 +301,26 @@
     api.onSettings((settings) => {
       applySettings(settings)
       if (bubble.classList.contains('show')) {
-        const height = Math.ceil(bubble.getBoundingClientRect().height) + 14
-        resizeForBubble(height)
+        const id = state.currentCard
+        const card = id ? cardById(id) : null
+        if (card) renderCard(card, id)
+        else resizeForBubble(measureBubble())
       }
     })
-    api.onWeather((w) => { state.weather = w })
+    api.onWeather((w) => {
+      state.weather = w
+      if (state.currentCard === 'weather' && bubble.classList.contains('show')) {
+        const card = cardById('weather')
+        if (card) renderCard(card, 'weather')
+      }
+    })
     api.onRemind(() => {
       if (bubble.classList.contains('show')) return
+      const card = cardById('water')
+      if (!card) return
       state.queue = ['water']
       state.queueIndex = 0
-      renderWater()
+      renderCard(card, 'water')
     })
   }
 

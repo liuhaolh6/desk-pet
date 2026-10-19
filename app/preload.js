@@ -43,6 +43,7 @@ contextBridge.exposeInMainWorld('deskPet', {
   setBubble: (visible, height) => ipcRenderer.send('pet:bubble', { visible: !!visible, height: height || 0 }),
   showMenu: () => ipcRenderer.send('pet:menu'),
   openSettings: () => ipcRenderer.send('pet:open-settings'),
+  openEditor: () => ipcRenderer.send('pet:open-editor'),
   drinkDone: () => ipcRenderer.send('pet:water-done'),
   openDataDir: () => ipcRenderer.invoke('app:open-data-dir'),
   quit: () => ipcRenderer.send('app:quit'),

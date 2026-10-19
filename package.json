@@ -1,16 +1,57 @@
 {
   "name": "desk-pet",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Windows 桌面宠物：自定义角色形象、点击看天气/喝水提醒，名称大小模式位置全部可配置",
   "main": "app/main.js",
   "private": true,
+  "author": {
+    "name": "liuhaolh6"
+  },
   "scripts": {
     "start": "electron .",
-    "test": "node tools/smoke.js"
+    "test": "node tools/smoke.js",
+    "dist": "electron-builder --win portable"
   },
   "keywords": ["desktop-pet", "electron", "weather", "windows"],
   "license": "MIT",
   "devDependencies": {
-    "electron": "^44.9.0"
+    "electron": "^44.9.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.deskpet.app",
+    "productName": "DeskPet",
+    "copyright": "Copyright © 2026 liuhaolh6",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "app/**/*",
+      "lib/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "npmRebuild": false,
+    "electronDist": "node_modules/electron/dist",
+    "toolsets": {
+      "nsis": "1.2.1"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "executableName": "DeskPet",
+      "artifactName": "DeskPet-${version}-portable.${ext}",
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "DeskPet-${version}-portable.${ext}",
+      "requestExecutionLevel": "user"
+    }
   }
 }

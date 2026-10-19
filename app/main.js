@@ -20,22 +20,39 @@ const { fetchWeather, geocode } = require('../lib/weather')
 
 const VERSION = require('../package.json').version
 const ASSETS = path.join(__dirname, '..', 'assets')
-const LOG_FILE = path.join(__dirname, '..', 'app.log')
+// electron-builder's portable target sets these to the folder/file of the .exe
+// the user actually double-clicked (the running process lives in a temp dir).
+const PORTABLE_DIR = process.env.PORTABLE_EXECUTABLE_DIR || ''
+const PORTABLE_EXE = process.env.PORTABLE_EXECUTABLE_FILE || ''
+
+// A packaged app's __dirname is inside app.asar, which is read-only, so the log
+// target moves to the data directory once that has been chosen. Lines written
+// before that are buffered and flushed, keeping boot logs in one file.
+let LOG_FILE = null
+const pendingLogs = []
+
+function writeLogLine(line) {
+  if (!LOG_FILE) { pendingLogs.push(line); return }
+  try { fs.appendFileSync(LOG_FILE, line) } catch (err) {}
+}
 
 function log() {
-  try {
-    const line = new Date().toISOString() + ' ' + Array.prototype.join.call(arguments, ' ') + '\n'
-    fs.appendFileSync(LOG_FILE, line)
-  } catch (err) {}
+  writeLogLine(new Date().toISOString() + ' ' + Array.prototype.join.call(arguments, ' ') + '\n')
+}
+
+function setLogFile(file) {
+  LOG_FILE = file
+  for (const line of pendingLogs.splice(0)) writeLogLine(line)
 }
 
 process.on('uncaughtException', (err) => log('uncaught', (err && err.stack) || String(err)))
 process.on('unhandledRejection', (err) => log('unhandledRejection', (err && err.stack) || String(err)))
-log('boot electron=' + process.versions.electron + ' argv=' + process.argv.join(' '))
+log('boot electron=' + process.versions.electron + ' packaged=' + app.isPackaged + ' argv=' + process.argv.join(' '))
 
 let store = null
 let petWin = null
 let settingsWin = null
+let editorWin = null
 let tray = null
 let extraBubbleHeight = 0
 let weather = null
@@ -53,11 +70,15 @@ log('schemes registered')
 
 function clamp(n, lo, hi) { return Math.min(hi, Math.max(lo, n)) }
 
+// Horizontal breathing room so bubbles can be wider than the pet itself.
+const WIN_PAD = 54
+function windowWidth(size) { return size + WIN_PAD * 2 }
+
 function defaultPosition(size) {
   const display = screen.getPrimaryDisplay()
   const area = display.workArea
   return {
-    x: area.x + area.width - size - 24,
+    x: area.x + area.width - size - WIN_PAD - 24,
     y: area.y + area.height - size - 24,
   }
 }
@@ -102,7 +123,7 @@ function createPetWindow() {
   petWin = new BrowserWindow({
     x: pos.x,
     y: pos.y,
-    width: size,
+    width: windowWidth(size),
     height: size,
     frame: false,
     transparent: !opaque,
@@ -162,23 +183,23 @@ function applyBubbleHeight(visible, height) {
     y: bottom - Math.floor(nextH / 2),
   })
   const y = Math.max(display.workArea.y, bottom - nextH)
-  petWin.setBounds({ x: b.x, y, width: size, height: nextH })
+  petWin.setBounds({ x: b.x, y, width: windowWidth(size), height: nextH })
 }
 
 function applySettingsSideEffects(prev, next) {
   if (!petWin) return
   const size = clamp(Number(next.size) || 220, 80, 480)
   const g = petWin.getBounds()
-  if (size !== g.width) {
+  if (windowWidth(size) !== g.width) {
     const bottom = g.y + g.height
-    petWin.setBounds({ x: g.x, y: bottom - (size + extraBubbleHeight), width: size, height: size + extraBubbleHeight })
+    petWin.setBounds({ x: g.x, y: bottom - (size + extraBubbleHeight), width: windowWidth(size), height: size + extraBubbleHeight })
   }
   if (!prev || prev.alwaysOnTop !== next.alwaysOnTop) {
     petWin.setAlwaysOnTop(!!next.alwaysOnTop, 'screen-saver')
   }
   if (prev && prev.autostart !== next.autostart) {
     try {
-      app.setLoginItemSettings({ openAtLogin: !!next.autostart, path: process.execPath, args: [] })
+      app.setLoginItemSettings({ openAtLogin: !!next.autostart, path: PORTABLE_EXE || process.execPath, args: [] })
     } catch (err) {}
   }
 }
@@ -202,6 +223,26 @@ function openSettings() {
   })
   settingsWin.loadFile(path.join(__dirname, 'settings.html'))
   settingsWin.on('closed', () => { settingsWin = null })
+}
+
+function openEditor() {
+  if (editorWin) { editorWin.show(); editorWin.focus(); return }
+  editorWin = new BrowserWindow({
+    width: 960,
+    height: 700,
+    minWidth: 780,
+    minHeight: 540,
+    title: '气泡编辑器',
+    backgroundColor: '#f7f9fd',
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  })
+  editorWin.loadFile(path.join(__dirname, 'editor.html'))
+  editorWin.on('closed', () => { editorWin = null })
 }
 
 function broadcastSettings() {
@@ -290,12 +331,15 @@ function createTray() {
   const menu = Menu.buildFromTemplate([
     { label: '显示 / 隐藏', click: () => { if (!petWin) createPetWindow(); else if (petWin.isVisible()) petWin.hide(); else petWin.show() } },
     { label: '设置…', click: openSettings },
+    { label: '编辑气泡…', click: openEditor },
     { label: '刷新天气', click: () => refreshWeather('tray') },
     { type: 'separator' },
     { label: '退出', click: () => { quitting = true; app.quit() } },
   ])
   tray.setContextMenu(menu)
   tray.on('click', () => { if (!petWin) createPetWindow(); else if (petWin.isVisible()) petWin.hide(); else petWin.show() })
+  log('tray created empty=' + image.isEmpty() + ' icon=' + iconPath + ' menu=' + menu.items.map((i) => i.label || i.type).join('|'))
+  try { log('tray bounds=' + JSON.stringify(tray.getBounds())) } catch (err) { log('tray bounds unavailable', String(err)) }
 }
 
 // ---------------------------------------------------------------------- menu
@@ -306,6 +350,7 @@ function showPetMenu() {
     { label: s.name || '桌宠', enabled: false },
     { type: 'separator' },
     { label: '设置…', click: openSettings },
+    { label: '编辑气泡…', click: openEditor },
     { label: '刷新天气', click: () => refreshWeather('menu') },
     { label: s.alwaysOnTop ? '取消置顶' : '置顶显示', click: () => { store.writeSettings({ alwaysOnTop: !s.alwaysOnTop }); applySettingsSideEffects(s, store.readSettings()); broadcastSettings() } },
     { label: '隐藏桌宠', click: () => petWin.hide() },
@@ -411,6 +456,7 @@ function registerIpc() {
 
   ipcMain.on('pet:menu', showPetMenu)
   ipcMain.on('pet:open-settings', openSettings)
+  ipcMain.on('pet:open-editor', openEditor)
   ipcMain.on('pet:water-done', () => {
     const s = store.readSettings()
     const today = new Date()
@@ -431,6 +477,9 @@ function pickDataDir() {
   log('pickDataDir start')
   const candidates = []
   if (process.env.DESKPET_DATA_DIR) candidates.push(path.resolve(process.env.DESKPET_DATA_DIR))
+  // Portable build: keep settings next to the exe so the folder can be moved or
+  // copied (including to a USB stick) without losing state.
+  if (PORTABLE_DIR) candidates.push(path.join(PORTABLE_DIR, 'desk-pet-data'))
   // Do NOT use app.getPath('userData') here: in restricted environments it can
   // crash the process natively before we get a chance to fall back.
   if (process.platform === 'win32') {
@@ -452,6 +501,8 @@ function pickDataDir() {
   return candidates[candidates.length - 1]
 }
 const DATA_DIR = pickDataDir()
+setLogFile(app.isPackaged ? path.join(DATA_DIR, 'app.log') : path.join(__dirname, '..', 'app.log'))
+log('portableDir=' + (PORTABLE_DIR || '-') + ' portableExe=' + (PORTABLE_EXE || '-'))
 try { app.setPath('userData', DATA_DIR) } catch (err) { log('setPath failed', String(err)) }
 log('userData=' + app.getPath('userData'))
 let hasLock = false
@@ -479,11 +530,12 @@ if (!hasLock) {
     log('store=' + store.dir)
     createPetWindow()
     createTray()
-    log('windows created')
+    log('windows created pet=' + (petWin ? 'yes' : 'no') + ' tray=' + (tray ? 'yes' : 'no'))
     refreshWeather('boot')
     scheduleWeather()
     startReminders()
     if (process.env.DESKPET_OPEN_SETTINGS === '1') setTimeout(openSettings, 800)
+    if (process.env.DESKPET_OPEN_EDITOR === '1') setTimeout(openEditor, 800)
   }).catch((err) => log('whenReady failed', (err && err.stack) || String(err)))
 
   app.on('before-quit', () => { quitting = true })
