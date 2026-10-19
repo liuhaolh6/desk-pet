@@ -154,7 +154,19 @@ npm run dist
 验证：手动把 `position` 写成 `{x:5000,y:4000,displayId:"999"}` 启动，日志出现 `position clamped to display=...`，
 窗口落在主屏右下角。
 
-## 11. 新对话开场白（直接粘贴）
+## 11. 桌面快捷方式（v0.3.0）
+
+- 版本号升到 `0.3.0`（含 M7 气泡编辑器 / M8 音效库 / M9 多显示器），因为之前的 portable exe 停在 0.2.0。
+- 新增 `npm run dist:dir`（electron-builder `dir` 目标）与 `npm run shortcut`（`tools/make-shortcut.ps1`）。
+- 快捷方式指向 **解包版** `dist\win-unpacked\DeskPet.exe`，而不是 portable：
+  portable 会解压到 `%TEMP%`，本机火绒会拦未签名进程写 TEMP（见第 5 节第 2 条）；
+  解包版直接运行，避开这一步。
+- 实际建成的快捷方式：`C:\Users\刘浩\Desktop\小芳桌宠.lnk`（图标取 exe 自身）。
+- 打包版已验证启动：4 个进程、窗口可见置顶、托盘创建成功、菜单含「编辑气泡…」。
+
+注意：未签名 exe 首次双击仍会碰到 SmartScreen（需“更多信息 → 仍要运行”）；可以从 `dist\win-unpacked` 直接重建快捷方式，不必重新打包。
+
+## 12. 新对话开场白（直接粘贴）
 
 > 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`PLAN.md` 和 `M6-PACKAGING.md`。
 > M6 portable 打包、M7 气泡编辑器、M8 音效库都已完成；下一步做 M9（多显示器记忆与贴边吸附）。

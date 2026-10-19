@@ -34,6 +34,16 @@ $env:ELECTRON_MIRROR='https://npmmirror.com/mirrors/electron/'
 npm install --registry=https://registry.npmmirror.com
 ```
 
+### 装到桌面（快捷方式）
+
+```powershell
+npm run dist:dir   # 构建解包版 → dist\win-unpacked\DeskPet.exe
+npm run shortcut   # 在桌面创建「小芳桌宠」快捷方式
+```
+
+快捷方式指向解包版而不是 portable：portable 会先解压到 `%TEMP%`，部分安全软件会拦未签名进程写临时目录。
+未签名 exe 第一次双击可能弹 SmartScreen，选「更多信息 → 仍要运行」即可。
+
 ## 打包
 
 ```bash
