@@ -56,7 +56,9 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 4. **Electron 二进制没自动下载**：`npm install` 只装壳，需在 `node_modules/electron` 里手动 `node install.js`，并设 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/`。
 5. **前端脚本顶部不能再加 `'use strict'`**：文件开头 `'use strict'` 紧跟 `(function(){...})()` 会被解析成调用字符串，整个渲染进程报 `"use strict" is not a function`。
 6. **截图抓不到右下角的宠物窗口**：本机屏幕捕获对那个区域的分层窗口不生效（原因未查明，疑似覆盖层）。要验证渲染请用 `webContents.capturePage()`，或把宠物拖到屏幕左上再截。
-7. **双击会被拆成两次单击**：已加 240ms 去抖，别再改回去。
+7. **打包版不带 `--no-sandbox` 会静默退出**（exit=-2147483645/0x80000003，连 app.log 都不写）：本机安全策略下 Chromium 沙箱起不来。
+   双击/快捷方式必须带该参数（`tools/make-shortcut.ps1` 已默认带上）；开机自启也已在代码里带上。
+8. **双击会被拆成两次单击**：已加 240ms 去抖，别再改回去。
 8. **32 位 NSIS 编译大包会崩**：数据块超过约 16 MB 时 `makensis` 报
    `Internal compiler error #12345: error creating mmap the size of ...`。
    3.0.4.1 / 1.2.1（3.12）的 32 位编译器都会中招。本机改用 64 位 NSIS 编译器包装：

@@ -250,7 +250,10 @@ function applySettingsSideEffects(prev, next) {
   }
   if (prev && prev.autostart !== next.autostart) {
     try {
-      app.setLoginItemSettings({ openAtLogin: !!next.autostart, path: PORTABLE_EXE || process.execPath, args: [] })
+      // Keep the sandbox flag in the login item, otherwise autostart hits the
+      // same startup crash as a plain double-click on this machine.
+      const args = process.argv.includes('--no-sandbox') ? ['--no-sandbox'] : []
+      app.setLoginItemSettings({ openAtLogin: !!next.autostart, path: PORTABLE_EXE || process.execPath, args })
     } catch (err) {}
   }
 }

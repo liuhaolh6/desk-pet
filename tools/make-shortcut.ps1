@@ -1,4 +1,4 @@
-# Create (or refresh) a desktop shortcut for the built app.
+﻿# Create (or refresh) a desktop shortcut for the built app.
 #
 #   powershell -ExecutionPolicy Bypass -File tools\make-shortcut.ps1
 #   powershell ... -File tools\make-shortcut.ps1 -Name "DeskPet" -Target "D:\path\DeskPet.exe"
@@ -8,7 +8,10 @@
 # extracting to %TEMP%, which some antivirus products block for unsigned apps.
 param(
   [string]$Name = '小芳桌宠',
-  [string]$Target = ''
+  [string]$Target = '',
+  # This machine blocks Chromium's sandbox (unsigned + security software), so the
+  # app must be started with --no-sandbox. Pass -Arguments '' to override.
+  [string]$Arguments = '--no-sandbox'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -27,10 +30,11 @@ $lnk = Join-Path $desktop ("{0}.lnk" -f $Name)
 $shell = New-Object -ComObject WScript.Shell
 $shortcut = $shell.CreateShortcut($lnk)
 $shortcut.TargetPath = $Target
+$shortcut.Arguments = $Arguments
 $shortcut.WorkingDirectory = Split-Path -Parent $Target
 $shortcut.IconLocation = "$Target,0"
 $shortcut.Description = '桌面宠物：点一下看天气、提醒喝水'
 $shortcut.Save()
 
 Write-Host "已创建：$lnk"
-Write-Host "        指向：$Target"
+Write-Host "        指向：$Target $Arguments"
