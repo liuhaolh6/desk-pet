@@ -122,7 +122,7 @@ function ensureOnScreen() {
     log('relocate pet to display=' + display.id)
     petWin.setBounds({
       x: clamped.x - WIN_PAD,
-      y: clamped.y,
+      y: clamped.y - extra,
       width: windowWidth(size),
       height: size + extra,
     })
@@ -132,7 +132,11 @@ function ensureOnScreen() {
 function petTopLeft() {
   if (!petWin) return { x: 0, y: 0 }
   const b = petWin.getBounds()
-  return { x: b.x, y: b.y + extraBubbleHeight }
+  const s = store.readSettings()
+  const size = clamp(Number(s.size) || 220, 80, 480)
+  // The pet always sits at the bottom of the window, so its top can be derived
+  // from the window bottom regardless of how much bubble space is reserved.
+  return { x: b.x, y: b.y + b.height - size }
 }
 
 // ------------------------------------------------------------------ role URLs
@@ -237,11 +241,14 @@ function applyBubbleHeight(visible, height) {
   const s = store.readSettings()
   const size = clamp(Number(s.size) || 220, 80, 480)
   const target = visible ? clamp(Math.round(Number(height) || 0), 0, 420) : 0
-  if (target === extraBubbleHeight) return
+  // Treat sub-card heights as "no bubble": they are invisible leftovers that
+  // otherwise leave a few pixels of reserved space (and shift drag maths).
+  const normalized = target < 40 ? 0 : target
+  if (normalized === extraBubbleHeight) return
   const b = petWin.getBounds()
   const bottom = b.y + b.height
-  extraBubbleHeight = target
-  const nextH = size + target
+  extraBubbleHeight = normalized
+  const nextH = size + normalized
   const display = screen.getDisplayNearestPoint({
     x: b.x + Math.floor(b.width / 2),
     y: bottom - Math.floor(nextH / 2),
@@ -567,9 +574,11 @@ function registerIpc() {
     if (s.snap && s.snap.enabled) next = placement.snapPet(next, display.workArea, s.snap.gap)
 
     const extra = Math.max(0, b.height - size)
+    // Window top = pet top - reserved bubble space, so dragging with a bubble
+    // open does not make the pet sink by `extra` on every move.
     petWin.setBounds({
       x: next.x - WIN_PAD,
-      y: next.y,
+      y: next.y - extra,
       width: windowWidth(size),
       height: size + extra,
     })

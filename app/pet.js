@@ -22,6 +22,8 @@
     currentCard: null,
     timer: 0,
     drag: null,
+    weatherMarked: false,
+    weatherFetchedAt: 0,
   }
 
   // ------------------------------------------------------------------ utils
@@ -143,6 +145,7 @@
   function hideBubble() {
     clearTimer()
     state.currentCard = null
+    state.weatherMarked = false
     bubble.classList.remove('show')
     resizeForBubble(0)
   }
@@ -178,7 +181,8 @@
     }
   }
 
-  function renderCard(card, cardId) {
+  function renderCard(card, cardId, options) {
+    const opts = options || {}
     state.currentCard = cardId
     const ctx = contextFor(card)
     const frame = el('div')
@@ -198,20 +202,26 @@
     if (card.action) frame.appendChild(actionButtons())
     showBubble(frame)
 
-    playSound(cardId === 'water' ? 'water' : 'bubble')
+    if (opts.playSound !== false) playSound(cardId === 'water' ? 'water' : 'bubble')
 
-    if (cardId === 'weather') {
+    // Weather bookkeeping must happen ONCE per showing. Doing it on every
+    // render used to loop: setSettings -> settings broadcast -> re-render -> ...
+    if (cardId === 'weather' && opts.markWeather !== false && !state.weatherMarked) {
+      state.weatherMarked = true
       const b = Object.assign({}, state.settings.bubble, { lastWeatherShownAt: Date.now() })
       api.setSettings({ bubble: b }).catch(() => {})
+    }
+
+    if (cardId === 'weather' && Date.now() - state.weatherFetchedAt > 60000) {
+      state.weatherFetchedAt = Date.now()
       api.refreshWeather().then((data) => {
-        if (!data) return
+        if (!data || !data.ok) return
         state.weather = data
         if (state.currentCard === 'weather' && bubble.classList.contains('show')) {
-          renderCard(card, cardId)
+          renderCard(card, cardId, { playSound: false, markWeather: false })
         }
       }).catch(() => {})
     }
-    beep(660, 80, 0.18)
   }
 
   function actionButtons() {
@@ -230,9 +240,16 @@
   }
 
   // ------------------------------------------------------------------ input
+  // A drag ends with a synthetic click; suppress it so dragging never pops a
+  // bubble open.
+  let suppressClickUntil = 0
+
   function wirePet() {
     pet.addEventListener('pointerdown', (ev) => {
       if (ev.button != null && ev.button !== 0) return
+      // Drop the bubble first: dragging with reserved bubble space above makes
+      // Windows clamp the window back on screen and the pet drifts off-screen.
+      if (bubble.classList.contains('show')) hideBubble()
       state.drag = { x: ev.screenX, y: ev.screenY, moved: false }
       pet.classList.add('dragging')
       try { pet.setPointerCapture(ev.pointerId) } catch (err) {}
@@ -255,7 +272,10 @@
       state.drag = null
       pet.classList.remove('dragging')
       try { pet.releasePointerCapture(ev.pointerId) } catch (err) {}
-      if (d && d.moved) api.dragEnd()
+      if (d && d.moved) {
+        suppressClickUntil = Date.now() + 600
+        api.dragEnd()
+      }
     }
     pet.addEventListener('pointerup', endDrag)
     pet.addEventListener('pointercancel', endDrag)
@@ -265,6 +285,7 @@
     let clickTimer = 0
     pet.addEventListener('click', () => {
       if (pet.classList.contains('dragging')) return
+      if (Date.now() < suppressClickUntil) return
       if (clickTimer) return
       clickTimer = setTimeout(() => {
         clickTimer = 0
@@ -298,11 +319,17 @@
     }
 
     api.onSettings((settings) => {
+      const prevLayout = JSON.stringify(state.layout)
+      const prevName = state.settings && state.settings.name
       applySettings(settings)
+      // Only redraw when the bubble itself changed; settings broadcasts caused by
+      // our own weather bookkeeping must not trigger another render/sound.
+      const changed = JSON.stringify(state.layout) !== prevLayout || settings.name !== prevName
+      if (!changed) return
       if (bubble.classList.contains('show')) {
         const id = state.currentCard
         const card = id ? cardById(id) : null
-        if (card) renderCard(card, id)
+        if (card) renderCard(card, id, { playSound: false, markWeather: false })
         else resizeForBubble(measureBubble())
       }
     })
@@ -310,7 +337,7 @@
       state.weather = w
       if (state.currentCard === 'weather' && bubble.classList.contains('show')) {
         const card = cardById('weather')
-        if (card) renderCard(card, 'weather')
+        if (card) renderCard(card, 'weather', { playSound: false, markWeather: false })
       }
     })
     api.onRemind(() => {
