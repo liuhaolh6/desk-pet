@@ -8,7 +8,7 @@
 | 项 | 值 |
 |---|---|
 | 文件 | `dist\DeskPet-0.2.0-portable.exe` |
-| 大小 | 100,508,458 字节（约 96 MB） |
+| 大小 | 100,513,136 字节（约 96 MB） |
 | 类型 | `electron-builder` `portable`（NSIS 自解压，单文件，无需安装） |
 | 架构 | x64（Electron 44.9.0） |
 | ProductName | `DeskPet` |
@@ -33,7 +33,7 @@
 - `files`: `app/**`、`lib/**`、`assets/**`、`package.json`
 - `portable.requestExecutionLevel: "user"`
 
-> 注意：本次 exe 由 23:19 的工作树打包。当时 M7 已提交，M8 音效库仍在工作树中（包含 `app/sound-model.js` 等未提交改动），因此 exe 也带上了 M8 的工作树代码；`npm test` 当时 19 项全绿。若要严格按某个提交出包，应在干净工作树/单独 worktree 重新构建。
+> 注意：最终 exe 由提交 `9227115`（M8 音效库已提交）的干净工作树于 23:25 重新打包，版本信息仍为 0.2.0；`npm test` 19 项全绿。构建日志确认 exit=0，asar 内包含 `bubble-model.js`、`editor.*`、`sound-model.js`。
 
 ## 3. 构建命令
 
