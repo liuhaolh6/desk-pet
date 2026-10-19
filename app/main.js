@@ -21,6 +21,19 @@ const placement = require('../lib/placement')
 
 const VERSION = require('../package.json').version
 const ASSETS = path.join(__dirname, '..', 'assets')
+
+// Best-effort breadcrumb next to the executable. Written before any data dir is
+// chosen, so even a launch that dies early leaves a trace to diagnose.
+function breadcrumb(text) {
+  try {
+    const file = path.join(path.dirname(process.execPath), 'desk-pet-boot.log')
+    let size = 0
+    try { size = fs.statSync(file).size } catch (err) {}
+    if (size > 32 * 1024) fs.writeFileSync(file, '')
+    fs.appendFileSync(file, new Date().toISOString() + ' ' + text + '\n')
+  } catch (err) {}
+}
+breadcrumb('start argv=' + process.argv.slice(1).join(' ') + ' exec=' + process.execPath)
 // electron-builder's portable target sets these to the folder/file of the .exe
 // the user actually double-clicked (the running process lives in a temp dir).
 const PORTABLE_DIR = process.env.PORTABLE_EXECUTABLE_DIR || ''
@@ -601,6 +614,9 @@ function pickDataDir() {
   // Portable build: keep settings next to the exe so the folder can be moved or
   // copied (including to a USB stick) without losing state.
   if (PORTABLE_DIR) candidates.push(path.join(PORTABLE_DIR, 'desk-pet-data'))
+  // Unpacked build: also allow the data folder next to the exe. This keeps the
+  // app usable when antivirus blocks writes to the user profile.
+  try { candidates.push(path.join(path.dirname(process.execPath), 'desk-pet-data')) } catch (err) {}
   // Do NOT use app.getPath('userData') here: in restricted environments it can
   // crash the process natively before we get a chance to fall back.
   if (process.platform === 'win32') {
@@ -610,12 +626,14 @@ function pickDataDir() {
     candidates.push(path.join(os.homedir(), '.desk-pet'))
   }
   candidates.push(path.join(os.tmpdir(), 'desk-pet'))
+  breadcrumb('candidates=' + candidates.join(' | '))
   for (const dir of candidates) {
     log('trying data dir ' + dir)
     try {
       fs.mkdirSync(dir, { recursive: true })
       fs.accessSync(dir, fs.constants.W_OK)
       log('using data dir ' + dir)
+      breadcrumb('data=' + dir)
       return dir
     } catch (err) { log('data dir unusable', dir, String(err && err.code)) }
   }
@@ -630,10 +648,13 @@ let hasLock = false
 try { hasLock = app.requestSingleInstanceLock() } catch (err) { log('lock threw', (err && err.stack) || String(err)) }
 log('lock=' + hasLock)
 if (!hasLock) {
-  log('single instance lock denied')
-  app.quit()
-} else {
-  log('single instance lock acquired')
+  // Another instance usually owns the lock; keep running anyway. A silently
+  // missing pet is worse than a duplicate, which the user can close from its menu.
+  log('single instance lock denied, continuing anyway')
+  breadcrumb('lock denied, continuing')
+}
+{
+  log('starting ui')
   app.on('second-instance', () => {
     if (petWin) { petWin.show(); petWin.focus() }
   })
