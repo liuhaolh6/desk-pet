@@ -1,0 +1,13 @@
+node_modules/
+dist/
+out/
+*.log
+.DS_Store
+Thumbs.db
+.dsh-ops-*.lock
+
+# local runtime state
+.userdata/
+app.log
+pet-capture.png
+shot-*.png

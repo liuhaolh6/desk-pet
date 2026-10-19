@@ -1,0 +1,16 @@
+{
+  "name": "desk-pet",
+  "version": "0.1.0",
+  "description": "Windows 桌面宠物：自定义角色形象、点击看天气/喝水提醒，名称大小模式位置全部可配置",
+  "main": "app/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node tools/smoke.js"
+  },
+  "keywords": ["desktop-pet", "electron", "weather", "windows"],
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^44.9.0"
+  }
+}
