@@ -7,6 +7,7 @@
 (function () {
   const api = window.deskPet
   const model = window.DeskPetBubble
+  const sound = window.DeskPetSound
   const pet = document.getElementById('pet')
   const bubble = document.getElementById('bubble')
 
@@ -15,6 +16,7 @@
     roles: [],
     weather: null,
     layout: null,
+    sounds: [],
     queue: [],
     queueIndex: 0,
     currentCard: null,
@@ -47,23 +49,14 @@
   }
 
   // ------------------------------------------------------------------ sound
-  let audio = null
-  function beep(freq, ms, gain) {
-    if (!state.settings || !state.settings.sound || !state.settings.sound.enabled) return
-    try {
-      audio = audio || new AudioContext()
-      const osc = audio.createOscillator()
-      const amp = audio.createGain()
-      const vol = clamp(Number(state.settings.sound.volume) || 0.4, 0, 1) * (gain || 0.25)
-      osc.type = 'sine'
-      osc.frequency.value = freq
-      amp.gain.setValueAtTime(0.0001, audio.currentTime)
-      amp.gain.exponentialRampToValueAtTime(vol, audio.currentTime + 0.01)
-      amp.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + ms / 1000)
-      osc.connect(amp).connect(audio.destination)
-      osc.start()
-      osc.stop(audio.currentTime + ms / 1000 + 0.02)
-    } catch (err) {}
+  function playSound(key) {
+    const settings = state.settings
+    if (!settings) return
+    const volume = sound.eventVolume(settings.sound, key)
+    if (!(volume > 0)) return
+    const event = sound.normalizeSound(settings.sound).events[key]
+    if (!event || !event.enabled) return
+    sound.playFragment(event.fragment, volume, state.sounds)
   }
 
   // ------------------------------------------------------------------ apply
@@ -205,6 +198,8 @@
     if (card.action) frame.appendChild(actionButtons())
     showBubble(frame)
 
+    playSound(cardId === 'water' ? 'water' : 'bubble')
+
     if (cardId === 'weather') {
       const b = Object.assign({}, state.settings.bubble, { lastWeatherShownAt: Date.now() })
       api.setSettings({ bubble: b }).catch(() => {})
@@ -225,8 +220,7 @@
     done.onclick = () => {
       api.drinkDone()
       hideBubble()
-      beep(880, 90, 0.2)
-      setTimeout(() => beep(1100, 110, 0.16), 110)
+      playSound('water')
     }
     const later = el('button', '', '待会儿')
     later.onclick = hideBubble
@@ -272,7 +266,11 @@
     pet.addEventListener('click', () => {
       if (pet.classList.contains('dragging')) return
       if (clickTimer) return
-      clickTimer = setTimeout(() => { clickTimer = 0; advance() }, 240)
+      clickTimer = setTimeout(() => {
+        clickTimer = 0
+        playSound('click')
+        advance()
+      }, 240)
     })
 
     pet.addEventListener('contextmenu', (ev) => {
@@ -294,6 +292,7 @@
       state.roles = initial.roles || []
       state.weather = initial.weather || null
       applySettings(initial.settings)
+      try { state.sounds = await api.listSounds() } catch (err) {}
     } catch (err) {
       console.error('[desk-pet] 初始化失败', err)
     }

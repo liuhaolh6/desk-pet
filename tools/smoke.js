@@ -13,6 +13,7 @@ const path = require('node:path')
 const { createStore, merge, DEFAULT_SETTINGS, DEFAULT_ROLES } = require('../lib/store')
 const { describe, WMO } = require('../lib/weather')
 const bubble = require('../app/bubble-model')
+const soundModel = require('../app/sound-model')
 
 let pass = 0
 function ok(name) { pass += 1; console.log('  ✓', name) }
@@ -153,6 +154,78 @@ const store = createStore(dir)
   assert.match(rows[0][0].css, /font-weight:600/, '样式转成 css')
   assert.match(rows[0][0].css, /font-size:18px/)
   ok('卡片渲染与空行剪枝')
+}
+
+// ------------------------------------------------------------------- sound
+{
+  const s = soundModel.normalizeSound(undefined)
+  assert.equal(s.enabled, true)
+  assert.equal(s.volume, 0.45)
+  assert.deepEqual(Object.keys(s.events).sort(), ['bubble', 'click', 'water'])
+  assert.equal(s.events.click.fragment, 'preset:ding')
+  assert.equal(s.events.click.volume, null, '默认跟随总音量')
+  ok('默认音效配置')
+}
+
+{
+  const s = soundModel.normalizeSound({
+    enabled: false,
+    volume: 2,
+    events: { click: { fragment: 'preset:pop', volume: -1, enabled: false }, water: { volume: 0.3 } },
+  })
+  assert.equal(s.volume, 1, '总音量被夹到 0..1')
+  assert.equal(s.events.click.fragment, 'preset:pop')
+  assert.equal(s.events.click.volume, 0, '单事件音量被夹到 0..1')
+  assert.equal(s.events.click.enabled, false)
+  assert.equal(s.events.water.volume, 0.3)
+  assert.equal(s.events.water.fragment, 'preset:drop', '未指定的字段用默认值')
+  ok('音效归一化与边界')
+}
+
+{
+  const base = soundModel.normalizeSound({ volume: 0.5 })
+  assert.equal(soundModel.eventVolume(base, 'click'), 0.5, '跟随总音量')
+  const explicit = soundModel.normalizeSound({ volume: 0.5, events: { click: { volume: 0.8 } } })
+  assert.equal(soundModel.eventVolume(explicit, 'click'), 0.8)
+  const muted = soundModel.normalizeSound({ enabled: false })
+  assert.equal(soundModel.eventVolume(muted, 'click'), 0)
+  const eventOff = soundModel.normalizeSound({ events: { bubble: { enabled: false } } })
+  assert.equal(soundModel.eventVolume(eventOff, 'bubble'), 0)
+  assert.ok(soundModel.eventVolume(eventOff, 'click') > 0)
+  ok('事件音量回退与静音')
+}
+
+{
+  const files = [{ id: 's1', name: '我的提示音' }]
+  assert.equal(soundModel.fragmentLabel('preset:ding'), '叮')
+  assert.equal(soundModel.fragmentLabel('file:s1', files), '我的提示音')
+  assert.equal(soundModel.fragmentLabel('file:nope', files), '（文件已删除）')
+  assert.equal(soundModel.isKnownFragment('preset:pop'), true)
+  assert.equal(soundModel.isKnownFragment('file:s1', files), true)
+  assert.equal(soundModel.isKnownFragment('file:nope', files), false)
+  ok('片段标签与有效性')
+}
+
+{
+  const entry = store.addSound('测试音', 'wav', Buffer.from([1, 2, 3, 4]))
+  assert.ok(entry.id)
+  assert.equal(store.readSounds().files.length, 1)
+  assert.ok(fs.existsSync(store.soundPath(entry.id)), '音频文件已落盘')
+  assert.equal(store.soundPath('nope'), '')
+  const del = store.deleteSound(entry.id)
+  assert.equal(del.ok, true)
+  assert.equal(store.readSounds().files.length, 0)
+  assert.equal(fs.existsSync(store.soundPath(entry.id)), false, '删除时清理文件')
+  assert.equal(store.deleteSound('nope').ok, false)
+  ok('音效片段增删与文件落盘')
+}
+
+{
+  const merged = merge(DEFAULT_SETTINGS, { sound: { events: { click: { volume: 0.9 } } } })
+  assert.equal(merged.sound.events.click.volume, 0.9)
+  assert.equal(merged.sound.events.water.fragment, 'preset:drop', '兄弟字段保留')
+  assert.equal(merged.sound.volume, DEFAULT_SETTINGS.sound.volume)
+  ok('音效深合并')
 }
 
 console.log('\n' + pass + ' checks passed')

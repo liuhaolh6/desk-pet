@@ -104,8 +104,20 @@
       </label>
       <label class="row check">
         <input id="sound" type="checkbox">
-        <span>交互音效</span>
+        <span>启用音效</span>
       </label>
+      <label class="row">
+        <span>总音量</span>
+        <input id="soundVolume" type="range" min="0" max="100" step="5">
+        <b id="soundVolumeVal" class="val">45%</b>
+      </label>
+      <div id="soundEvents" class="sound-events"></div>
+      <div class="row sound-files-row">
+        <span>片段库</span>
+        <div id="soundFiles" class="chips-inline"></div>
+        <button id="soundImportBtn" type="button">导入音频…</button>
+      </div>
+      <p class="muted">支持 wav / mp3 / ogg / m4a / flac，单个不超过 8MB。</p>
       <div class="row">
         <button id="editorBtn" class="primary" type="button">编辑气泡…</button>
         <span class="muted">自定义每张卡的行、模块与样式</span>
@@ -135,6 +147,7 @@
     </section>
   </main>
 
+  <script src="sound-model.js"></script>
   <script src="settings.js"></script>
 </body>
 </html>

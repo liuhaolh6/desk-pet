@@ -65,6 +65,7 @@ let quitting = false
 // file paths out of the renderer entirely.
 protocol.registerSchemesAsPrivileged([
   { scheme: 'pet-role', privileges: { standard: true, secure: true, supportFetchAPI: true } },
+  { scheme: 'pet-sound', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
 ])
 log('schemes registered')
 
@@ -108,6 +109,24 @@ function handleRoleProtocol(request) {
     }
     if (!bytes) return new Response('not found', { status: 404 })
     return new Response(bytes, { headers: { 'content-type': 'image/png' } })
+  } catch (err) {
+    return new Response('error', { status: 500 })
+  }
+}
+
+function handleSoundProtocol(request) {
+  try {
+    const url = new URL(request.url)
+    if (url.hostname !== 'sound') return new Response('not found', { status: 404 })
+    const id = decodeURIComponent(url.pathname.replace(/^\//, ''))
+    const file = store.soundPath(id)
+    if (!file) return new Response('not found', { status: 404 })
+    const bytes = fs.readFileSync(file)
+    const ext = file.split('.').pop().toLowerCase()
+    const type = {
+      wav: 'audio/wav', mp3: 'audio/mpeg', ogg: 'audio/ogg', m4a: 'audio/mp4', flac: 'audio/flac',
+    }[ext] || 'application/octet-stream'
+    return new Response(bytes, { headers: { 'content-type': type } })
   } catch (err) {
     return new Response('error', { status: 500 })
   }
@@ -372,6 +391,15 @@ function roleList() {
   }))
 }
 
+function soundList() {
+  return store.readSounds().files.map((f) => ({
+    id: f.id,
+    name: f.name || f.id,
+    ext: f.ext,
+    url: 'pet-sound://sound/' + encodeURIComponent(f.id),
+  }))
+}
+
 function registerIpc() {
   ipcMain.handle('state:get', () => ({
     settings: store.readSettings(),
@@ -425,6 +453,50 @@ function registerIpc() {
   })
 
   ipcMain.handle('weather:get', () => weather)
+
+  ipcMain.handle('sounds:list', () => soundList())
+
+  ipcMain.handle('sounds:import', async () => {
+    const result = await dialog.showOpenDialog(settingsWin || petWin, {
+      title: '导入音频片段',
+      properties: ['openFile'],
+      filters: [{ name: '音频', extensions: ['wav', 'mp3', 'ogg', 'm4a', 'flac'] }],
+    })
+    if (result.canceled || !result.filePaths || !result.filePaths[0]) return { ok: false, canceled: true }
+    const file = result.filePaths[0]
+    try {
+      const bytes = fs.readFileSync(file)
+      if (bytes.length > 8 * 1024 * 1024) return { ok: false, error: '音频超过 8MB' }
+      const ext = path.extname(file).replace('.', '').toLowerCase() || 'wav'
+      const name = path.basename(file).replace(/\.[^.]+$/, '').slice(0, 30)
+      const entry = store.addSound(name, ext, bytes)
+      return { ok: true, file: entry, files: soundList() }
+    } catch (err) {
+      return { ok: false, error: String(err.message || err) }
+    }
+  })
+
+  ipcMain.handle('sounds:delete', (ev, id) => {
+    const deleted = store.deleteSound(id)
+    if (deleted.ok) {
+      const s = store.readSettings()
+      const events = (s.sound && s.sound.events) || {}
+      let touched = false
+      for (const key of Object.keys(events)) {
+        if (events[key] && events[key].fragment === 'file:' + id) {
+          events[key] = Object.assign({}, events[key], { fragment: 'preset:ding' })
+          touched = true
+        }
+      }
+      if (touched) {
+        const next = store.writeSettings({ sound: Object.assign({}, s.sound, { events }) })
+        applySettingsSideEffects(s, next)
+        broadcastSettings()
+      }
+    }
+    return Object.assign({}, deleted, { files: soundList() })
+  })
+
   ipcMain.handle('weather:refresh', () => refreshWeather('manual'))
   ipcMain.handle('geocode', async (ev, q) => {
     try { return { ok: true, list: await geocode(q) } }
@@ -522,6 +594,7 @@ if (!hasLock) {
     app.setAppUserModelId('com.deskpet.app')
     store = createStore(app.getPath('userData'))
     protocol.handle('pet-role', handleRoleProtocol)
+    protocol.handle('pet-sound', handleSoundProtocol)
     const { session } = require('electron')
     session.defaultSession.setPermissionRequestHandler((wc, permission, callback) => {
       callback(permission === 'geolocation')

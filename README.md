@@ -13,6 +13,7 @@ Windows 桌面上的常驻小宠物：点一下看天气、被提醒喝水，换
 - 🧩 **气泡模块化编辑器**：每张卡由多行、每行由多个模块组成；模块可选固定文字 / 随机语句 / 名字 / 天气各项 / 今日杯数 / 时间 / 日期，单独调字号、加粗、斜体、文字色、底色，支持拖拽排序与「模块库」复用
 - 🧲 **桌面行为**：无边框透明窗口、始终置顶（可关）、拖动摆位、托盘菜单、开机自启（可选）
 - 🎛️ **全量可配置**：名字、大小 120–360px、模式（安静/正常/话痨）、天气刷新、气泡收起与冷却、音效
+- 🔊 **音效库**：内置 5 种合成音色（叮/啵/水滴/三音/轻提示，不占安装体积）；可导入 wav/mp3/ogg/m4a/flac；点击角色、气泡出现、喝水提醒三个事件各自选片段、单独音量或跟随总音量，每行带试听
 - 🔒 **本地运行**：不登录、不上传，只请求 Open-Meteo 天气接口
 
 ## 运行
@@ -57,7 +58,8 @@ npm install --registry=https://registry.npmmirror.com
 | `position` | `{x,y}` 窗口左上角，`null` 为右下角 | `null` |
 | `alwaysOnTop` | 始终置顶 | `true` |
 | `autostart` | 开机自启 | `false` |
-| `sound.enabled` / `sound.volume` | 点击与提醒音效 | `true` / `0.45` |
+| `sound.enabled` / `sound.volume` | 音效总开关 / 总音量 | `true` / `0.45` |
+| `sound.events.<click\|bubble\|water>` | 每个事件的 `enabled` / `fragment` / `volume`（`null` = 跟随总音量） | 叮 / 啵 / 水滴 |
 | `weather.lat` / `lon` / `city` | 天气坐标与城市名 | `null` |
 | `weather.refreshMinutes` | 天气刷新间隔 | `15` |
 | `water.intervalMinutes` | 喝水提醒间隔 | `60` |
@@ -107,7 +109,7 @@ tools/
 ## 后续
 
 见 [PLAN.md](PLAN.md)；跨对话接手请看 [HANDOFF.md](HANDOFF.md)（现状、决策、已知坑、待办与开场白）。
-当前 `0.1.0` 已有：角色、天气、喝水、气泡、托盘、设置、置顶、自启。待做：气泡模块化编辑器、音效库、开机自启的安装包（electron-builder）、多显示器记忆。
+当前 `0.2.0` 已有：角色、天气、喝水、气泡模块化编辑器、音效库、托盘、设置、置顶、自启、便携打包。待做：多显示器记忆、贴边吸附。
 
 ## License
 

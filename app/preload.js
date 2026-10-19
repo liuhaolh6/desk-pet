@@ -32,6 +32,11 @@ contextBridge.exposeInMainWorld('deskPet', {
   importRole: () => ipcRenderer.invoke('roles:import'),
   deleteRole: (id) => ipcRenderer.invoke('roles:delete', id),
 
+  // sounds
+  listSounds: () => ipcRenderer.invoke('sounds:list'),
+  importSound: () => ipcRenderer.invoke('sounds:import'),
+  deleteSound: (id) => ipcRenderer.invoke('sounds:delete', id),
+
   // weather
   getWeather: () => ipcRenderer.invoke('weather:get'),
   refreshWeather: () => ipcRenderer.invoke('weather:refresh'),

@@ -99,7 +99,19 @@ npm test
 
 注意：气泡布局存在 `settings.bubble.layout`；不存则用默认布局；`normalizeLayout` 对损坏数据 fail-soft 回默认，不会让挂件白屏。
 
-## 9. 新对话开场白（直接粘贴）
+## 9. 最近变更（M8 音效库）
+
+- 新增 `app/sound-model.js`：事件（click/bubble/water）× 片段（`preset:*` 内置合成 / `file:<id>` 导入）模型；
+  `eventVolume()` 实现「单事件音量 null = 跟随总音量」，总开关或事件关闭则返回 0。
+- 新增 `pet-sound://sound/<id>` 自定义协议与 `sounds:list/import/delete` IPC；片段落盘在 `<data>/sounds/<id>.<ext>`，索引 `sounds.json`。
+- 设置窗口新增音效区：总开关/总音量 + 每事件一行（开关、片段下拉、音量、跟随、试听）+ 片段库导入/删除。
+  删除被引用的片段时，主进程自动把引用回退到 `preset:ding`。
+- 宠物侧：点击角色 / 气泡出现 / 喝水提醒三个时机分别发声，旧的固定 beep 已删除。
+- `tools/smoke.js` 扩到 **19 项**（新增音效默认值、归一化边界、音量回退、片段标签、片段增删、深合并）。
+
+注意：内置音色是 WebAudio 合成的，仓库不带音频二进制；真实发声无法在无音频设备的会话里自动验证，目前只验证了代码路径与控制台无报错。
+
+## 10. 新对话开场白（直接粘贴）
 
 > 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md` 和 `PLAN.md`，
 > 然后做 M6：用 electron-builder 打出 portable exe（带图标、版本信息），
