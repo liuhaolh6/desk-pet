@@ -8,6 +8,7 @@
 'use strict'
 
 const path = require('node:path')
+const os = require('node:os')
 const fs = require('node:fs')
 const {
   app, BrowserWindow, Tray, Menu, ipcMain, screen, dialog,
@@ -424,11 +425,34 @@ function registerIpc() {
 
 // ---------------------------------------------------------------------- boot
 log('before lock')
-// Allow the data directory to be overridden (portable installs, tests, or a
-// locked-down environment where %APPDATA% is not writable).
-if (process.env.DESKPET_DATA_DIR) {
-  try { app.setPath('userData', path.resolve(process.env.DESKPET_DATA_DIR)) } catch (err) { log('setPath failed', String(err)) }
+// Pick a writable data directory before Electron touches its singleton lock:
+// an unwritable userData makes requestSingleInstanceLock() crash natively.
+function pickDataDir() {
+  log('pickDataDir start')
+  const candidates = []
+  if (process.env.DESKPET_DATA_DIR) candidates.push(path.resolve(process.env.DESKPET_DATA_DIR))
+  // Do NOT use app.getPath('userData') here: in restricted environments it can
+  // crash the process natively before we get a chance to fall back.
+  if (process.platform === 'win32') {
+    const roaming = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming')
+    candidates.push(path.join(roaming, 'desk-pet'))
+  } else {
+    candidates.push(path.join(os.homedir(), '.desk-pet'))
+  }
+  candidates.push(path.join(os.tmpdir(), 'desk-pet'))
+  for (const dir of candidates) {
+    log('trying data dir ' + dir)
+    try {
+      fs.mkdirSync(dir, { recursive: true })
+      fs.accessSync(dir, fs.constants.W_OK)
+      log('using data dir ' + dir)
+      return dir
+    } catch (err) { log('data dir unusable', dir, String(err && err.code)) }
+  }
+  return candidates[candidates.length - 1]
 }
+const DATA_DIR = pickDataDir()
+try { app.setPath('userData', DATA_DIR) } catch (err) { log('setPath failed', String(err)) }
 log('userData=' + app.getPath('userData'))
 let hasLock = false
 try { hasLock = app.requestSingleInstanceLock() } catch (err) { log('lock threw', (err && err.stack) || String(err)) }
