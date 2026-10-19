@@ -17,6 +17,7 @@ const {
 
 const { createStore } = require('../lib/store')
 const { fetchWeather, geocode } = require('../lib/weather')
+const placement = require('../lib/placement')
 
 const VERSION = require('../package.json').version
 const ASSETS = path.join(__dirname, '..', 'assets')
@@ -75,12 +76,43 @@ function clamp(n, lo, hi) { return Math.min(hi, Math.max(lo, n)) }
 const WIN_PAD = 54
 function windowWidth(size) { return size + WIN_PAD * 2 }
 
-function defaultPosition(size) {
-  const display = screen.getPrimaryDisplay()
-  const area = display.workArea
-  return {
-    x: area.x + area.width - size - WIN_PAD - 24,
-    y: area.y + area.height - size - 24,
+function getDisplays() {
+  const primaryId = String(screen.getPrimaryDisplay().id)
+  return screen.getAllDisplays().map((d) => ({
+    id: String(d.id),
+    primary: String(d.id) === primaryId,
+    workArea: d.workArea,
+  }))
+}
+
+/** Window position for startup, clamped onto an existing display. */
+function resolveWindowPosition(size) {
+  const s = store.readSettings()
+  const res = placement.resolveSaved(s.position, getDisplays(), size, WIN_PAD, 24)
+  if (res.moved) log('position clamped to display=' + res.displayId)
+  return { x: res.x, y: res.y, displayId: res.displayId }
+}
+
+/** Keep the pet visible after a monitor is unplugged or its resolution changes. */
+function ensureOnScreen() {
+  if (!petWin) return
+  const s = store.readSettings()
+  const size = clamp(Number(s.size) || 220, 80, 480)
+  const b = petWin.getBounds()
+  const pet = placement.petRectOf({ x: b.x, y: petTopLeft().y }, size, WIN_PAD)
+  const display = placement.displayForRect(getDisplays(), pet)
+  if (!display) return
+  const clamped = placement.clampPet(pet, display.workArea)
+  const extra = Math.max(0, b.height - size)
+  const moved = clamped.x !== pet.x || clamped.y !== pet.y
+  if (moved) {
+    log('relocate pet to display=' + display.id)
+    petWin.setBounds({
+      x: clamped.x - WIN_PAD,
+      y: clamped.y,
+      width: windowWidth(size),
+      height: size + extra,
+    })
   }
 }
 
@@ -136,7 +168,7 @@ function handleSoundProtocol(request) {
 function createPetWindow() {
   const s = store.readSettings()
   const size = clamp(Number(s.size) || 220, 80, 480)
-  const pos = s.position && Number.isFinite(s.position.x) ? s.position : defaultPosition(size)
+  const pos = resolveWindowPosition(size)
 
   const opaque = process.env.DESKPET_OPAQUE === '1'
   petWin = new BrowserWindow({
@@ -505,21 +537,35 @@ function registerIpc() {
 
   ipcMain.on('pet:drag', (ev, delta) => {
     if (!petWin || !delta) return
+    const s = store.readSettings()
     const b = petWin.getBounds()
-    const display = screen.getDisplayNearestPoint({
-      x: b.x + Math.floor(b.width / 2),
-      y: b.y + Math.floor(b.height / 2),
+    const size = clamp(Number(s.size) || 220, 80, 480)
+    const pet = placement.petRectOf({ x: b.x, y: petTopLeft().y }, size, WIN_PAD)
+    pet.x += Math.round(Number(delta.dx) || 0)
+    pet.y += Math.round(Number(delta.dy) || 0)
+
+    const displays = getDisplays()
+    const display = placement.displayForRect(displays, pet)
+    if (!display) return
+    let next = placement.clampPet(pet, display.workArea)
+    if (s.snap && s.snap.enabled) next = placement.snapPet(next, display.workArea, s.snap.gap)
+
+    const extra = Math.max(0, b.height - size)
+    petWin.setBounds({
+      x: next.x - WIN_PAD,
+      y: next.y,
+      width: windowWidth(size),
+      height: size + extra,
     })
-    const area = display.workArea
-    const x = clamp(b.x + Math.round(Number(delta.dx) || 0), area.x, area.x + area.width - b.width)
-    const y = clamp(b.y + Math.round(Number(delta.dy) || 0), area.y, area.y + area.height - b.height)
-    petWin.setPosition(x, y)
   })
 
   ipcMain.on('pet:drag-end', () => {
     if (!petWin) return
+    const s = store.readSettings()
+    const size = clamp(Number(s.size) || 220, 80, 480)
     const pos = petTopLeft()
-    store.writeSettings({ position: { x: pos.x, y: pos.y } })
+    const display = placement.displayAt(getDisplays(), { x: pos.x + size / 2, y: pos.y + size / 2 })
+    store.writeSettings({ position: { x: pos.x, y: pos.y, displayId: display ? display.id : null } })
   })
 
   ipcMain.on('pet:bubble', (ev, payload) => {
@@ -609,6 +655,9 @@ if (!hasLock) {
     startReminders()
     if (process.env.DESKPET_OPEN_SETTINGS === '1') setTimeout(openSettings, 800)
     if (process.env.DESKPET_OPEN_EDITOR === '1') setTimeout(openEditor, 800)
+    screen.on('display-removed', ensureOnScreen)
+    screen.on('display-added', ensureOnScreen)
+    screen.on('display-metrics-changed', ensureOnScreen)
   }).catch((err) => log('whenReady failed', (err && err.stack) || String(err)))
 
   app.on('before-quit', () => { quitting = true })

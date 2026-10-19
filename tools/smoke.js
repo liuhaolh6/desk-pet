@@ -14,6 +14,7 @@ const { createStore, merge, DEFAULT_SETTINGS, DEFAULT_ROLES } = require('../lib/
 const { describe, WMO } = require('../lib/weather')
 const bubble = require('../app/bubble-model')
 const soundModel = require('../app/sound-model')
+const placement = require('../lib/placement')
 
 let pass = 0
 function ok(name) { pass += 1; console.log('  ✓', name) }
@@ -226,6 +227,84 @@ const store = createStore(dir)
   assert.equal(merged.sound.events.water.fragment, 'preset:drop', '兄弟字段保留')
   assert.equal(merged.sound.volume, DEFAULT_SETTINGS.sound.volume)
   ok('音效深合并')
+}
+
+// ----------------------------------------------------------------- placement
+const DISPLAYS = [
+  { id: '1', primary: true, workArea: { x: 0, y: 0, width: 1920, height: 1080 } },
+  { id: '2', primary: false, workArea: { x: 1920, y: 0, width: 1280, height: 1024 } },
+]
+const SIZE = 220
+const PAD = 54
+
+{
+  const res = placement.resolveSaved(null, DISPLAYS, SIZE, PAD, 24)
+  assert.equal(res.displayId, '1')
+  assert.equal(res.moved, false)
+  assert.equal(res.x, 1920 - SIZE - 24 - PAD, '右下角（窗口坐标）')
+  assert.equal(res.y, 1080 - SIZE - 24)
+  ok('无保存位置 → 主屏右下角')
+}
+
+{
+  const saved = { x: 2000 + PAD, y: 120, displayId: '2' }
+  const res = placement.resolveSaved(saved, DISPLAYS, SIZE, PAD, 24)
+  assert.equal(res.displayId, '2')
+  assert.equal(res.moved, false)
+  assert.equal(res.x, saved.x)
+  assert.equal(res.y, saved.y)
+  ok('记住所属显示器')
+}
+
+{
+  // saved display gone, point still inside the other screen
+  const res = placement.resolveSaved({ x: 2000 + PAD, y: 120, displayId: 'removed' }, DISPLAYS, SIZE, PAD, 24)
+  assert.equal(res.displayId, '2')
+  assert.equal(res.moved, false)
+  ok('显示器被拔掉 → 按坐标重新归属')
+}
+
+{
+  const res = placement.resolveSaved({ x: 9000, y: 4000, displayId: 'removed' }, DISPLAYS, SIZE, PAD, 24)
+  assert.equal(res.displayId, '2', '夹到最近的显示器')
+  assert.equal(res.moved, true)
+  assert.ok(res.x + PAD + SIZE <= 1920 + 1280, '仍在屏内')
+  assert.ok(res.y + SIZE <= 1024)
+  ok('离屏保存 → 夹回最近屏幕')
+}
+
+{
+  const tiny = { x: 0, y: 0, width: 100, height: 100 }
+  const clamped = placement.clampPet({ x: 50, y: 50, width: 220, height: 220 }, tiny)
+  assert.deepEqual({ x: clamped.x, y: clamped.y }, { x: 0, y: 0 })
+  ok('窗口大于屏幕时贴左上')
+}
+
+{
+  const area = { x: 0, y: 0, width: 1920, height: 1080 }
+  const near = placement.snapPet({ x: 12, y: 1080 - 220 - 9, width: 220, height: 220 }, area, 18)
+  assert.equal(near.x, 0)
+  assert.equal(near.snapped.left, true)
+  assert.equal(near.y, 1080 - 220)
+  assert.equal(near.snapped.bottom, true)
+  const far = placement.snapPet({ x: 200, y: 200, width: 220, height: 220 }, area, 18)
+  assert.equal(far.x, 200)
+  assert.equal(far.y, 200)
+  assert.deepEqual(far.snapped, { left: false, right: false, top: false, bottom: false })
+  const off = placement.snapPet({ x: 12, y: 12, width: 220, height: 220 }, area, 0)
+  assert.equal(off.x, 12, 'gap=0 时不吸附')
+  const right = placement.snapPet({ x: 1920 - 220 - 15, y: 400, width: 220, height: 220 }, area, 18)
+  assert.equal(right.snapped.right, true)
+  assert.equal(right.x, 1920 - 220)
+  ok('贴边吸附（四边与阈值）')
+}
+
+{
+  assert.equal(placement.displayAt(DISPLAYS, { x: 2200, y: 300 }).id, '2')
+  assert.equal(placement.displayAt(DISPLAYS, { x: 50, y: 50 }).id, '1')
+  assert.equal(placement.displayForRect(DISPLAYS, { x: 1860, y: 100, width: 220, height: 220 }).id, '2',
+    '大部分在屏幕 2 上')
+  ok('显示器归属判定')
 }
 
 console.log('\n' + pass + ' checks passed')

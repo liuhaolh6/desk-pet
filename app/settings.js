@@ -46,6 +46,10 @@
     $('sizeVal').textContent = settings.size + 'px'
     $('alwaysOnTop').checked = !!settings.alwaysOnTop
     $('autostart').checked = !!settings.autostart
+    $('snapEnabled').checked = !!(settings.snap && settings.snap.enabled)
+    if (document.activeElement !== $('snapGap')) {
+      $('snapGap').value = String((settings.snap && settings.snap.gap) == null ? 18 : settings.snap.gap)
+    }
     $('mode').value = settings.mode || 'normal'
     setIfIdle('city', settings.weather && settings.weather.city ? settings.weather.city : '')
     $('refreshMinutes').value = String((settings.weather && settings.weather.refreshMinutes) || 15)
@@ -116,6 +120,12 @@
 
     $('alwaysOnTop').addEventListener('change', (ev) => save({ alwaysOnTop: ev.target.checked }, true))
     $('autostart').addEventListener('change', (ev) => save({ autostart: ev.target.checked }, true))
+    $('snapEnabled').addEventListener('change', (ev) => save({ snap: { enabled: ev.target.checked } }, true))
+    $('snapGap').addEventListener('change', (ev) => {
+      const gap = clamp(Number(ev.target.value) || 0, 0, 80)
+      ev.target.value = String(gap)
+      save({ snap: { gap } }, true)
+    })
     $('mode').addEventListener('change', (ev) => save({ mode: ev.target.value }, true))
     $('refreshMinutes').addEventListener('change', (ev) => {
       save({ weather: { refreshMinutes: Number(ev.target.value) } }, true)
