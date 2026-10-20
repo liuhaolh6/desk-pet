@@ -1,0 +1,9 @@
+# Git attributes: keep binary assets binary. No `text=auto` here on purpose —
+# adding it would rewrite line endings across the whole tree.
+assets/models/*.onnx binary
+*.png binary
+*.ico binary
+*.woff2 binary
+*.exe binary
+*.node binary
+*.dll binary

@@ -22,12 +22,17 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Syntax check
+        run: npm run check
+
       - name: Unit tests + alpha assertions
         run: npm test
 
       - name: Cutout diagnostic (synthetic fixture + GT, no model)
-        run: >
-          node tools/cutout-diag.js
-          --fake tools/fixtures/synthetic-portrait.png
-          --mask tools/fixtures/synthetic-portrait-mask.png
-          --assert
+        run: npm run diag:fixtures
+
+      - name: Real model on synthetic fixture (alpha metrics)
+        run: node tools/cutout-diag.js --input tools/fixtures/synthetic-portrait.png --assert
+
+      - name: Real model on a no-person image (must report NO_PERSON)
+        run: node tools/cutout-diag.js --input tools/fixtures/negative-landscape.png --expect no-person

@@ -33,10 +33,10 @@
 | P1-5 主进程解耦 | ✅ | utilityProcess 跑推理/合成/编码；抠图中主进程 IPC 往返 max 7ms（进程内对照 644ms）；worker 失败自动退回进程内 |
 | P1-6 去色污 | ✅ | 边缘色取最近主体色（两次方向扫描 O(n)）；红主体/绿背景边缘绿色像素 12→0 |
 | P1-7 阴影降级 | ✅ | `photo-role` 下浅阴影；顺带修复保存新角色后桌宠不刷新（`pet.js` 补 `onRoles`） |
-| P1-8 无障碍 | 🟡 部分 | `aria-pressed`/`aria-keyshortcuts`/键盘可完成擦除与保存；WCAG/NVDA 未审计 |
-| P1-9 仓库/CI | 🟡 部分 | 新增 `.github/workflows/ci.yml`；未推送、未打 tag |
+| P1-8 无障碍 | ✅ 基础 | 画布 `aria-live` 替代文本、`Q/W/F` 构图快捷键、进出修补焦点管理、`aria-keyshortcuts`；完整 WCAG/NVDA 审计未做 |
+| P1-9 仓库/CI | ✅ 本地部分 | `.gitattributes`、`MODEL-ASSETS.md`、`npm run check`、CI（语法 + 单测 + 合成图 + 真实模型正/负例）；**未推送/未 tag/未在 GitHub 实跑** |
 
-实测与未覆盖项见 `M12.2-NOTES.md` / `M12.3-NOTES.md`。**P1 的 5/6/7 已提前到 0.5.3**（原估计 0.6.0），P1-8/9 只做了基础项。
+实测与未覆盖项见 `M12.2-NOTES.md` / `M12.3-NOTES.md` / `M12.4-NOTES.md`。**P1-1~P1-9 的可行项已全部落地（0.5.2~0.5.4）**；剩下的推送到远端、CI 实跑、完整无障碍审计与 10 张 golden set 属外部/环境依赖项。
 
 ## 1. 问题与结论
 
@@ -163,7 +163,7 @@
 | M12.1 | P0-1~P0-8（alpha 合成、映射、连通域、羽化、契约、回退、诊断、上限） | 3–4 人日 | ✅ 0.5.1 portable + `M12-NOTES.md` |
 | M12.2 | P1-1~P1-4（预处理 A/B、蒙版视图、手动擦除、旋转/翻转） | 3–4 人日 | ✅ 0.5.2 + `M12.2-NOTES.md` |
 | M12.3 | P1-5~P1-7（utilityProcess、token IPC、去色污、阴影） | 2–3 人日 | ✅ 0.5.3（token IPC 未做，仍走 base64） |
-| M12.4 | P1-8/P1-9（无障碍、CI/版本锚点） | 1–2 人日 | 🟡 基础键盘/ARIA + CI 文件，未推送/tag/审计 |
+| M12.4 | P1-8/P1-9（无障碍、CI/版本锚点） | 1–2 人日 | ✅ 0.5.4（无障碍基础 + token IPC；推送/tag/完整审计未做） |
 | M13 | P2 模型 A/B + alpha 命中 + 构图策略 | 3–5 人日 | 决策记录，不默认换模型 |
 
 > 排期为单人估算，不含 SignPath 审核/签名等待；签名仍是独立外部流程。

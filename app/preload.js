@@ -33,7 +33,8 @@ contextBridge.exposeInMainWorld('deskPet', {
   deleteRole: (id) => ipcRenderer.invoke('roles:delete', id),
   openCutout: () => ipcRenderer.send('cutout:open'),
   pickCutoutPhoto: () => ipcRenderer.invoke('cutout:pick'),
-  runCutout: (dataUrl) => ipcRenderer.invoke('cutout:run', { dataUrl }),
+  loadCutoutPhoto: (dataUrl, name) => ipcRenderer.invoke('cutout:load', { dataUrl, name }),
+  runCutout: (token) => ipcRenderer.invoke('cutout:run', { token }),
   saveCutout: (payload) => ipcRenderer.invoke('cutout:save', payload),
   closeCutout: () => ipcRenderer.send('cutout:close'),
 

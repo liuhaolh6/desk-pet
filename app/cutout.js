@@ -13,6 +13,9 @@
   const state = {
     original: '',
     originalImage: null,
+    // Main process keeps the full-size photo; the renderer only sees this token
+    // plus a small preview (P1-5 token IPC).
+    token: '',
     resultUrl: '',
     resultImage: null,
     maskUrl: '',
@@ -144,6 +147,15 @@
       btn.setAttribute('aria-pressed', on ? 'true' : 'false')
     })
     stage.setAttribute('aria-label', '角色预览：' + (VIEW_LABEL[state.view] || ''))
+    const modeText = state.mode === 'cutout' ? '已抠图'
+      : state.mode === 'fallback' ? '未抠图（整张照片）'
+        : state.mode === 'original' ? '原图，尚未抠图' : '等待照片'
+    const el = $('previewAlt')
+    if (el) {
+      el.textContent = state.resultImage || state.originalImage
+        ? '当前视图：' + (VIEW_LABEL[state.view] || '') + '；' + modeText + '。'
+        : '尚未选择照片。'
+    }
   }
 
   function ensureMaskCanvas() {
@@ -188,6 +200,7 @@
   }
 
   function setEditTool(tool) {
+    const was = state.editTool
     const next = state.editTool === tool ? null : tool
     state.editTool = next
     state.stroke = null
@@ -202,6 +215,9 @@
         : '恢复模式：在画面上拖动找回被擦掉的部分；再点“恢复”或按 Esc 退出。', '')
     } else {
       status('已退出修补。拖动或缩放调整构图后再保存。', '')
+      // Keep keyboard focus on the tool that was just turned off.
+      const back = was === 'restore' ? $('restoreBtn') : $('eraseBtn')
+      if (back && typeof back.focus === 'function') back.focus()
     }
     updateEditButtons()
   }
@@ -287,8 +303,9 @@
     draw()
   }
 
-  async function setSource(dataUrl, name) {
+  async function setSource(dataUrl, name, token) {
     state.original = dataUrl
+    state.token = token || ''
     state.name = name || state.name || '照片角色'
     $('name').value = state.name
     state.originalImage = await loadImage(dataUrl)
@@ -351,7 +368,7 @@
       const result = await api.pickCutoutPhoto()
       if (!result || result.canceled) { status('已取消'); return }
       if (!result.ok) { status(result.error || '读取失败', 'error'); return }
-      await setSource(result.dataUrl, result.name)
+      await setSource(result.dataUrl, result.name, result.token)
     } catch (err) {
       status('读取照片失败', 'error')
     } finally {
@@ -365,7 +382,7 @@
     status('正在离线抠图，第一次会加载模型，请稍候…')
     mode('处理中')
     try {
-      const result = await api.runCutout(state.original)
+      const result = await api.runCutout(state.token)
       if (result && result.ok) {
         await setResult(result.dataUrl, result.maskDataUrl, 'cutout', '已抠图')
         status('抠图完成。可切换“蒙版”检查边缘，或进入“修补边缘”擦除残留。', 'ok')
@@ -500,8 +517,18 @@
     ev.preventDefault()
     const file = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]
     if (!file || !/^image\//.test(file.type)) { status('请拖入图片文件', 'error'); return }
+    const name = file.name.replace(/\.[^.]+$/, '')
     const reader = new FileReader()
-    reader.onload = () => setSource(String(reader.result), file.name.replace(/\.[^.]+$/, ''))
+    reader.onload = async () => {
+      status('正在载入照片…')
+      try {
+        const result = await api.loadCutoutPhoto(String(reader.result), name)
+        if (!result || !result.ok) { status((result && result.error) || '读取拖入的图片失败', 'error'); return }
+        await setSource(result.dataUrl, result.name, result.token)
+      } catch (err) {
+        status('读取拖入的图片失败', 'error')
+      }
+    }
     reader.onerror = () => status('读取拖入的图片失败', 'error')
     reader.readAsDataURL(file)
   })
@@ -526,22 +553,22 @@
     status('已重置全部修补。', '')
   })
 
-  $('rotateLeftBtn').addEventListener('click', () => {
-    state.rotation = (state.rotation + 270) % 360
+  function rotateBy(delta) {
+    state.rotation = (state.rotation + delta + 360) % 360
     draw()
-    status('构图：左转 90°（当前 ' + state.rotation + '°）', '')
-  })
-  $('rotateRightBtn').addEventListener('click', () => {
-    state.rotation = (state.rotation + 90) % 360
-    draw()
-    status('构图：右转 90°（当前 ' + state.rotation + '°）', '')
-  })
-  $('flipBtn').addEventListener('click', () => {
+    status('构图：旋转 ' + state.rotation + '°', '')
+  }
+
+  function toggleFlip() {
     state.flipX = !state.flipX
     $('flipBtn').setAttribute('aria-pressed', state.flipX ? 'true' : 'false')
     draw()
     status(state.flipX ? '构图：已水平翻转' : '构图：已取消水平翻转', '')
-  })
+  }
+
+  $('rotateLeftBtn').addEventListener('click', () => rotateBy(270))
+  $('rotateRightBtn').addEventListener('click', () => rotateBy(90))
+  $('flipBtn').addEventListener('click', toggleFlip)
 
   $('pickBtn').addEventListener('click', pick)
   $('runBtn').addEventListener('click', run)
@@ -572,11 +599,19 @@
       undoEdit()
       return
     }
-    if (state.mode !== 'cutout' || !state.resultImage) return
+    if (state.mode !== 'cutout' || !state.resultImage) {
+      if (state.resultImage && (ev.key === 'q' || ev.key === 'Q')) { ev.preventDefault(); rotateBy(270) }
+      else if (state.resultImage && (ev.key === 'w' || ev.key === 'W')) { ev.preventDefault(); rotateBy(90) }
+      else if (state.resultImage && (ev.key === 'f' || ev.key === 'F')) { ev.preventDefault(); toggleFlip() }
+      return
+    }
     if (ev.key === 'e' || ev.key === 'E') { ev.preventDefault(); setEditTool('erase') }
     else if (ev.key === 'r' || ev.key === 'R') { ev.preventDefault(); setEditTool('restore') }
     else if (ev.key === '[') { ev.preventDefault(); setBrush(state.brush - 4, true) }
     else if (ev.key === ']') { ev.preventDefault(); setBrush(state.brush + 4, true) }
+    else if (ev.key === 'q' || ev.key === 'Q') { ev.preventDefault(); rotateBy(270) }
+    else if (ev.key === 'w' || ev.key === 'W') { ev.preventDefault(); rotateBy(90) }
+    else if (ev.key === 'f' || ev.key === 'F') { ev.preventDefault(); toggleFlip() }
   })
 
   // Initial canvas is transparent; the checkerboard is CSS behind it.

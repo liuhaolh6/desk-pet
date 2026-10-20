@@ -7,7 +7,7 @@ Windows 桌面上的常驻小宠物：点一下看天气、被提醒喝水，换
 ## 特性
 
 - 🖼️ **自定义角色**：任意图片导入（自动缩放到 610px 内），多角色切换与删除
-- 📸 **照片抠图角色**：从照片离线抠出人像（U2Net，随应用打包），支持拖动/缩放、结果/原图/蒙版三态、擦除/恢复/撤销、旋转/翻转，保存为角色；无人像或模型失败时回退“仅缩放导入”。0.5.1 修复 alpha 合成/背景半透明与回退假成功，0.5.2 加入蒙版检查与手动修补，0.5.3 把重活移入 worker 并处理边缘色污，见 [`M12-NOTES.md`](M12-NOTES.md) / [`M12.2-NOTES.md`](M12.2-NOTES.md) / [`M12.3-NOTES.md`](M12.3-NOTES.md)
+- 📸 **照片抠图角色**：从照片离线抠出人像（U2Net，随应用打包），支持拖动/缩放、结果/原图/蒙版三态、擦除/恢复/撤销、旋转/翻转，保存为角色；无人像或模型失败时回退“仅缩放导入”。0.5.1 修复 alpha 合成/背景半透明与回退假成功，0.5.2 加入蒙版检查与手动修补，0.5.3 把重活移入 worker 并处理边缘色污，0.5.4 加入 token IPC 与无障碍基础，见 [`M12-NOTES.md`](M12-NOTES.md) / [`M12.2-NOTES.md`](M12.2-NOTES.md) / [`M12.3-NOTES.md`](M12.3-NOTES.md) / [`M12.4-NOTES.md`](M12.4-NOTES.md)
 - 🌤️ **天气**：点角色弹出当前天气（温度、天气、今日高低温、降水概率、湿度），城市搜索，断网用上次缓存并标注「离线缓存」
 - 💧 **喝水提醒**：按间隔提醒，记录今日杯数，支持免打扰时段；窗口隐藏时走系统通知
 - 💬 **点击队列**：天气 → 喝水 → 温馨语句（到点才出现），再点收起；温馨语句可自己写
@@ -63,7 +63,7 @@ npm run dist      # electron-builder portable，输出 dist/DeskPet-<version>-po
 
 - exe 带图标与版本信息（ProductName / FileVersion / Copyright 等）。
 - 未签名 exe 可能被 SmartScreen 提示「已保护你的电脑」：点「更多信息 → 仍要运行」，或对 exe 签名。
-- 当前 `0.5.3` 仍未签名；免费开源签名方案与 CI 工作流见 [`SIGNING.md`](SIGNING.md)。在 SignPath 审核通过前，不要把它当作已签名发布。
+- 当前 `0.5.4` 仍未签名；免费开源签名方案与 CI 工作流见 [`SIGNING.md`](SIGNING.md)。在 SignPath 审核通过前，不要把它当作已签名发布。
 - 本机打包绕坑（32 位 NSIS mmap、火绒拦临时目录）见 [`M6-PACKAGING.md`](M6-PACKAGING.md)。
 
 ## 使用
@@ -170,7 +170,7 @@ Signing setup and verification: [`SIGNING.md`](SIGNING.md).
 ## 后续
 
 见 [PLAN.md](PLAN.md)；跨对话接手请看 [HANDOFF.md](HANDOFF.md)（现状、决策、已知坑、待办与开场白）。
-当前 `0.5.3` 已有：角色、照片抠图（alpha 修复 + 蒙版/擦除/旋转 + worker 卸载）、天气、喝水、气泡模块化编辑器、音效库、多显示器与贴边吸附、触摸动效、whale classic SVG 思考气泡、悬停菜单、设置重构、内置字体、托盘、设置、置顶、自启、便携打包。待做：M12 P1-8/P1-9（完整无障碍、CI 实跑/tag，见 [`M12-PLAN.md`](M12-PLAN.md)）、代码签名（SignPath 免费 OSS 路线，见 [`SIGNING.md`](SIGNING.md)）。
+当前 `0.5.4` 已有：角色、照片抠图（alpha 修复 + 蒙版/擦除/旋转 + worker 卸载 + token IPC）、天气、喝水、气泡模块化编辑器、音效库、多显示器与贴边吸附、触摸动效、whale classic SVG 思考气泡、悬停菜单、设置重构、内置字体、托盘、设置、置顶、自启、便携打包。待做：推送/tag/CI 实跑、完整无障碍审计、10 张 golden set（见 [`M12-PLAN.md`](M12-PLAN.md)）、代码签名（SignPath 免费 OSS 路线，见 [`SIGNING.md`](SIGNING.md)）。
 
 ## License
 

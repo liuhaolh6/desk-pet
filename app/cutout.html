@@ -18,13 +18,14 @@
 
   <main class="layout">
     <section class="stage-card">
-      <div id="stage" class="stage" tabindex="0" aria-label="角色预览">
+      <div id="stage" class="stage" tabindex="0" aria-label="角色预览" aria-describedby="previewAlt">
         <canvas id="canvas" width="610" height="610"></canvas>
         <div id="empty" class="empty">
           <strong>选择一张人像照片</strong>
           <span>支持 JPG / PNG / WebP，自动抠出人像</span>
         </div>
       </div>
+      <p id="previewAlt" class="sr-only" aria-live="polite">尚未选择照片</p>
       <div id="viewRow" class="view-row" hidden>
         <div class="seg-group" role="group" aria-label="预览视图">
           <button type="button" class="seg is-on" data-view="result" aria-pressed="true">结果</button>
@@ -58,9 +59,9 @@
         </label>
         <p class="hint">拖动画面调整位置，滚轮可以缩放。</p>
         <div class="chip-row" role="group" aria-label="旋转与翻转">
-          <button id="rotateLeftBtn" class="ghost compact" type="button" title="左转 90°">↺ 左转</button>
-          <button id="rotateRightBtn" class="ghost compact" type="button" title="右转 90°">↻ 右转</button>
-          <button id="flipBtn" class="ghost compact" type="button" title="水平翻转" aria-pressed="false">⇋ 翻转</button>
+          <button id="rotateLeftBtn" class="ghost compact" type="button" title="左转 90°" aria-keyshortcuts="Q">↺ 左转</button>
+          <button id="rotateRightBtn" class="ghost compact" type="button" title="右转 90°" aria-keyshortcuts="W">↻ 右转</button>
+          <button id="flipBtn" class="ghost compact" type="button" title="水平翻转" aria-pressed="false" aria-keyshortcuts="F">⇋ 翻转</button>
         </div>
         <div class="button-row">
           <button id="fallbackBtn" class="ghost" type="button" disabled>仅缩放导入</button>
@@ -80,7 +81,7 @@
           <span>笔刷 <em id="brushVal">24px</em></span>
           <input id="brush" type="range" min="8" max="80" value="24" aria-label="笔刷大小（8 到 80 像素）">
         </label>
-        <p class="hint">E 擦除 / R 恢复 / [ ] 调笔刷 / Ctrl+Z 撤销；编辑时暂停拖动。</p>
+        <p class="hint">E 擦除 / R 恢复 / [ ] 笔刷 / Ctrl+Z 撤销；Q / W 旋转、F 翻转；编辑时暂停拖动。</p>
       </section>
 
       <p class="privacy">照片和角色图都只写在本机数据目录；抠图模型已随应用离线打包。</p>

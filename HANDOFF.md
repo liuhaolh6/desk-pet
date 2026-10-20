@@ -8,7 +8,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 
 - 仓库：<https://github.com/liuhaolh6/desk-pet>（public，main 分支）
 - 本地目录：`D:\project\deskpet`
-- 版本：`0.5.3`（M12 P0 alpha + P1-1~P1-7 抠图体验与主进程卸载；未签名）；本地 21+ 个提交（含 M10/M11/M12 文档，部分未推送）
+- 版本：`0.5.4`（M12 P0 + P1-1~P1-9 可行部分；未签名）；本地 21+ 个提交（含 M10/M11/M12 文档，部分未推送）
 - 早期那套「DSH 挂件版」实现已移出仓库，归档在 `D:\project\deskpet-dsh-plugin`（需要参考角色/气泡系统时可以翻）
 
 ## 2. 现在能用的功能（都真机验证过）
@@ -27,7 +27,8 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 | M6 打包：portable exe（图标 / 版本信息 / 便携数据目录） | ✅ 当前产物 `dist/DeskPet-0.5.0-portable.exe`；启动已验证，托盘图标本机不显示（见 §5.13） |
 | M11 照片抠图（离线 U2Net + 抠图窗口 + 回退） | ✅ 0.5.1 修复 alpha/映射/回退语义，开发版/解包版/portable 均 CDP 走通；`npm test` 42 项 |
 | M12.2 抠图体验（蒙版视图 / 擦除恢复 / 旋转翻转） | ✅ 0.5.2，见 `M12.2-NOTES.md` |
-| M12.3 主进程卸载 / 去色污 / 照片阴影 | ✅ 0.5.3，见 `M12.3-NOTES.md`；P1-8/9 仅基础项 |
+| M12.3 主进程卸载 / 去色污 / 照片阴影 | ✅ 0.5.3，见 `M12.3-NOTES.md` |
+| M12.4 无障碍基础 / token IPC / 仓库基线 | ✅ 0.5.4，见 `M12.4-NOTES.md`；未推送、未 tag、未做完整 WCAG |
 | M10 手感与视觉（Q 弹 / 思考气泡 / 悬停菜单 / 设置重构 / 内置字体） | ✅ 见第 12 节、`M10-NOTES.md`、`M10.1-NOTES.md`、`M10.2-NOTES.md` |
 | `npm test`（41 项，存储 / 角色 / 天气码 / 气泡布局 / 音效 / 多显示器 / 抠图 alpha） | ✅ |
 
@@ -52,7 +53,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 | **M9 多显示器** | 记住每块屏的位置、贴边吸附 | ✅ 已完成，见第 10 节 |
 | **M10 手感与视觉** | Q 弹 / 思考气泡 / 悬停菜单 / 设置重构 / 字体排版 | ✅ 已完成，见第 12 节 |
 | **M11 照片抠图** | 离线 U2Net 生成角色 | ✅ 已完成，见第 13 节、`M11-NOTES.md`；质量缺陷由 M12 修复 |
-| **M12 抠图质量修复** | alpha 合成/映射、回退语义、诊断与评测 | ✅ 0.5.1 P0；0.5.2 P1-1~P1-4；0.5.3 P1-5~P1-7；P1-8/9 基础项 + 10 张 golden set 未完成 |
+| **M12 抠图质量修复** | alpha 合成/映射、回退语义、诊断与评测 | ✅ 0.5.1 P0；0.5.2 P1-1~P1-4；0.5.3 P1-5~P1-7；0.5.4 P1-8/9 可行部分 + token IPC；10 张 golden set 未完成 |
 | **发布签名** | SignPath Foundation 免费 OSS 签名 | ⬜ 工作流/申请材料已就绪，待申请与配置 secrets；当前 exe 仍未签名 |
 | 小改进 | 天气卡文案换行（现在「80% 湿度」可能断行）、托盘的「暂停提醒」开关 | 低优先 |
 
@@ -148,6 +149,12 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
     - worker 任意失败都要能退回进程内（`DESKPET_CUTOUT_INLINE=1` 可强制进程内）。
 38. **`app/pet.js` 要监听 `roles:changed`**：否则保存/导入新角色后 `roleId` 变了、角色列表还是旧的，
     桌宠回退默认图直到重启（0.5.3 修复，别删这个订阅）。
+39. **抠图原图不要塞进渲染层**（0.5.4）：`cutout:pick`/`cutout:load` 只返回 token + ≤1200px 预览，
+    `cutout:run(payload.token)` 用 token 取回原图；25MB 原图的 base64 不再往返。`cutout:run` 仍兼容
+    `{ dataUrl }`，但新代码别再用它传整图。token 存在 `cutoutInputs`（上限 3，窗口关闭清空）。
+40. **仓库基线**：`.gitattributes` 只做二进制标记、**不要加 `text=auto`**（会全仓库重写换行）；
+    模型不用 LFS、不重写历史，理由与量化约束见 `MODEL-ASSETS.md`；CI = `npm run check` + `npm test`
+    + 合成图 `--fake --assert` + 真实模型正/负例。推送与 tag 仍需用户确认。
 
 ## 6. 快速开始
 
@@ -208,6 +215,9 @@ npm run dist
 | `M12-NOTES.md` | 0.5.1 抠图修复实测、未覆盖项、回滚 |
 | `M12.2-NOTES.md` | 0.5.2 蒙版视图/擦除/旋转与 squash-vs-letterbox A/B |
 | `M12.3-NOTES.md` | 0.5.3 utilityProcess 卸载、边缘去色污、照片角色阴影 |
+| `M12.4-NOTES.md` | 0.5.4 无障碍基础、token IPC、CI/模型资产基线 |
+| `MODEL-ASSETS.md` | 模型/二进制资产决策（不用 LFS、不重写历史、量化约束） |
+| `.gitattributes` | 二进制标记（不含 `text=auto`） |
 | `lib/cutout-worker.js` | utilityProcess 里的抠图执行体（P1-5） |
 | `.github/workflows/ci.yml` | `npm ci` + `npm test` + 合成图 alpha 断言（未推送） |
 | `app/cutout.html/css/js` | 照片选择、预览、拖动缩放、保存/回退窗口 |
@@ -296,10 +306,12 @@ npm run dist
 
 **M12.2 结果（0.5.2）**：新增结果/原图/蒙版三态、图像空间擦除/恢复/撤销 3 步、旋转/翻转；squash vs letterbox A/B 差异 <1%（默认 letterbox 仅保持长宽比）；`npm test` 42 项。
 
-**M12.3 结果（0.5.3）**：推理/合成/编码移入 utilityProcess（抠图中主进程 IPC 往返 max 7ms，进程内对照 644ms）；边缘去色污；照片角色阴影降级；修复保存新角色后桌宠不刷新；`npm test` 43 项。P1-8/9 仅基础项，详见 `M12.3-NOTES.md`。
+**M12.3 结果（0.5.3）**：推理/合成/编码移入 utilityProcess（抠图中主进程 IPC 往返 max 7ms，进程内对照 644ms）；边缘去色污；照片角色阴影降级；修复保存新角色后桌宠不刷新；`npm test` 43 项。
+
+**M12.4 结果（0.5.4）**：token IPC（原图不再进渲染层）、画布 `aria-live` 替代文本与 `Q/W/F` 键盘构图、进出修补的焦点管理；`.gitattributes`/`MODEL-ASSETS.md`/`npm run check`/CI 真实模型正负例。推送与 tag 未做，详见 `M12.4-NOTES.md`。
 
 ## 14. 新对话开场白（直接粘贴）
 
-> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`M12.3-NOTES.md`、`M12.2-NOTES.md`、`M12-NOTES.md`、`M12-PLAN.md`。
-> 0.5.3 已完成 M12 P0 + P1-1~P1-7（蒙版视图、擦除、旋转、utilityProcess、去色污、照片阴影）；`npm test` 43 项。
-> 剩余：P1-8 完整 WCAG、P1-9 push/tag/CI 实跑、10 张 golden set；换模型放 P2。签名待 SignPath。
+> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`M12.4-NOTES.md`、`M12.3-NOTES.md`、`M12.2-NOTES.md`、`M12-NOTES.md`、`M12-PLAN.md`。
+> 0.5.4 已完成 M12 P0 + P1-1~P1-9 的可行部分（蒙版/擦除/旋转、utilityProcess、去色污、阴影、token IPC、基础无障碍、CI/模型资产基线）；`npm test` 43 项。
+> 剩余：push/tag/CI 实跑、完整 WCAG 审计、10 张 golden set、P2 模型 A/B。签名待 SignPath。

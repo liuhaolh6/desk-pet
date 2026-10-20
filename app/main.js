@@ -364,7 +364,7 @@ function openCutout() {
     },
   })
   cutoutWin.loadFile(path.join(__dirname, 'cutout.html'))
-  cutoutWin.on('closed', () => { cutoutWin = null })
+  cutoutWin.on('closed', () => { cutoutWin = null; cutoutInputs.clear() })
 }
 
 function broadcastSettings() {
@@ -637,6 +637,40 @@ async function runCutoutDecoded(image, options) {
   return cutout.cutoutImageRGBA(rgba, width, height, options)
 }
 
+// ------------------------------------------------------- cutout input tokens
+// The renderer must not receive the full-size photo (a 25MB JPEG becomes ~33MB
+// of base64). `cutout:pick`/`cutout:load` keep the decoded native image here
+// and hand the renderer a token plus a small preview; `cutout:run` is then
+// called with the token only.
+const CUTOUT_INPUT_LIMIT = 3
+const cutoutInputs = new Map()
+
+function previewDataUrl(image, max = 1200) {
+  const preview = cutout.scaleOnly(image, max)
+  return 'data:image/png;base64,' + preview.toPNG().toString('base64')
+}
+
+function rememberCutoutInput(image, name) {
+  const token = 'c' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8)
+  cutoutInputs.set(token, { image, name: String(name || '').slice(0, 30), at: Date.now() })
+  while (cutoutInputs.size > CUTOUT_INPUT_LIMIT) {
+    const oldest = cutoutInputs.keys().next().value
+    cutoutInputs.delete(oldest)
+  }
+  return token
+}
+
+function cutoutInputPayload(image, name) {
+  const size = image.getSize()
+  return {
+    token: rememberCutoutInput(image, name),
+    dataUrl: previewDataUrl(image),
+    name: String(name || '').slice(0, 30),
+    width: size.width,
+    height: size.height,
+  }
+}
+
 function roleList() {
   const index = store.readRoles()
   return index.roles.map((r) => ({
@@ -729,29 +763,43 @@ function registerIpc() {
     let stat
     try { stat = fs.statSync(file) } catch (err) { return { ok: false, error: '读不到文件' } }
     if (stat.size > MAX_IMAGE_BYTES) return { ok: false, error: '图片超过 25MB，请先压缩' }
-    const buffer = fs.readFileSync(file)
-    const image = nativeImage.createFromBuffer(buffer)
+    const image = nativeImage.createFromBuffer(fs.readFileSync(file))
     if (image.isEmpty()) return { ok: false, error: '读不出图片' }
-    const ext = path.extname(file).toLowerCase()
-    const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg'
-    return {
-      ok: true,
-      dataUrl: 'data:' + mime + ';base64,' + buffer.toString('base64'),
-      name: path.basename(file).replace(/\.[^.]+$/, '').slice(0, 30),
-      width: image.getSize().width,
-      height: image.getSize().height,
+    const name = path.basename(file).replace(/\.[^.]+$/, '').slice(0, 30)
+    return Object.assign({ ok: true }, cutoutInputPayload(image, name))
+  })
+
+  // Drag & drop: the file already lives in the renderer, so it arrives once and
+  // is replaced by a token for every later call.
+  ipcMain.handle('cutout:load', (ev, payload) => {
+    let decoded
+    try { decoded = decodeImageDataUrl(payload && payload.dataUrl) } catch (err) {
+      return { ok: false, error: err.message }
     }
+    const image = nativeImage.createFromBuffer(decoded.buffer)
+    if (image.isEmpty()) return { ok: false, error: '读不出图片' }
+    return Object.assign({ ok: true }, cutoutInputPayload(image, payload && payload.name))
   })
 
   ipcMain.handle('cutout:run', async (ev, payload) => {
     const startedAt = Date.now()
-    let decoded
-    try { decoded = decodeImageDataUrl(payload && payload.dataUrl) } catch (err) {
-      cutoutTrace({ ok: false, mode: 'none', code: 'BAD_IMAGE', ms: Date.now() - startedAt, error: err.message })
-      return { ok: false, mode: 'none', code: 'BAD_IMAGE', error: err.message }
+    let image = null
+    const token = payload && typeof payload.token === 'string' ? payload.token : ''
+    if (token && cutoutInputs.has(token)) {
+      image = cutoutInputs.get(token).image
+    } else if (payload && payload.dataUrl) {
+      // Back-compat: an older renderer still hands over the base64 image.
+      let decoded
+      try { decoded = decodeImageDataUrl(payload.dataUrl) } catch (err) {
+        cutoutTrace({ ok: false, mode: 'none', code: 'BAD_IMAGE', ms: Date.now() - startedAt, error: err.message })
+        return { ok: false, mode: 'none', code: 'BAD_IMAGE', error: err.message }
+      }
+      image = nativeImage.createFromBuffer(decoded.buffer)
+    } else {
+      cutoutTrace({ ok: false, mode: 'none', code: 'BAD_IMAGE', ms: Date.now() - startedAt, error: '缺少照片' })
+      return { ok: false, mode: 'none', code: 'BAD_IMAGE', error: '缺少照片，请重新选择' }
     }
-    const image = nativeImage.createFromBuffer(decoded.buffer)
-    if (image.isEmpty()) {
+    if (!image || image.isEmpty()) {
       cutoutTrace({ ok: false, mode: 'none', code: 'BAD_IMAGE', ms: Date.now() - startedAt })
       return { ok: false, mode: 'none', code: 'BAD_IMAGE', error: '读不出图片' }
     }
