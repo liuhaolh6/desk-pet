@@ -947,6 +947,9 @@ function registerIpc() {
 
   ipcMain.on('pet:drag', (ev, delta) => {
     if (!petWin || !delta) return
+    // Opt-in diagnostic: count how many window moves a drag actually performs
+    // (the renderer coalesces them to one per animation frame).
+    if (process.env.DESKPET_TRACE_DRAG === '1') log('pet-drag', Math.round(Number(delta.dx) || 0), Math.round(Number(delta.dy) || 0))
     const s = store.readSettings()
     const b = petWin.getBounds()
     const size = clamp(Number(s.size) || 220, 80, 480)

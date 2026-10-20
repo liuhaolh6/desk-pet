@@ -36,7 +36,11 @@ body {
   height: 100%;
   transform-origin: center bottom;
   transform: scaleX(var(--pet-flip, 1));
-  transition: transform var(--dur) var(--ease-spring);
+  transition: transform var(--dur) var(--ease-out);
+  /* The drop-shadow lives on this wrapper, NOT on the transformed sprite:
+     scaling a `filter`ed layer makes Windows reuse the old raster and smear it
+     (the "放大/缩小虚影" seen on click). */
+  filter: drop-shadow(0 10px 16px rgba(15, 23, 42, 0.2));
 }
 
 #pet {
@@ -51,10 +55,10 @@ body {
   transform: translateY(var(--pet-lift, 0))
     rotate(var(--pet-tilt, 0deg))
     scale(var(--pet-scale-x, 1), var(--pet-scale-y, 1));
-  filter: drop-shadow(0 10px 16px rgba(15, 23, 42, 0.2));
-  /* Only transform animates: animating `filter` re-composites the whole
-     transparent window every frame and flickers on Windows. */
-  transition: transform 0.2s var(--ease-spring);
+  /* Monotone easing only: --ease-spring overshoots, which adds stray frames
+     past the target scale (a ghost frame on a transparent window). No `filter`
+     here either — only transform animates. */
+  transition: transform 0.16s var(--ease-out);
   will-change: transform;
 }
 
@@ -62,32 +66,28 @@ body {
   --pet-lift: -2px;
   --pet-scale-x: 1.03;
   --pet-scale-y: 1.03;
-  /* Deliberately no `filter` change here: swapping the drop-shadow on a
-     transparent window re-composites it and can flash. The lift+scale already
-     signals hover. */
 }
 
 /* Photo roles: softer shadow so edge fringe is not amplified. */
-body.photo-role #pet {
+body.photo-role .pet-flip {
   filter: drop-shadow(0 5px 9px rgba(15, 23, 42, 0.14));
-}
-
-body.photo-role .pet-wrap.hover #pet {
-  /* Same as above: photo roles keep their constant softer shadow. */
 }
 
 .pet-wrap.pressing #pet {
   --pet-lift: 0px;
-  --pet-scale-x: 1.05;
-  --pet-scale-y: 0.88;
-  transition-duration: 0.06s;
+  --pet-scale-x: 1.04;
+  --pet-scale-y: 0.9;
+  /* Slow enough that a frame moves ~1.5% instead of ~5%. */
+  transition-duration: 0.11s;
+  transition-timing-function: var(--ease-out);
 }
 
 .pet-wrap.dragging #pet {
   cursor: grabbing;
   --pet-tilt: var(--drag-tilt, 0deg);
-  transition-duration: 0.08s;
-  transition-timing-function: linear;
+  /* Follow the pointer exactly while dragging; a transition here lags behind
+     the cursor and reads as stutter. */
+  transition: none;
 }
 
 .pet-wrap.pressing #pet,

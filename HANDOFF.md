@@ -8,7 +8,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 
 - 仓库：<https://github.com/liuhaolh6/desk-pet>（public，main 分支）
 - 本地目录：`D:\project\deskpet`
-- 版本：`0.5.5`（M12 P0 + P1-1~P1-9 可行部分 + 桌宠窗口屏闪修复；未签名）；本地 21+ 个提交（含 M10/M11/M12 文档，部分未推送）
+- 版本：`0.5.6`（M12 P0 + P1-1~P1-9 可行部分 + 无障碍审计 + 桌宠窗口屏闪/缩放虚影修复；未签名）；本地 21+ 个提交（含 M10/M11/M12 文档，部分未推送）
 - 早期那套「DSH 挂件版」实现已移出仓库，归档在 `D:\project\deskpet-dsh-plugin`（需要参考角色/气泡系统时可以翻）
 
 ## 2. 现在能用的功能（都真机验证过）
@@ -30,6 +30,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 | M12.3 主进程卸载 / 去色污 / 照片阴影 | ✅ 0.5.3，见 `M12.3-NOTES.md` |
 | M12.4 无障碍基础 / token IPC / 仓库基线 | ✅ 0.5.4，见 `M12.4-NOTES.md` |
 | M12.5 完整无障碍审计（可自动化部分） | ✅ 0.5.5，82 项 0 失败（含键盘-only 流程），见 `A11Y-AUDIT.md`；未做 NVDA/真实高对比度 |
+| M12.6 桌宠点击/拖动流畅性（缩放虚影、settings 缓存） | ✅ 0.5.6，见 `PET-WINDOW-NOTES.md` §1；无过冲帧、拖动按帧合并 |
 | M10 手感与视觉（Q 弹 / 思考气泡 / 悬停菜单 / 设置重构 / 内置字体） | ✅ 见第 12 节、`M10-NOTES.md`、`M10.1-NOTES.md`、`M10.2-NOTES.md` |
 | `npm test`（41 项，存储 / 角色 / 天气码 / 气泡布局 / 音效 / 多显示器 / 抠图 alpha） | ✅ |
 
@@ -169,6 +170,16 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
     - 桌宠 `☰` 菜单要能用键盘聚焦显示（`.pet-wrap:focus-within .menu-btn`）；
     - 动态创建的音效控件要有 `aria-label`；改完跑 `node tools/check-a11y.js` 与
       `node tools/a11y-audit.js --port <调试端口> --flow`（82 项应全过）。
+43. **缩放动画不要用会过冲的缓动，也不要让被缩放的精灵带 `filter`**（0.5.6 虚影修复，见
+    `PET-WINDOW-NOTES.md` §1）：
+    - `#pet` 只许 `transition: transform 0.16s var(--ease-out)`；`--ease-spring`
+      （`cubic-bezier(0.34,1.3,0.6,1)`）会过冲到 1.3，出现 1.034 / 0.877 这类**越界帧**＝肉眼虚影；
+    - `drop-shadow` 放在未被缩放的 `.pet-flip` 上；`#pet` 自身不要 `filter`（同时带
+      `will-change: transform` 会复用旧光栅，缩放时糊/拖影）；
+    - 按压保持 ≥110ms，让单调过渡走完再回弹，别在动画中途反向（会每帧跳 4%～5%）；
+    - 拖动时 `transition: none` 跟手，IPC 用 `requestAnimationFrame` 按帧合并；
+    - **`store.readSettings()` 已有缓存**（拖动每帧都要读，无缓存时 175µs/次），别退回每次读盘；
+    - `tools/smoke.js` 有静态断言，改完跑 `npm test`。
 
 ## 6. 快速开始
 

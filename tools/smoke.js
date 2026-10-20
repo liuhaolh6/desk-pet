@@ -668,7 +668,8 @@ const PAD = 54
   // drop-shadow, and the sprite must not animate `filter` on a transparent
   // window. Window resizes must only grow while a bubble is visible.
   const petJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.js'), 'utf8')
-  const petCss = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.css'), 'utf8')
+  const petCssRaw = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.css'), 'utf8')
+  const petCss = petCssRaw.replace(/\/\*[\s\S]*?\*\//g, '')
   const mainJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main.js'), 'utf8')
   assert.ok(/pointerType === 'touch'/.test(petJs), '触摸不应触发 hover 样式')
   const petRule = petCss.match(/#pet\s*\{[\s\S]*?\}/)
@@ -682,7 +683,17 @@ const PAD = 54
   const hoverBlocks = petCss.match(/\.pet-wrap\.hover[^{]*\{[^}]*\}/g) || []
   assert.ok(hoverBlocks.length > 0, 'hover 规则存在')
   assert.ok(hoverBlocks.every((b) => !/filter\s*:/.test(b)), 'hover 不应改 filter')
-  ok('桌宠窗口：触摸不触发 hover、hover 不改 filter、气泡只增不减')
+  assert.ok(/transition:\s*transform\s+0\.16s\s+var\(--ease-out\)/.test(petCss), '#pet 只用单调 ease-out 过渡')
+  assert.ok(!/ease-spring/.test((petCss.match(/#pet\s*\{[^}]*\}/) || [''])[0]), '#pet 不用会过冲的 ease-spring')
+  const flipRule = (petCss.match(/\.pet-flip\s*\{[^}]*\}/) || [''])[0]
+  assert.ok(/filter:\s*drop-shadow/.test(flipRule), '阴影在被缩放的精灵之外（.pet-flip）')
+  const petRule2 = (petCss.match(/#pet\s*\{[^}]*\}/) || [''])[0]
+  assert.ok(!/filter\s*:/.test(petRule2), '#pet 自身不带 filter')
+  assert.ok(/requestAnimationFrame\(flushDrag\)/.test(petJs), '拖动按帧合并 IPC')
+  assert.ok(/elapsed < 110/.test(petJs), '按压保持到过渡走完再回弹')
+  const storeJs = fs.readFileSync(path.join(__dirname, '..', 'lib', 'store.js'), 'utf8')
+  assert.ok(/settingsCache/.test(storeJs), 'settings 读取有缓存（拖动每帧都要读）')
+  ok('桌宠窗口：无过冲缩放、阴影不随缩放、拖动按帧合并、settings 有缓存')
 }
 
 console.log('\n' + pass + ' checks passed')

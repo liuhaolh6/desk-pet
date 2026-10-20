@@ -417,6 +417,28 @@
   let suppressClickUntil = 0
 
   function wirePet() {
+    // Coalesce drag updates to one per animation frame: one IPC + one window
+    // move per frame instead of one per pointer event (which stutters).
+    let dragAccX = 0
+    let dragAccY = 0
+    let dragRaf = 0
+
+    function flushDrag() {
+      dragRaf = 0
+      if (!dragAccX && !dragAccY) return
+      const dx = dragAccX
+      const dy = dragAccY
+      dragAccX = 0
+      dragAccY = 0
+      api.drag({ dx, dy })
+    }
+
+    function queueDrag(dx, dy) {
+      dragAccX += dx
+      dragAccY += dy
+      if (!dragRaf) dragRaf = requestAnimationFrame(flushDrag)
+    }
+
     pet.addEventListener('pointerdown', (ev) => {
       if (ev.button != null && ev.button !== 0) return
       if (ev.pointerType === 'touch') showTouchUi()
@@ -442,7 +464,7 @@
       d.totalX += dx
       const tilt = clamp(d.totalX * 0.15, -3, 3)
       petWrap.style.setProperty('--drag-tilt', tilt.toFixed(2) + 'deg')
-      api.drag({ dx, dy })
+      queueDrag(dx, dy)
       d.x = ev.screenX
       d.y = ev.screenY
     })
@@ -453,13 +475,19 @@
       petWrap.classList.remove('dragging')
       petWrap.style.setProperty('--drag-tilt', '0deg')
       try { pet.releasePointerCapture(ev.pointerId) } catch (err) {}
+      if (dragRaf) { cancelAnimationFrame(dragRaf); dragRaf = 0 }
       if (d && d.moved) {
+        // Flush whatever is still pending so the window lands where the pointer
+        // ended instead of one frame behind.
+        if (dragAccX || dragAccY) flushDrag()
         petWrap.classList.remove('pressing')
         suppressClickUntil = Date.now() + 600
         api.dragEnd()
       } else {
+        // Hold the dip long enough to finish its (monotone) transition before
+        // reversing. Reversing mid-flight is what produced stray scale frames.
         const elapsed = performance.now() - (d ? d.startAt : 0)
-        if (elapsed < 36) setTimeout(() => petWrap.classList.remove('pressing'), 36 - elapsed)
+        if (elapsed < 110) setTimeout(() => petWrap.classList.remove('pressing'), 110 - elapsed)
         else petWrap.classList.remove('pressing')
       }
     }
