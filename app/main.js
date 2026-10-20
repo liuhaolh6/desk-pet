@@ -443,23 +443,8 @@ function createTray() {
 }
 
 // ---------------------------------------------------------------------- menu
-function showPetMenu() {
-  if (!petWin) return
-  const s = store.readSettings()
-  const menu = Menu.buildFromTemplate([
-    { label: s.name || '桌宠', enabled: false },
-    { type: 'separator' },
-    { label: '设置…', click: openSettings },
-    { label: '编辑气泡…', click: openEditor },
-    { label: '刷新天气', click: () => refreshWeather('menu') },
-    { label: s.alwaysOnTop ? '取消置顶' : '置顶显示', click: () => { store.writeSettings({ alwaysOnTop: !s.alwaysOnTop }); applySettingsSideEffects(s, store.readSettings()); broadcastSettings() } },
-    { label: '隐藏桌宠', click: () => petWin.hide() },
-    { type: 'separator' },
-    { label: '打开数据目录', click: () => shell.openPath(store.dir) },
-    { label: '退出', click: () => { quitting = true; app.quit() } },
-  ])
-  menu.popup({ window: petWin })
-}
+// The pet window deliberately has no right-click menu; everything lives in the
+// renderer's hover menu and the tray menu.
 
 // ----------------------------------------------------------------------- IPC
 function roleList() {
@@ -625,7 +610,6 @@ function registerIpc() {
     applyBubbleHeight(!!(payload && payload.visible), payload && payload.height)
   })
 
-  ipcMain.on('pet:menu', showPetMenu)
   ipcMain.on('pet:hide', () => { if (petWin) petWin.hide() })
   ipcMain.on('pet:open-settings', openSettings)
   ipcMain.on('pet:open-editor', openEditor)

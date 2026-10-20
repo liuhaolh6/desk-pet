@@ -8,7 +8,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 
 - 仓库：<https://github.com/liuhaolh6/desk-pet>（public，main 分支）
 - 本地目录：`D:\project\deskpet`
-- 版本：`0.4.0`，已推送 15 个提交
+- 版本：`0.4.1`，已推送 16 个提交
 - 早期那套「DSH 挂件版」实现已移出仓库，归档在 `D:\project\deskpet-dsh-plugin`（需要参考角色/气泡系统时可以翻）
 
 ## 2. 现在能用的功能（都真机验证过）
@@ -18,14 +18,14 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 | 透明无边框窗口、始终置顶（可关）、跳过任务栏 | ✅ |
 | 单击出卡：天气 → 喝水 → 温馨语句，再点收起 | ✅ |
 | 气泡出现时窗口向上加高，收起缩回（不挡桌面点击） | ✅ |
-| 双击开设置窗口；右键弹菜单；托盘菜单 | ✅ |
+| 悬停 ☰ 菜单；托盘菜单（桌宠双击/右键无响应） | ✅ |
 | 角色导入 / 切换 / 删除（自定义 `pet-role://` 协议） | ✅ |
 | 天气：Open-Meteo、城市搜索、磁盘缓存、断网降级 | ✅ |
 | 喝水：间隔提醒、今日杯数、免打扰、隐藏时系统通知 | ✅ |
 | 设置：名字、大小、置顶、自启、模式、城市、刷新、间隔、气泡、音效 | ✅ |
 | 气泡模块化编辑器 / 音效库（M7/M8） | ✅ |
-| M6 打包：portable exe（图标 / 版本信息 / 便携数据目录） | ✅ 当前产物 `dist/DeskPet-0.4.0-portable.exe`；启动已验证，托盘图标本机不显示（见 §5.13） |
-| M10 手感与视觉（Q 弹 / 思考气泡 / 悬停菜单 / 设置重构 / 内置字体） | ✅ 见第 12 节、`M10-NOTES.md` |
+| M6 打包：portable exe（图标 / 版本信息 / 便携数据目录） | ✅ 当前产物 `dist/DeskPet-0.4.1-portable.exe`；启动已验证，托盘图标本机不显示（见 §5.13） |
+| M10 手感与视觉（Q 弹 / 思考气泡 / 悬停菜单 / 设置重构 / 内置字体） | ✅ 见第 12 节、`M10-NOTES.md`、`M10.1-NOTES.md` |
 | `npm test`（26 项，存储 / 角色 / 天气码 / 气泡布局 / 音效 / 多显示器） | ✅ |
 
 ## 3. 关键决策（别推翻，除非有理由）
@@ -96,6 +96,10 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
     在默认右下角位置误翻转。用 `placement.petRectOf` + 20px 阈值。
 20. **字体子集**：`tools/make-font.py` 生成 `DeskPetSans-{Regular,Semibold}.woff2`，OFL/NOTICE 随包；
     不要提交 17MB 源字体，也不要依赖系统字体保证排版。
+21. **桌宠双击/右键已移除**：设置只从悬停 ☰ 或托盘打开；不要再给 `pet` 加 `dblclick` / `contextmenu` 监听。
+    单击仍走 240ms 去抖，双击只推进一张卡。
+22. **气泡/菜单动效已对齐 whale-widget**：主体 .26s、大点 .13s、小点 0s、文字 .36s；关闭 .1/.2/.3s；
+    气泡隐藏后 **540ms** 再缩窗口，改回 200ms 会把回收动画裁掉。
 
 ## 6. 快速开始
 
@@ -141,6 +145,7 @@ npm run dist
 | `build/icon.ico` | Windows 多尺寸图标（make-assets.py 生成） |
 | `M6-PACKAGING.md` | M6 portable 打包记录 / 验证 / 本机限制 |
 | `M10-NOTES.md` | M10 记录 / 验证 / 截图 |
+| `M10.1-NOTES.md` | 0.4.1 交互收尾：去双击/右键、whale 气泡与菜单样式 |
 
 ## 8. 最近变更（M7 气泡模块化编辑器）
 
@@ -192,7 +197,7 @@ npm run dist
 
 注意：未签名 exe 首次双击仍会碰到 SmartScreen（需“更多信息 → 仍要运行”）；可以从 `dist\win-unpacked` 直接重建快捷方式，不必重新打包。
 
-## 12. 最近变更（M10 手感与视觉包，0.4.0）
+## 12. 最近变更（M10 手感与视觉包，0.4.1）
 
 - 交互：按压 Q 弹 / 松手回弹 / 悬停微放大 / 拖动倾斜 / 贴边镜像；`pet.css` 用 CSS 变量组合 transform，`pet.js` 做手势仲裁（240ms 双击去抖、600ms 拖动抑制、36ms 按下帧）。
 - 思考气泡：云朵感圆角 + 两个错落思考点，0/130/260ms 分段入场；`measureBubble` +30，先预留窗口高度再显示，隐藏后延迟 200ms 缩回。
@@ -201,9 +206,10 @@ npm run dist
 - 字体：`DeskPet Sans`（Noto Sans SC 子集，OFL，约 2.1MB），`tokens.css` 统一 token；编辑器也接入。
 - 修复：点击队列被 pointerdown 重置、默认位置误镜像、气泡/菜单高度时序。
 - 验证：`npm test` 26 项；CDP 测悬停/按压/队列/菜单/120–360px/镜像/全部设置面板无横向溢出；打包版字体 `document.fonts.check` 通过、控制台无 error。截图在 `docs/m10/`，详情 `M10-NOTES.md`。
+- **0.4.1 收尾**：移除桌宠双击/右键（设置只走悬停 ☰ / 托盘）；气泡文字色/描边/入场时序与菜单按钮/面板参数对齐 whale-widget；气泡隐藏后 540ms 再缩窗口。详见 `M10.1-NOTES.md`。
 
 ## 13. 新对话开场白（直接粘贴）
 
-> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`PLAN.md` 和 `M10-NOTES.md`。
-> M10（0.4.0，手感/思考气泡/悬停菜单/设置重构/内置字体）已完成；下一步做 M11 照片抠图
-> （离线 U2Net + 抠图窗口，参考 `D:\project\whale-role`）。已知坑见 HANDOFF 第 5 节。
+> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`PLAN.md`、`M10-NOTES.md` 和 `M10.1-NOTES.md`。
+> M10/M10.1（0.4.1，手感/思考气泡/悬停菜单/设置重构/内置字体/去双击右键）已完成；
+> 下一步做 M11 照片抠图（离线 U2Net + 抠图窗口，参考 `D:\project\whale-role`）。已知坑见 HANDOFF 第 5 节。

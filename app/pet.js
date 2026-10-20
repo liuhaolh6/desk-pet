@@ -153,7 +153,9 @@
     const token = ++state.bubbleToken
     bubble.classList.remove('show')
     bubble.innerHTML = ''
-    bubble.appendChild(node)
+    const content = el('div', 'bubble-content')
+    content.appendChild(node)
+    bubble.appendChild(content)
     // Reserve the window height first, then fade the cloud in on the next
     // frame. Showing it before the OS resize lands clips the top of the cloud.
     const height = measureBubble()
@@ -178,7 +180,7 @@
     clearTimeout(state.shrinkTimer)
     state.shrinkTimer = setTimeout(() => {
       if (!bubble.classList.contains('show') && !state.menuOpen) resizeForBubble(0)
-    }, 200)
+    }, 540)
   }
 
   function advance() {
@@ -431,8 +433,8 @@
     pet.addEventListener('pointerup', endDrag)
     pet.addEventListener('pointercancel', endDrag)
 
-    // Single click advances, double click opens settings; the debounce keeps a
-    // double click from advancing twice.
+    // Single click advances the card queue. Settings live in the hover menu;
+    // there is intentionally no double-click shortcut or pet right-click menu.
     let clickTimer = 0
     pet.addEventListener('click', () => {
       if (petWrap.classList.contains('dragging')) return
@@ -444,17 +446,6 @@
         playSound('click')
         advance()
       }, 240)
-    })
-
-    pet.addEventListener('contextmenu', (ev) => {
-      ev.preventDefault()
-      if (state.menuOpen) closeMenu(true)
-      api.showMenu()
-    })
-
-    pet.addEventListener('dblclick', () => {
-      if (clickTimer) { clearTimeout(clickTimer); clickTimer = 0 }
-      api.openSettings()
     })
   }
 

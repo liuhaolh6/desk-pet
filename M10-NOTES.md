@@ -3,6 +3,8 @@
 > 日期：2026-10-20 · 版本：`0.4.0`
 > 产物：`dist/DeskPet-0.4.0-portable.exe`（102,710,482 字节，gitignore）
 > SHA-256：`fddc6d2ebef5c02bbce45674cfd076c452314a99f79eb04f597fb77d8a51cf7d`
+>
+> 0.4.1 的交互收尾（去掉双击/桌宠右键、气泡/菜单对齐 whale-widget）见 `M10.1-NOTES.md`。
 
 ## 1. 这轮做了什么
 
