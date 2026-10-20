@@ -359,11 +359,18 @@
     // Touch has no hover: firing pointerenter on a touch press used to apply the
     // hover drop-shadow, which animates `filter` on a transparent window and
     // shows as a screen flash. Only real pointer hover may trigger it.
+    // Chromium also emits compatibility mouse events right after a tap, so keep
+    // a short suppression window after any touch pointer.
+    let lastTouchAt = 0
+    const markTouch = (ev) => { if (ev && ev.pointerType === 'touch') lastTouchAt = performance.now() }
     const hoverForPointer = (ev) => {
+      markTouch(ev)
       if (ev && ev.pointerType === 'touch') return
+      if (performance.now() - lastTouchAt < 900) return
       showHover()
     }
     const leaveForPointer = (ev) => {
+      markTouch(ev)
       if (ev && ev.pointerType === 'touch') return
       hideHoverSoon()
     }

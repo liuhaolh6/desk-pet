@@ -9,6 +9,7 @@ Thumbs.db
 # local runtime state
 .userdata*/
 .flash-test/
+.flash-solo/
 .m10-*/
 .m11-*/
 .m12-*/

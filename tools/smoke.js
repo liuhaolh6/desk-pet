@@ -678,7 +678,11 @@ const PAD = 54
   assert.ok(/visible \? Math\.max\(cardHeight, extraBubbleHeight\) : 0/.test(mainJs), '气泡只增不减，避免反复改窗口尺寸')
   assert.ok(/showTouchUi/.test(petJs), '触摸需要无 hover 的菜单入口')
   assert.ok(/\.pet-wrap\.touch-ui \.menu-btn/.test(petCss), 'touch-ui 下菜单按钮可见可点')
-  ok('桌宠窗口：触摸不触发 hover、不过渡 filter、气泡只增不减')
+  assert.ok(/lastTouchAt/.test(petJs), '触摸后短时间忽略兼容鼠标事件')
+  const hoverBlocks = petCss.match(/\.pet-wrap\.hover[^{]*\{[^}]*\}/g) || []
+  assert.ok(hoverBlocks.length > 0, 'hover 规则存在')
+  assert.ok(hoverBlocks.every((b) => !/filter\s*:/.test(b)), 'hover 不应改 filter')
+  ok('桌宠窗口：触摸不触发 hover、hover 不改 filter、气泡只增不减')
 }
 
 console.log('\n' + pass + ' checks passed')
