@@ -8,7 +8,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 
 - 仓库：<https://github.com/liuhaolh6/desk-pet>（public，main 分支）
 - 本地目录：`D:\project\deskpet`
-- 版本：`0.5.0`；本地 21 个提交（含 M10/M11/M12 文档，部分未推送）
+- 版本：`0.5.1`（M12 P0 alpha 修复；未签名）；本地 21+ 个提交（含 M10/M11/M12 文档，部分未推送）
 - 早期那套「DSH 挂件版」实现已移出仓库，归档在 `D:\project\deskpet-dsh-plugin`（需要参考角色/气泡系统时可以翻）
 
 ## 2. 现在能用的功能（都真机验证过）
@@ -25,9 +25,9 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 | 设置：名字、大小、置顶、自启、模式、城市、刷新、间隔、气泡、音效 | ✅ |
 | 气泡模块化编辑器 / 音效库（M7/M8） | ✅ |
 | M6 打包：portable exe（图标 / 版本信息 / 便携数据目录） | ✅ 当前产物 `dist/DeskPet-0.5.0-portable.exe`；启动已验证，托盘图标本机不显示（见 §5.13） |
-| M11 照片抠图（离线 U2Net + 抠图窗口 + 回退） | ✅ 见 `M11-NOTES.md`；`npm test` 31 项 |
+| M11 照片抠图（离线 U2Net + 抠图窗口 + 回退） | ✅ 0.5.1 修复 alpha/映射/回退语义，开发版/解包版/portable 均 CDP 走通；`npm test` 41 项 |
 | M10 手感与视觉（Q 弹 / 思考气泡 / 悬停菜单 / 设置重构 / 内置字体） | ✅ 见第 12 节、`M10-NOTES.md`、`M10.1-NOTES.md`、`M10.2-NOTES.md` |
-| `npm test`（26 项，存储 / 角色 / 天气码 / 气泡布局 / 音效 / 多显示器） | ✅ |
+| `npm test`（41 项，存储 / 角色 / 天气码 / 气泡布局 / 音效 / 多显示器 / 抠图 alpha） | ✅ |
 
 ## 3. 关键决策（别推翻，除非有理由）
 
@@ -50,7 +50,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 | **M9 多显示器** | 记住每块屏的位置、贴边吸附 | ✅ 已完成，见第 10 节 |
 | **M10 手感与视觉** | Q 弹 / 思考气泡 / 悬停菜单 / 设置重构 / 字体排版 | ✅ 已完成，见第 12 节 |
 | **M11 照片抠图** | 离线 U2Net 生成角色 | ✅ 已完成，见第 13 节、`M11-NOTES.md`；质量缺陷由 M12 修复 |
-| **M12 抠图质量修复** | alpha 合成/映射、回退语义、诊断与评测 | ⬜ 计划见 `M12-PLAN.md`、交接见 `M12-HANDOFF.md` |
+| **M12 抠图质量修复** | alpha 合成/映射、回退语义、诊断与评测 | ✅ 0.5.1 P0-1~P0-8 完成，验收集与打包记录见 `M12-NOTES.md`；P1（预处理 A/B、蒙版视图、擦除）未做 |
 | **发布签名** | SignPath Foundation 免费 OSS 签名 | ⬜ 工作流/申请材料已就绪，待申请与配置 secrets；当前 exe 仍未签名 |
 | 小改进 | 天气卡文案换行（现在「80% 湿度」可能断行）、托盘的「暂停提醒」开关 | 低优先 |
 
@@ -115,12 +115,22 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
     要量化就做静态 QOperator QDQ/QOperator，只量化 Conv，并先用真实照片校准；验证能 `InferenceSession.create` 再打包。
 27. **模型不能放进 asar**：`onnxruntime-node` 需要真实文件路径。模型走 `extraResources/models`，
     原生模块 `asarUnpack`；只保留 win32 x64 二进制，否则 portable 会多出 180MB。
-28. **抠图失败必须回退**：`cutout:run` 捕获 `NO_PERSON`/`MODEL_*`，返回 `fallbackDataUrl`；
-    抠图窗口自动切“仅缩放导入”，不能把用户卡在错误页。
-29. **抠图“背景变淡”不是单一模型问题**（M11 复盘）：`applyAlpha()` 的 straight alpha 被
-    `nativeImage.createFromBitmap` 按预乘解释，透明像素再经 `composeCanvas()` 的 `resize()` 会变成半透明；
-    `mask² + a<0.45` 又把模型中等响应压成 45%–91% 的 alpha。另有回退整图可直接保存、无角色标记的问题。
-    修复前先读 `M12-PLAN.md` / `M12-HANDOFF.md`；不要把“31 项测试全绿”当抠图质量证明。
+28. **抠图失败必须回退，但不能假装成功**（0.5.1 起）：`cutout:run` 失败返回 `mode:'fallback'` + `fallbackDataUrl`；
+    抠图窗口显示“未抠图（整图）”，保存必须二次确认，`cutout:save` 没有 `confirmFallback:true` 会拒绝；
+    角色条目写 `cutout:false`，图库显示“未抠图”徽标。别再改回“自动放开保存”。
+29. **alpha 必须走自有像素管线，不要交给 nativeImage 缩放**（M12 已修，别回退）：`getBitmap()/createFromBitmap()` 是**预乘 BGRA**；
+    对含透明像素的 nativeImage 调 `resize()` 会把 alpha=0 雾化成半透明。现在 `lib/cutout-pixels.js` 做预乘采样/合成，
+    `lib/png.js` 直写 straight RGBA PNG；`lib/cutout.js` 只在入口用 nativeImage 解码一次。
+30. **不要在抠图后处理里恢复 `mask²` / `a<0.45` / 按图 min-max**：这就是“背景 45%–91% 半透明”的来源；
+    现在是绝对双阈值 + 8 邻接形态学 + 输出级 2px 羽化。阈值/羽化改动必须跑 `tools/cutout-diag.js --assert`。
+31. **DSH 受限沙箱下 Electron 会被环境杀掉**：`workspace-write` 会话里启动 Electron 约 1s 内以
+    `0x80000003`（STATUS_BREAKPOINT，Mojo 命名管道拒绝访问）退出，旧版同样；切到 danger-full-access 后可正常运行。
+    测试前清 `ELECTRON_RUN_AS_NODE`、加 `--no-sandbox`；模型验证也可用“Electron 只解码 → 纯 Node 跑核心”的方式。
+32. **诊断入口**：`node tools/cutout-diag.js --fake <img> --mask <gt> --assert`（合成，无模型）、`--png<角色.png>`（分析既有 PNG）、
+    `--input <png>`（纯 Node 跑真模型）、`--decode`（Electron 把 JPEG 转 straight RGBA PNG）。
+    每次抠图的 trace 写在 `<data>/cutout-trace.jsonl`（>256KB 轮转）。
+33. **coverage 双侧门禁**：`<0.02 → NO_PERSON`、`>0.90 → OVER_SEGMENTED`，都会走回退并要求二次确认；
+    不要再“自动放开保存”，也不要只看 31/41 项测试全绿当摘图质量证明。
 
 ## 6. 快速开始
 
@@ -171,8 +181,14 @@ npm run dist
 | `M11-NOTES.md` | 0.5.0 照片抠图：模型/量化/窗口/回退/验证（质量结论已由 M12 修正） |
 | `M12-PLAN.md` | M12 抠图质量修复计划书（P0/P1/P2、验收、风险） |
 | `M12-HANDOFF.md` | M12 抠图链路交接（代码地图、坑、复现、下一步） |
-| `lib/cutout.js` | 离线 U2Net + nativeImage 抠图 |
-| `lib/cutout-math.js` | 蒙版归一化/连通域/包围盒/适配纯函数 |
+| `lib/cutout.js` | 离线 U2Net + 纯 Node 核心 `cutoutImageRGBA()`；Electron 入口只解码 |
+| `lib/cutout-math.js` | 绝对双阈值/滞回、形态学、连通域、填洞、包围盒、适配纯函数 |
+| `lib/cutout-pixels.js` | 预乘 BGRA↔RGBA、面积缩放、蒙版合成、羽化、alpha 分带 |
+| `lib/png.js` | 8-bit RGBA PNG 编解码（zlib），保证 straight alpha |
+| `tools/cutout-diag.js` | alpha 分带/背景/主体/边缘/耗时诊断与 `--assert` |
+| `tools/make-cutout-fixtures.js` | 生成可公开的合成 fixture（人像+GT、负例、alpha 色块） |
+| `tools/fixtures/` | 合成测试图（不含个人照片） |
+| `M12-NOTES.md` | 0.5.1 抠图修复实测、未覆盖项、回滚 |
 | `app/cutout.html/css/js` | 照片选择、预览、拖动缩放、保存/回退窗口 |
 | `assets/models/u2net_human_seg.onnx` | 量化后 44MB 离线人像分割模型 |
 | `SIGNING.md` | SignPath Foundation 免费 OSS 签名申请 / CI / 验签 |
@@ -255,8 +271,10 @@ npm run dist
 
 **M12 复盘结论**：用户所说“只是把背景变淡”是保存 PNG 的真实 alpha 问题，不是棋盘格视觉。已证实两条：① straight-alpha + `nativeImage` 预乘解释 + `resize` 把透明区雾化；② `mask² + a<0.45` 把背景压成 45%–91% 半透明。另有回退整图可直接保存、无角色标记。M12 先修这些，再对预处理 squash/letterbox 做 A/B；换模型放 P2。
 
+**M12 结果（0.5.1）**：P0-1~P0-8 已实施；同一张本地照片的远背景平均 alpha 23.07→0、非边缘半透明 8.25%→0%、边缘 7.67px→2.23px；`npm test` 41 项；开发版与解包版 GUI（CDP）均走通“拖入→抠图→保存”和“负例→未抠图（整图）→二次确认保存”，角色库显示“未抠图”。10 张 golden set 与 G5 人工核验仍未做，详见 `M12-NOTES.md` §5。
+
 ## 14. 新对话开场白（直接粘贴）
 
-> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`M12-PLAN.md`、`M12-HANDOFF.md`。
-> M11（0.5.0）已完成但抠图质量有缺陷：保存 PNG 背景半透明/回退可存整图；M12 是当前优先。
-> 先按 M12-PLAN 的 P0 修 alpha 预乘/resize、映射、回退语义和诊断测试；预处理 A/B 与换模型放后面。签名仍待 SignPath 审核，见 SIGNING.md。已知坑见 HANDOFF 第 5 节。
+> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`M12-NOTES.md`、`M12-PLAN.md`、`M12-HANDOFF.md`。
+> M12 P0（0.5.1）已修 alpha 合成/映射/形态学/羽化/回退语义/诊断，`npm test` 41 项；开发版与解包版 GUI 已验证，10 张 golden set 尚未复验。
+> 下一步是 P1-1 预处理 A/B、P1-2/P1-3 蒙版视图与手动擦除；换模型放 P2。签名仍待 SignPath 审核，见 SIGNING.md。

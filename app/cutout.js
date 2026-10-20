@@ -20,6 +20,9 @@
     dragging: null,
     busy: false,
     name: '',
+    confirmFallback: false,
+    confirmAt: 0,
+    confirmTimer: 0,
   }
 
   function status(text, kind) {
@@ -28,8 +31,17 @@
     el.className = 'status' + (kind ? ' ' + kind : '')
   }
 
-  function mode(text) {
-    $('modeLabel').textContent = text
+  function mode(text, fallback) {
+    const el = $('modeLabel')
+    el.textContent = text
+    el.className = 'pill' + (fallback ? ' warn' : '')
+  }
+
+  function resetFallbackConfirm() {
+    state.confirmFallback = false
+    state.confirmAt = 0
+    if (state.confirmTimer) { clearTimeout(state.confirmTimer); state.confirmTimer = 0 }
+    $('saveBtn').textContent = '保存为角色'
   }
 
   function setBusy(value) {
@@ -73,10 +85,12 @@
     state.zoom = 1
     state.offsetX = 0
     state.offsetY = 0
+    resetFallbackConfirm()
     $('zoom').value = '100'
     $('zoomVal').textContent = '100%'
     stage.classList.add('has-image')
-    mode(label)
+    stage.classList.toggle('is-fallback', nextMode === 'fallback')
+    mode(label, nextMode === 'fallback')
     draw()
     $('saveBtn').disabled = false
     $('fallbackBtn').disabled = nextMode === 'fallback' || !state.original
@@ -122,8 +136,8 @@
       } else {
         const fallback = result && result.fallbackDataUrl
         if (fallback) {
-          await useImage(fallback, 'fallback', '仅缩放')
-          status((result.error || '未检测到人像') + '。当前为仅缩放导入，可直接保存。', 'error')
+          await useImage(fallback, 'fallback', '未抠图（整图）')
+          status((result.error || '未检测到人像') + '。当前显示的是整张原图，不是抠图结果；保存前需要二次确认。', 'error')
         } else {
           status((result && result.error) || '抠图失败', 'error')
           mode('处理失败')
@@ -139,18 +153,31 @@
 
   async function fallback() {
     if (!state.original) return
-    await useImage(state.original, 'fallback', '仅缩放')
-    status('已跳过抠图，当前为仅缩放导入。', '')
+    await useImage(state.original, 'fallback', '未抠图（整图）')
+    status('已跳过抠图：当前是整张照片。保存前会要求再次确认，角色库也会标记“未抠图”。', '')
     $('fallbackBtn').disabled = true
   }
 
   async function save() {
     if (!state.current || state.busy) return
+    // Saving a fallback image silently is exactly the M11 "fake success" path.
+    if (state.mode === 'fallback' && !state.confirmFallback) {
+      state.confirmFallback = true
+      state.confirmAt = Date.now()
+      $('saveBtn').textContent = '确认保存未抠图角色'
+      status('当前是“仅缩放导入”，保存的角色会保留整张照片背景。再点一次“确认保存未抠图角色”才会保存。', 'error')
+      state.confirmTimer = setTimeout(() => resetFallbackConfirm(), 10000)
+      return
+    }
+    // A stray double click must not count as the second confirmation.
+    if (state.mode === 'fallback' && Date.now() - state.confirmAt < 600) return
     setBusy(true)
     status('正在保存角色…')
     try {
       const name = ($('name').value || state.name || '照片角色').trim().slice(0, 30) || '照片角色'
-      const result = await api.saveCutout({ dataUrl: canvas.toDataURL('image/png'), name })
+      const payload = { dataUrl: canvas.toDataURL('image/png'), name, mode: state.mode === 'fallback' ? 'fallback' : 'cutout' }
+      if (payload.mode === 'fallback') payload.confirmFallback = true
+      const result = await api.saveCutout(payload)
       if (!result || !result.ok) {
         status((result && result.error) || '保存失败', 'error')
         return

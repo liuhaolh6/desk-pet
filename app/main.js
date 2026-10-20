@@ -477,14 +477,38 @@ function createTray() {
 // renderer's hover menu and the tray menu.
 
 // ----------------------------------------------------------------------- IPC
+// One limit for both "pick a file" and "decode a data URL", measured on the
+// binary bytes. 25MB of JPEG is ~33MB of base64, so a 30MB base64 cap used to
+// reject files that the 25MB file check had just accepted.
+const MAX_IMAGE_BYTES = 25 * 1024 * 1024
+
 function decodeImageDataUrl(dataUrl) {
   if (typeof dataUrl !== 'string') throw new Error('缺少图片数据')
   const match = dataUrl.match(/^data:(image\/(?:png|jpeg|jpg|webp));base64,([A-Za-z0-9+/=\s]+)$/i)
   if (!match) throw new Error('图片格式不支持')
   const buffer = Buffer.from(match[2].replace(/\s/g, ''), 'base64')
   if (!buffer.length) throw new Error('图片为空')
-  if (buffer.length > 30 * 1024 * 1024) throw new Error('图片超过 30MB')
+  if (buffer.length > MAX_IMAGE_BYTES) throw new Error('图片超过 25MB，请先压缩')
   return { buffer, mime: match[1].toLowerCase() }
+}
+
+/** One JSON line per cutout attempt; rotate at 256KB. Local diagnostics only. */
+function cutoutTrace(entry) {
+  try {
+    const file = path.join(store.dir, 'cutout-trace.jsonl')
+    try { if (fs.statSync(file).size > 256 * 1024) fs.renameSync(file, file + '.1') } catch (err) {}
+    fs.appendFileSync(file, JSON.stringify(Object.assign({ at: new Date().toISOString() }, entry)) + '\n')
+  } catch (err) {
+    log('cutout trace failed', String(err))
+  }
+}
+
+function cutoutErrorMessage(code) {
+  if (code === 'NO_PERSON') return '没有检测到清晰人像'
+  if (code === 'OVER_SEGMENTED') return '主体覆盖画面过多，可能把背景当成了人像'
+  if (code === 'MODEL_MISSING' || code === 'MODEL_LOAD_FAILED') return '离线抠图模型未就绪'
+  if (code === 'BAD_OUTPUT_SHAPE' || code === 'NO_OUTPUT') return '模型输出异常'
+  return '抠图失败'
 }
 
 function roleList() {
@@ -494,6 +518,10 @@ function roleList() {
     name: r.name || r.id,
     builtin: !!r.builtin,
     url: roleUrl(r.id),
+    // null = legacy/imported role without a cutout verdict; false = saved
+    // through the "scale only" fallback and must be shown as not cut out.
+    cutout: r.cutout === undefined ? null : !!r.cutout,
+    mode: r.mode || null,
   }))
 }
 
@@ -574,7 +602,7 @@ function registerIpc() {
     const file = result.filePaths[0]
     let stat
     try { stat = fs.statSync(file) } catch (err) { return { ok: false, error: '读不到文件' } }
-    if (stat.size > 25 * 1024 * 1024) return { ok: false, error: '图片超过 25MB，请先压缩' }
+    if (stat.size > MAX_IMAGE_BYTES) return { ok: false, error: '图片超过 25MB，请先压缩' }
     const buffer = fs.readFileSync(file)
     const image = nativeImage.createFromBuffer(buffer)
     if (image.isEmpty()) return { ok: false, error: '读不出图片' }
@@ -590,35 +618,69 @@ function registerIpc() {
   })
 
   ipcMain.handle('cutout:run', async (ev, payload) => {
+    const startedAt = Date.now()
     let decoded
     try { decoded = decodeImageDataUrl(payload && payload.dataUrl) } catch (err) {
-      return { ok: false, code: 'BAD_IMAGE', error: err.message }
+      cutoutTrace({ ok: false, mode: 'none', code: 'BAD_IMAGE', ms: Date.now() - startedAt, error: err.message })
+      return { ok: false, mode: 'none', code: 'BAD_IMAGE', error: err.message }
     }
     const image = nativeImage.createFromBuffer(decoded.buffer)
-    if (image.isEmpty()) return { ok: false, code: 'BAD_IMAGE', error: '读不出图片' }
+    if (image.isEmpty()) {
+      cutoutTrace({ ok: false, mode: 'none', code: 'BAD_IMAGE', ms: Date.now() - startedAt })
+      return { ok: false, mode: 'none', code: 'BAD_IMAGE', error: '读不出图片' }
+    }
+    const inputSize = image.getSize()
     try {
       const result = await cutout.cutoutImage(nativeImage, image, { canvas: 610 })
+      const dataUrl = 'data:image/png;base64,' + result.png.toString('base64')
+      cutoutTrace({
+        ok: true,
+        mode: 'cutout',
+        code: null,
+        input: inputSize,
+        working: result.working,
+        shape: [1, 1, 320, 320],
+        output: [610, 610],
+        coverage: result.coverage,
+        bands: result.bands,
+        cutout: result.cutout,
+        timings: result.timings,
+        ms: Date.now() - startedAt,
+      })
       return {
         ok: true,
-        dataUrl: 'data:image/png;base64,' + result.image.toPNG().toString('base64'),
+        mode: 'cutout',
+        dataUrl,
         width: 610,
         height: 610,
         coverage: result.coverage,
         cutout: result.cutout,
         source: result.source,
+        bands: result.bands,
+        ms: result.ms,
       }
     } catch (err) {
       const code = (err && err.code) || 'CUTOUT_FAILED'
+      // Fallback keeps the app usable, but it is explicitly labelled: the
+      // renderer must show "未抠图（整图）" and ask for a second confirmation
+      // before it can be saved as a role.
       const fallback = cutout.scaleOnly(image, 610)
       const fallbackSize = fallback.getSize()
+      cutoutTrace({
+        ok: false,
+        mode: 'fallback',
+        code,
+        input: inputSize,
+        coverage: typeof err.coverage === 'number' ? err.coverage : null,
+        output: [fallbackSize.width, fallbackSize.height],
+        ms: Date.now() - startedAt,
+        error: err.message,
+      })
       return {
         ok: false,
+        mode: 'fallback',
         code,
-        error: code === 'NO_PERSON'
-          ? '没有检测到清晰人像，可以改用“仅缩放导入”'
-          : code === 'MODEL_MISSING' || code === 'MODEL_LOAD_FAILED'
-            ? '离线抠图模型未就绪，可以改用“仅缩放导入”'
-            : '抠图失败，可以改用“仅缩放导入”',
+        error: cutoutErrorMessage(code),
         fallbackDataUrl: 'data:image/png;base64,' + fallback.toPNG().toString('base64'),
         width: fallbackSize.width,
         height: fallbackSize.height,
@@ -633,9 +695,13 @@ function registerIpc() {
     }
     const image = nativeImage.createFromBuffer(decoded.buffer)
     if (image.isEmpty()) return { ok: false, error: '读不出生成的角色图' }
+    const mode = payload && payload.mode === 'fallback' ? 'fallback' : 'cutout'
+    if (mode === 'fallback' && (!payload || payload.confirmFallback !== true)) {
+      return { ok: false, code: 'FALLBACK_UNCONFIRMED', error: '整图回退需要二次确认后才能保存' }
+    }
     const send = cutout.scaleOnly(image, 610)
     const name = String((payload && payload.name) || '照片角色').trim().slice(0, 30) || '照片角色'
-    const entry = store.addRole(name, send.toPNG())
+    const entry = store.addRole(name, send.toPNG(), { cutout: mode === 'cutout', mode })
     store.writeSettings({ roleId: entry.id })
     broadcastSettings()
     broadcastRoles()

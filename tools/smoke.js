@@ -16,6 +16,8 @@ const bubble = require('../app/bubble-model')
 const soundModel = require('../app/sound-model')
 const placement = require('../lib/placement')
 const cutoutMath = require('../lib/cutout-math')
+const pixels = require('../lib/cutout-pixels')
+const pngCodec = require('../lib/png')
 
 let pass = 0
 function ok(name) { pass += 1; console.log('  ✓', name) }
@@ -310,25 +312,243 @@ const PAD = 54
 
 // ------------------------------------------------------------------ cutout
 {
-  const alpha = cutoutMath.normalizeMask(new Float32Array([0, 0.25, 0.5, 0.75, 1]), 5)
+  // Absolute sigmoid scores, no per-image min/max stretch. A flat or dark
+  // score map must not be "normalised" into a foreground mask.
+  const alpha = cutoutMath.normalizeMask(new Float32Array([0.1, 0.3, 0.5, 0.9, -0.2, 1.4]), 6)
   assert.ok(alpha)
-  assert.equal(alpha[0], 0)
-  assert.equal(alpha[4], 1)
-  ok('U2Net mask 归一化与阈值')
+  assert.ok(Math.abs(alpha[0] - 0.1) < 1e-6)
+  assert.ok(Math.abs(alpha[2] - 0.5) < 1e-6)
+  assert.equal(alpha[4], 0, '负值夹到 0')
+  assert.equal(alpha[5], 1, '超界夹到 1')
+  assert.ok(cutoutMath.normalizeMask(new Float32Array([0.2, 0.2, 0.2]), 3), '平坦输出不再返回 null')
+  ok('蒙版绝对分数映射（无 min-max 漂移）')
 }
 
 {
-  const alpha = new Float32Array([
-    0, 0, 0,
-    0.9, 0.9, 0,
-    0, 0, 0.8,
-  ])
-  const keep = cutoutMath.largestComponent(alpha, 3, 3, 0.5)
+  const w = 7
+  const h = 7
+  const scores = new Float32Array(w * h)
+  scores[1 * w + 1] = 0.9
+  scores[1 * w + 2] = 0.3
+  scores[2 * w + 2] = 0.3
+  scores[6 * w + 0] = 0.3 // isolated medium response, below the seed threshold
+  const mask = cutoutMath.hysteresisMask(scores, w, h, 0.22, 0.55)
+  assert.equal(mask[1 * w + 1], 1)
+  assert.equal(mask[1 * w + 2], 1, '低阈值但连到核心的区域保留')
+  assert.equal(mask[2 * w + 2], 1)
+  assert.equal(mask[6 * w + 0], 0, '孤立的中间响应不当作前景')
+  ok('双阈值滞回分割')
+}
+
+{
+  const alpha = new Float32Array(25)
+  alpha[6] = 0.9
+  alpha[7] = 0.9
+  alpha[11] = 0.9
+  alpha[12] = 0.9
+  alpha[24] = 0.8 // far from the 2x2 blob
+  const keep = cutoutMath.largestComponent(alpha, 5, 5, 0.5)
   assert.ok(keep)
-  assert.equal(keep[3], 1)
-  assert.equal(keep[4], 1)
-  assert.equal(keep[8], 0, '丢掉零散前景')
-  ok('保留主要人像连通域')
+  assert.equal(keep[6], 1)
+  assert.equal(keep[12], 1)
+  assert.equal(keep[24], 0, '丢掉零散前景')
+  const diag = new Float32Array(9)
+  diag[0] = 1
+  diag[4] = 1
+  const diagonal = cutoutMath.largestComponent(diag, 3, 3, 0.5)
+  assert.equal(diagonal[0], 1)
+  assert.equal(diagonal[4], 1, '8 邻接下对角线相连')
+  ok('保留主要人像连通域（8 邻接）')
+}
+
+{
+  const w = 9
+  const h = 9
+  const mask = new Uint8Array(w * h)
+  for (let y = 2; y < 7; y++) for (let x = 2; x < 7; x++) mask[y * w + x] = 1
+  mask[0] = 1 // speck
+  const opened = cutoutMath.openMask(mask, w, h)
+  assert.equal(opened[0], 0, '开运算去掉孤立噪点')
+  assert.equal(opened[4 * w + 4], 1, '主体保留')
+  const gapped = new Uint8Array(w * h)
+  for (let y = 2; y < 7; y++) { gapped[y * w + 2] = 1; gapped[y * w + 4] = 1 }
+  const closed = cutoutMath.closeMask(gapped, w, h)
+  assert.equal(closed[4 * w + 3], 1, '闭运算桥接 1px 断缝')
+  ok('开/闭运算清理蒙版')
+}
+
+{
+  const w = 7
+  const h = 7
+  const mask = new Uint8Array(w * h).fill(1)
+  for (let y = 2; y < 5; y++) for (let x = 2; x < 5; x++) mask[y * w + x] = 0
+  mask[0] = 0 // touches the frame: not a hole
+  const filled = cutoutMath.fillHoles(mask, w, h, 100)
+  assert.equal(filled[3 * w + 3], 1, '内部小洞被填上')
+  assert.equal(filled[0], 0, '贴着边框的背景不算洞')
+  ok('填充内部小洞')
+}
+
+{
+  const w = 20
+  const h = 20
+  const mask = new Uint8Array(w * h)
+  for (let y = 0; y < 10; y++) for (let x = 0; x < 10; x++) mask[y * w + x] = 1
+  for (let y = 0; y < 4; y++) for (let x = 15; x < 19; x++) mask[y * w + x] = 1 // 16 px satellite
+  mask[19 * w + 19] = 1 // 1 px speck
+  const keep = cutoutMath.retainComponents(mask, w, h, { minRatio: 0.01, minPixels: 16 })
+  assert.ok(keep)
+  assert.equal(keep[5 * w + 5], 1, '主主体保留')
+  assert.equal(keep[1 * w + 16], 1, '≥1% 的副连通域（手/耳）保留')
+  assert.equal(keep[19 * w + 19], 0, '过小的噪点丢弃')
+  assert.equal(cutoutMath.retainComponents(new Uint8Array(w * h), w, h), null, '空蒙版返回 null')
+  ok('多连通域保留与空蒙版')
+}
+
+{
+  const rgba = Buffer.from([200, 100, 50, 128, 0, 0, 0, 0])
+  const bgra = pixels.rgbaToPremultipliedBGRA(rgba, 2, 1)
+  assert.deepEqual(Array.from(bgra), [25, 50, 100, 128, 0, 0, 0, 0], '写入预乘 BGRA')
+  const back = pixels.bgraToRGBA(bgra, 2, 1, true)
+  assert.ok(Math.abs(back[0] - 200) <= 1 && Math.abs(back[1] - 100) <= 1 && Math.abs(back[2] - 50) <= 1)
+  assert.equal(back[3], 128)
+  ok('预乘 BGRA 与 straight RGBA 互转')
+}
+
+{
+  const original = Buffer.from([200, 100, 50, 128, 1, 2, 3, 255, 0, 0, 0, 0, 9, 8, 7, 0])
+  const file = pngCodec.encodePNG(2, 2, original)
+  const decoded = pngCodec.decodePNG(file)
+  assert.deepEqual(Array.from(decoded.data), Array.from(original), 'PNG 编解码逐字节一致')
+  assert.equal(decoded.width, 2)
+  assert.equal(decoded.height, 2)
+  ok('PNG 直通 alpha 编解码')
+}
+
+{
+  // The M11 bug: 50% alpha colour washed out because straight alpha was fed
+  // to a premultiplied API. Compose must keep (200,100,50,128).
+  const w = 64
+  const h = 64
+  const src = Buffer.alloc(w * h * 4)
+  for (let y = 16; y < 48; y++) {
+    for (let x = 16; x < 48; x++) {
+      const p = (y * w + x) * 4
+      src[p] = 200
+      src[p + 1] = 100
+      src[p + 2] = 50
+      src[p + 3] = 128
+    }
+  }
+  const mask = new Float32Array(w * h).fill(1)
+  const out = pixels.composeMaskedCanvas({
+    src, sw: w, sh: h, mask, mw: w, mh: h,
+    bounds: { x: 0, y: 0, width: w, height: h },
+    fit: { x: 0, y: 0, width: w, height: h, scale: 1 },
+    canvas: w,
+    feather: 0,
+  })
+  const center = (32 * w + 32) * 4
+  assert.ok(Math.abs(out[center] - 200) <= 1, 'straight 红通道不冲白')
+  assert.ok(Math.abs(out[center + 1] - 100) <= 1)
+  assert.ok(Math.abs(out[center + 2] - 50) <= 1)
+  assert.ok(Math.abs(out[center + 3] - 128) <= 1)
+  const corner = 0
+  assert.deepEqual([out[corner], out[corner + 1], out[corner + 2], out[corner + 3]], [0, 0, 0, 0],
+    '完全透明区保持 0')
+  const a = out[center + 3] / 255
+  const onWhite = [0, 1, 2].map((i) => Math.round(out[center + i] * a + 255 * (1 - a)))
+  const onBlack = [0, 1, 2].map((i) => Math.round(out[center + i] * a))
+  assert.deepEqual(onWhite, [227, 177, 152], '白底合成不变成纯白')
+  assert.deepEqual(onBlack, [100, 50, 25], '黑底合成不变成灰雾')
+  ok('50% alpha 色块在合成/白底/黑底保持颜色')
+}
+
+{
+  // Resampling a transparent image must not fog the clear area or bleed white.
+  const w = 64
+  const h = 64
+  const src = Buffer.alloc(w * h * 4)
+  for (let i = 0; i < w * h; i++) {
+    const p = i * 4
+    src[p] = 255
+    src[p + 1] = 255
+    src[p + 2] = 255
+    src[p + 3] = 0
+  }
+  for (let y = 16; y < 48; y++) {
+    for (let x = 16; x < 48; x++) {
+      const p = (y * w + x) * 4
+      src[p] = 200
+      src[p + 1] = 100
+      src[p + 2] = 50
+      src[p + 3] = 255
+    }
+  }
+  const small = pixels.resampleStraight(src, w, h, 32, 32)
+  assert.deepEqual([small[0], small[1], small[2], small[3]], [0, 0, 0, 0], '透明区缩放后仍 alpha=0')
+  const inner = (16 * 32 + 16) * 4
+  assert.deepEqual([small[inner], small[inner + 1], small[inner + 2], small[inner + 3]], [200, 100, 50, 255])
+  ok('透明区缩放不发雾、不染白')
+}
+
+{
+  // End-to-end geometry: disc mask -> 610 canvas. Background must stay clear,
+  // the subject solid, and the edge soft over 2–4 px.
+  const size = 320
+  const src = Buffer.alloc(size * size * 4)
+  for (let i = 0; i < size * size; i++) {
+    const p = i * 4
+    src[p] = 180
+    src[p + 1] = 150
+    src[p + 2] = 130
+    src[p + 3] = 255
+  }
+  const mask = new Uint8Array(size * size)
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const dx = x - 160
+      const dy = y - 160
+      if (dx * dx + dy * dy <= 90 * 90) mask[y * size + x] = 1
+    }
+  }
+  const bounds = { x: 40, y: 40, width: 240, height: 240 }
+  const fit = cutoutMath.fitRect(bounds.width, bounds.height, 610)
+  const out = pixels.composeMaskedCanvas({
+    src, sw: size, sh: size, mask, mw: size, mh: size, bounds, fit, canvas: 610, feather: 2,
+  })
+  const bands = pixels.alphaBands(out)
+  assert.ok(bands.zeroPct > 40, '画布大部分透明')
+  assert.ok(bands.nonEdgeMidPct < 5, '半透明像素集中在边缘')
+  let darkFringe = 0
+  for (let i = 0; i < 610 * 610; i++) {
+    const a = out[i * 4 + 3]
+    if (a > 32 && a < 250 && out[i * 4] < 100) darkFringe++
+  }
+  assert.equal(darkFringe, 0, '羽化过渡带不能是黑色（要用真实图像颜色）')
+  const fg = new Uint8Array(610 * 610)
+  for (let i = 0; i < fg.length; i++) fg[i] = out[i * 4 + 3] > 127 ? 1 : 0
+  const core = cutoutMath.erode(cutoutMath.erode(cutoutMath.erode(fg, 610, 610), 610, 610), 610, 610)
+  let coreCount = 0
+  let solid = 0
+  for (let i = 0; i < core.length; i++) {
+    if (!core[i]) continue
+    coreCount++
+    if (out[i * 4 + 3] >= 250) solid++
+  }
+  assert.ok(coreCount > 0)
+  assert.ok((solid / coreCount) * 100 >= 98, '主体内部不透明 ≥98%')
+  const boundary = new Uint8Array(fg.length)
+  const eroded = cutoutMath.erode(fg, 610, 610)
+  let boundaryPixels = 0
+  for (let i = 0; i < fg.length; i++) {
+    boundary[i] = fg[i] !== eroded[i] ? 1 : 0
+    if (boundary[i]) boundaryPixels++
+  }
+  const edgeWidth = bands.soft + bands.medium
+  assert.ok(edgeWidth / boundaryPixels >= 1.8 && edgeWidth / boundaryPixels <= 4.2,
+    '边缘过渡带 2–4px，实测 ' + (edgeWidth / boundaryPixels).toFixed(2))
+  ok('610 合成：背景透明/主体不透明/软边过渡')
 }
 
 {
@@ -350,6 +570,18 @@ const PAD = 54
   assert.equal(fit.y, 31)
   assert.equal(fit.x, 144)
   ok('610 画布底部居中适配')
+}
+
+{
+  const entry = store.addRole('回退角色', Buffer.from([0x89, 0x50, 0x4e, 0x47]), { cutout: false, mode: 'fallback' })
+  const saved = store.readRoles().roles.find((r) => r.id === entry.id)
+  assert.equal(saved.cutout, false, '回退角色记录 cutout:false')
+  assert.equal(saved.mode, 'fallback')
+  const cut = store.addRole('抠图角色', Buffer.from([0x89, 0x50, 0x4e, 0x47]), { cutout: true, mode: 'cutout' })
+  assert.equal(store.readRoles().roles.find((r) => r.id === cut.id).cutout, true)
+  store.deleteRole(entry.id)
+  store.deleteRole(cut.id)
+  ok('角色记录抠图/回退标记')
 }
 
 {

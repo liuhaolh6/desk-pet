@@ -115,6 +115,13 @@
       img.src = role.url
       img.alt = role.name
       card.appendChild(img)
+      if (role.cutout === false) {
+        const badge = document.createElement('em')
+        badge.className = 'role-badge'
+        badge.textContent = '未抠图'
+        badge.title = '这张角色图是“仅缩放导入”的整张照片，没有经过抠图'
+        card.appendChild(badge)
+      }
       const label = document.createElement('span')
       label.textContent = role.name
       card.appendChild(label)

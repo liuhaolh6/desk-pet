@@ -3,6 +3,8 @@
 > 日期：2026-10-20 · 当前版本：0.5.0（未签名）
 > 状态：**抠图“能用但不达预期”**。用户反馈“只是把背景变淡/半透明，而不是真正把人像 alpha 抠出”。
 > 必读：`M12-PLAN.md`（优化计划）、`M11-NOTES.md`（原实现记录，质量结论被本文修正）。
+>
+> **2026-10-20 晚更新（0.5.1）**：P0-1~P0-8 已实施，本文 §3 的 alpha 合成/映射/回退缺陷已修复；实测指标、未覆盖项与回滚见 `M12-NOTES.md`。本文保留问题分析，作为回归背景。
 
 ## 1. 一句话现状
 
@@ -174,30 +176,30 @@ print("mid alpha", sum(1 for v in a.getdata() if 32 <= v <= 223))
 
 ### 未完成（M12）
 
-- 预乘 alpha / 避免透明 nativeImage resize；
-- 绝对阈值/双阈值 + smoothstep、去平方硬切、羽化；
-- 8 邻接/多连通域/填洞/null 报错；
-- 覆盖率上限、输出契约校验、trace；
-- 回退 `mode`/`cutout` 标记 + 二次确认 + 角色徽标；
-- 预处理 squash vs letterbox A/B；
-- 蒙版视图、手动擦除/恢复、旋转/翻转；
-- utilityProcess/token IPC、25/30MB 统一；
-- 真图 E2E/CI、alpha 指标断言。
+- ~~预乘 alpha / 避免透明 nativeImage resize~~（0.5.1 完成，见 `M12-NOTES.md` §3 P0-1）
+- ~~绝对阈值/双阈值 + smoothstep、去平方硬切、羽化~~（0.5.1 完成）
+- ~~8 邻接/多连通域/填洞/null 报错~~（0.5.1 完成）
+- ~~覆盖率上限、输出契约校验、trace~~（0.5.1 完成）
+- ~~回退 `mode`/`cutout` 标记 + 二次确认 + 角色徽标~~（0.5.1 完成）
+- 预处理 squash vs letterbox A/B（未做，P1-1）
+- 蒙版视图、手动擦除/恢复、旋转/翻转（未做，P1-2/P1-3）
+- utilityProcess/token IPC（未做；25/30MB 已统一，P1-5）
+- 真图 E2E/CI、10 张 golden set 的 alpha 指标（部分：41 项 + 合成/单张真人回归已完成，golden set 未凑齐）
 
 ## 9. 下一步（按顺序）
 
-1. 按 `M12-PLAN.md` P0-1~P0-8 实施；先做 **P0-1 预乘/resize** 与 **P0-2 映射**，因为这两项已被本地实验/代码证实。
-2. 用 `tools/cutout-diag.js` + 10 张授权图建立基线（背景/主体/半透明带/回退）。
-3. 完成 P0 后再做 P1-1 预处理 A/B；不要凭单张照片改 `buildInput`。
-4. P1-2/P1-3 蒙版视图与手动擦除；P1-5 移出主进程。
+1. 在可启动 GUI 的普通桌面会话复跑：抠图窗口 → 抠图 → 拖动/缩放 → 保存；回退二次确认；角色库“未抠图”徽标；`cutout-trace.jsonl`。
+2. 凑齐 ≥10 张授权人像 golden set，用 `tools/cutout-diag.js --assert` 跑 G1–G4；负例跑 `--expect no-person`。
+3. P1-1 预处理 A/B（squash vs letterbox）；不要凭单张照片改 `buildInput`。
+4. P1-2/P1-3 蒙版视图与手动擦除；P1-5 把推理移出主进程并补阻塞实测。
 5. P2 仅在 >20% 样例不达标时评估 MODNet/RMBG/ISNet；换模型必须带 A/B 与许可/包体评估。
 6. 签名仍按 `SIGNING.md` 走 SignPath，不阻塞 M12。
 
 ## 10. 回滚
 
-- 代码回滚集中在 `lib/cutout.js`、`lib/cutout-math.js`、`app/cutout.*`；`package.json`/模型/存储格式不需要动。
-- 建议加 `DESKPET_CUTOUT_LEGACY=1` 回退旧映射，便于灰度与对比。
-- 不重写历史角色图；610×610 PNG 契约保持不变。
+- 代码回滚集中在 `lib/cutout.js`、`lib/cutout-math.js`、`lib/cutout-pixels.js`、`lib/png.js`、`app/cutout.*`、`app/main.js` 的 cutout IPC；`package.json`/模型/存储格式不需要动。
+- 存储只新增可选 `cutout/mode` 字段，旧角色不受影响；610×610 PNG 契约不变。
+- 没有实现 `DESKPET_CUTOUT_LEGACY` 环境开关：旧映射与旧预乘路径已被删除，留开关等于留一条会雾化的死路径；灰度用 Git 回滚到 `a1eb24b`。
 - 发布前保留 0.5.0 portable 作为回退安装包。
 
 ## 11. 新对话开场白（直接粘贴）
