@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>从照片生成角色</title>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="cutout.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>从照片生成角色</h1>
+      <p>离线抠图，照片不会上传</p>
+    </div>
+    <button id="closeBtn" class="ghost compact" type="button">关闭</button>
+  </header>
+
+  <main class="layout">
+    <section class="stage-card">
+      <div id="stage" class="stage" tabindex="0" aria-label="角色预览">
+        <canvas id="canvas" width="610" height="610"></canvas>
+        <div id="empty" class="empty">
+          <strong>选择一张人像照片</strong>
+          <span>支持 JPG / PNG / WebP，自动抠出人像</span>
+        </div>
+      </div>
+      <div class="stage-tools">
+        <span id="modeLabel" class="pill">等待照片</span>
+        <button id="resetBtn" class="ghost compact" type="button">重置位置</button>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="card">
+        <h2>1. 选择照片</h2>
+        <button id="pickBtn" class="primary" type="button">选择照片</button>
+        <button id="runBtn" class="ghost" type="button" disabled>开始抠图</button>
+        <label class="field" for="name">
+          <span>角色名</span>
+          <input id="name" type="text" maxlength="30" placeholder="照片角色">
+        </label>
+        <p id="status" class="status" role="status">选择照片后会在这里显示进度。</p>
+      </section>
+
+      <section class="card">
+        <h2>2. 调整构图</h2>
+        <label class="range" for="zoom">
+          <span>缩放 <em id="zoomVal">100%</em></span>
+          <input id="zoom" type="range" min="60" max="160" value="100">
+        </label>
+        <p class="hint">拖动画面调整位置，滚轮可以缩放。</p>
+        <div class="button-row">
+          <button id="fallbackBtn" class="ghost" type="button" disabled>仅缩放导入</button>
+          <button id="saveBtn" class="primary" type="button" disabled>保存为角色</button>
+        </div>
+      </section>
+
+      <p class="privacy">照片和角色图都只写在本机数据目录；抠图模型已随应用离线打包。</p>
+    </aside>
+  </main>
+
+  <script src="cutout.js"></script>
+</body>
+</html>

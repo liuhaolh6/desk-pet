@@ -8,7 +8,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 
 - 仓库：<https://github.com/liuhaolh6/desk-pet>（public，main 分支）
 - 本地目录：`D:\project\deskpet`
-- 版本：`0.4.2`，已推送 18 个提交
+- 版本：`0.5.0`，已推送 19 个提交
 - 早期那套「DSH 挂件版」实现已移出仓库，归档在 `D:\project\deskpet-dsh-plugin`（需要参考角色/气泡系统时可以翻）
 
 ## 2. 现在能用的功能（都真机验证过）
@@ -24,7 +24,8 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 | 喝水：间隔提醒、今日杯数、免打扰、隐藏时系统通知 | ✅ |
 | 设置：名字、大小、置顶、自启、模式、城市、刷新、间隔、气泡、音效 | ✅ |
 | 气泡模块化编辑器 / 音效库（M7/M8） | ✅ |
-| M6 打包：portable exe（图标 / 版本信息 / 便携数据目录） | ✅ 当前产物 `dist/DeskPet-0.4.2-portable.exe`；启动已验证，托盘图标本机不显示（见 §5.13） |
+| M6 打包：portable exe（图标 / 版本信息 / 便携数据目录） | ✅ 当前产物 `dist/DeskPet-0.5.0-portable.exe`；启动已验证，托盘图标本机不显示（见 §5.13） |
+| M11 照片抠图（离线 U2Net + 抠图窗口 + 回退） | ✅ 见 `M11-NOTES.md`；`npm test` 31 项 |
 | M10 手感与视觉（Q 弹 / 思考气泡 / 悬停菜单 / 设置重构 / 内置字体） | ✅ 见第 12 节、`M10-NOTES.md`、`M10.1-NOTES.md`、`M10.2-NOTES.md` |
 | `npm test`（26 项，存储 / 角色 / 天气码 / 气泡布局 / 音效 / 多显示器） | ✅ |
 
@@ -48,7 +49,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 | **M8 音效库** | 自定义片段、音量、试听 | ✅ 已完成，见第 9 节 |
 | **M9 多显示器** | 记住每块屏的位置、贴边吸附 | ✅ 已完成，见第 10 节 |
 | **M10 手感与视觉** | Q 弹 / 思考气泡 / 悬停菜单 / 设置重构 / 字体排版 | ✅ 已完成，见第 12 节 |
-| **M11 照片抠图** | 离线 U2Net 生成角色 | ⬜ 下一里程碑 |
+| **M11 照片抠图** | 离线 U2Net 生成角色 | ✅ 已完成，见第 13 节、`M11-NOTES.md` |
 | **发布签名** | SignPath Foundation 免费 OSS 签名 | ⬜ 工作流/申请材料已就绪，待申请与配置 secrets；当前 exe 仍未签名 |
 | 小改进 | 天气卡文案换行（现在「80% 湿度」可能断行）、托盘的「暂停提醒」开关 | 低优先 |
 
@@ -104,9 +105,17 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 23. **气泡外观用 whale classic SVG 框**：`pet.html` 里的 `M 827 248 ...` 路径 + 两个 ellipse；
     SVG 做了水平 1.35 拉伸与重新居中、内容 padding `6 24 54`，否则多行中文会超出椭圆。
     改 viewBox/比例前先跑 `cdp-fullshot` 确认「今日 — · 降水 —」仍在白框内。
-24. **不要声称当前 exe 已签名**：`0.4.2` 仍是未签名构建；签名走 SignPath Foundation 免费 OSS 路线，
+24. **不要声称当前 exe 已签名**：`0.5.0` 仍是未签名构建；签名走 SignPath Foundation 免费 OSS 路线，
     工作流只在配置了 `SIGNPATH_*` 变量后才运行。自签名只能本机测试，不解决用户端 SmartScreen。
     详见 `SIGNING.md`。
+25. **参考目录的 58MB 模型是截断的**：`u2net_human_seg.onnx` 图长度字段约 176MB，文件只有 58MB，
+    ONNX Runtime 报 `Protobuf parsing failed`。现在仓库里是完整模型静态量化后的 **44,253,573 字节**版本。
+26. **ONNX 原生依赖别用动态量化**：动态量化生成的 `ConvInteger` 在当前 CPU EP 无实现。
+    要量化就做静态 QOperator QDQ/QOperator，只量化 Conv，并先用真实照片校准；验证能 `InferenceSession.create` 再打包。
+27. **模型不能放进 asar**：`onnxruntime-node` 需要真实文件路径。模型走 `extraResources/models`，
+    原生模块 `asarUnpack`；只保留 win32 x64 二进制，否则 portable 会多出 180MB。
+28. **抠图失败必须回退**：`cutout:run` 捕获 `NO_PERSON`/`MODEL_*`，返回 `fallbackDataUrl`；
+    抠图窗口自动切“仅缩放导入”，不能把用户卡在错误页。
 
 ## 6. 快速开始
 
@@ -154,6 +163,11 @@ npm run dist
 | `M10-NOTES.md` | M10 记录 / 验证 / 截图 |
 | `M10.1-NOTES.md` | 0.4.1 交互收尾：去双击/右键、whale 气泡与菜单样式 |
 | `M10.2-NOTES.md` | 0.4.2 气泡外观：whale classic SVG 框 + 适配 |
+| `M11-NOTES.md` | 0.5.0 照片抠图：模型/量化/窗口/回退/验证 |
+| `lib/cutout.js` | 离线 U2Net + nativeImage 抠图 |
+| `lib/cutout-math.js` | 蒙版归一化/连通域/包围盒/适配纯函数 |
+| `app/cutout.html/css/js` | 照片选择、预览、拖动缩放、保存/回退窗口 |
+| `assets/models/u2net_human_seg.onnx` | 量化后 44MB 离线人像分割模型 |
 | `SIGNING.md` | SignPath Foundation 免费 OSS 签名申请 / CI / 验签 |
 | `THIRD-PARTY-NOTICES.md` | whale-widget / Noto Sans / Electron 许可与归属 |
 | `.github/workflows/sign-release.yml` | 构建 + SignPath 签名工作流（配置变量前休眠） |
@@ -220,11 +234,20 @@ npm run dist
 - 验证：`npm test` 26 项；CDP 测悬停/按压/队列/菜单/120–360px/镜像/全部设置面板无横向溢出；打包版字体 `document.fonts.check` 通过、控制台无 error。截图在 `docs/m10/`，详情 `M10-NOTES.md`。
 - **0.4.1 收尾**：移除桌宠双击/右键（设置只走悬停 ☰ / 托盘）；气泡文字色/描边/入场时序与菜单按钮/面板参数对齐 whale-widget；气泡隐藏后 540ms 再缩窗口。详见 `M10.1-NOTES.md`。
 - **0.4.2 外观**：气泡换成 whale classic SVG 框（路径 + 双 ellipse），SVG 水平拉伸 1.35 并重新居中、内容 padding `6 24 54`，多行中文不裁切；截图 `docs/m10/pet-bubble.png`。详见 `M10.2-NOTES.md`。
-- **签名脚手架**：选定 SignPath Foundation 免费 OSS 路线；新增 `.github/workflows/sign-release.yml`、`SIGNING.md`、`tools/verify-signature.ps1` 和 `npm run verify:signature`。当前 `0.4.2` 仍未签名，审核通过后由 CI 签。
+- **签名脚手架**：选定 SignPath Foundation 免费 OSS 路线；新增 `.github/workflows/sign-release.yml`、`SIGNING.md`、`tools/verify-signature.ps1` 和 `npm run verify:signature`。当前 `0.5.0` 仍未签名，审核通过后由 CI 签。
 
-## 13. 新对话开场白（直接粘贴）
+## 13. 最近变更（M11 照片抠图，0.5.0）
 
-> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`PLAN.md`、`M10.2-NOTES.md` 和 `SIGNING.md`。
-> M10/M10.1/M10.2（0.4.2，手感/whale 气泡外观/悬停菜单/设置重构/内置字体/去双击右键）已完成；
-> 签名走 SignPath Foundation 免费 OSS 路线，工作流已就绪但尚未申请/配置。
-> 下一步做 M11 照片抠图（离线 U2Net + 抠图窗口，参考 `D:\project\whale-role`）。已知坑见 HANDOFF 第 5 节。
+- 新增 `assets/models/u2net_human_seg.onnx`：完整 human seg 模型静态量化（44MB），`lib/cutout.js` 用 `onnxruntime-node` + `nativeImage` 做 320 输入、蒙版归一化/最大连通域/alpha 清理/胸像裁切/610 画布合成。
+- 新增独立 `cutout.html/css/js` 窗口：选择/拖入照片 → 开始抠图 → 棋盘格预览 → 拖动/滚轮/缩放滑杆 → 保存为角色；支持无人像/模型失败自动回退“仅缩放导入”，也有手动回退按钮。
+- 设置 → 角色 → “从照片生成角色”已启用；保存后写 `store.addRole`、切换 `roleId`，通过 `roles:changed` 刷新设置里的角色图库。
+- 打包：模型走 `extraResources/models`（不能放 asar）；`onnxruntime-node` 走 `asarUnpack`，排除 darwin/linux/win32-arm64，portable 153MB。
+- 验证：`npm test` 31 项；开发版/打包版 CDP 都完成“拖入→抠图→保存角色”，无人像图片回退成功，控制台无 error。详见 `M11-NOTES.md`。
+
+注意：复杂背景/多人/发丝可能有残留；当前是自动胸像裁切，没有手动橡皮擦。
+
+## 14. 新对话开场白（直接粘贴）
+
+> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`PLAN.md`、`M11-NOTES.md` 和 `SIGNING.md`。
+> M11 照片抠图（0.5.0）已完成；签名走 SignPath Foundation 免费 OSS 路线，工作流已就绪但尚未申请/配置。
+> 下一步：处理 SignPath 申请/签名，或继续打磨抠图（手动擦除/多人选择）和打包体验。已知坑见 HANDOFF 第 5 节。

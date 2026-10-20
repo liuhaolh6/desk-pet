@@ -1,7 +1,7 @@
 # 代码签名（SignPath Foundation 免费 OSS 路线）
 
 > 选定路线：**A. SignPath Foundation 免费开源签名**
-> 状态：申请材料、GitHub Actions、artifact 配置示例、本地验签脚本已就绪；**当前 `0.4.2` 仍是未签名构建**。SignPath 审核通过并配置 secrets/vars 后，由 GitHub Actions 签名。
+> 状态：申请材料、GitHub Actions、artifact 配置示例、本地验签脚本已就绪；**当前 `0.5.0` 仍是未签名构建**。SignPath 审核通过并配置 secrets/vars 后，由 GitHub Actions 签名。
 
 ## 1. 这条路线是什么
 
@@ -30,7 +30,7 @@ SignPath Foundation 为公开开源项目提供免费代码签名：证书签发
 2. **GitHub 2FA**：SignPath 要求所有成员开启 MFA。
 3. **公开的发布页**：至少有一个 GitHub Release，里面能有当前 exe/zip。
 4. **项目说明**：README 已描述功能、下载、运行方式。
-5. **版本号**：正式签名发布前把 `package.json` 的 version 升到新版本（例如 `0.4.3`），避免和当前未签名的 `0.4.2` 混淆。
+5. **版本号**：正式签名发布前把 `package.json` 的 version 升到新版本（例如 `0.5.1`），避免和当前未签名的 `0.5.0` 混淆。
 6. **单人维护说明**：当前 committer/reviewer/approver 都是 `@liuhaolh6`；如果 SignPath 要求职责分离，审核时按他们的要求加第二个人。
 
 申请时可以写：
@@ -145,14 +145,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify-signature.ps1
 
 # 指定路径
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify-signature.ps1 `
-  -Path 'signed\DeskPet-0.4.3-portable.exe','dist\win-unpacked\DeskPet.exe'
+  -Path 'signed\DeskPet-0.5.1-portable.exe','dist\win-unpacked\DeskPet.exe'
 ```
 
 或：
 
 ```powershell
-Get-AuthenticodeSignature .\signed\DeskPet-0.4.3-portable.exe | Format-List *
-signtool verify /pa /v .\signed\DeskPet-0.4.3-portable.exe
+Get-AuthenticodeSignature .\signed\DeskPet-0.5.1-portable.exe | Format-List *
+signtool verify /pa /v .\signed\DeskPet-0.5.1-portable.exe
 ```
 
 `Status` 必须是 `Valid`，并确认有 **Timestamp**。签名后不要再改文件，任何改动都会让签名失效。

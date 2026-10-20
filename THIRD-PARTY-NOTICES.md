@@ -38,6 +38,20 @@ distributed under the SIL Open Font License 1.1. The full license text is in
 [`assets/fonts/OFL.txt`](assets/fonts/OFL.txt); the subsetting notice is in
 [`assets/fonts/FONT-NOTICE.txt`](assets/fonts/FONT-NOTICE.txt).
 
+## U2Net human segmentation model
+
+`assets/models/u2net_human_seg.onnx` is a quantized derivative of the
+`u2net_human_seg` model distributed by
+[rembg](https://github.com/danielgatis/rembg). U^2-Net is by Xuebin Qin et al.
+and is distributed under the Apache License 2.0
+(<https://github.com/xuebinqin/U-2-Net>); rembg is MIT-licensed. The model is
+used for offline human segmentation only.
+
+## ONNX Runtime
+
+`onnxruntime-node` is distributed under the MIT License
+(<https://github.com/microsoft/onnxruntime>).
+
 ## Electron
 
 Electron is distributed under the MIT License. See the license files in the

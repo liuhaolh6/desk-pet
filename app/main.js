@@ -18,6 +18,7 @@ const {
 const { createStore } = require('../lib/store')
 const { fetchWeather, geocode } = require('../lib/weather')
 const placement = require('../lib/placement')
+const cutout = require('../lib/cutout')
 
 const VERSION = require('../package.json').version
 const ASSETS = path.join(__dirname, '..', 'assets')
@@ -67,6 +68,7 @@ let store = null
 let petWin = null
 let settingsWin = null
 let editorWin = null
+let cutoutWin = null
 let tray = null
 let extraBubbleHeight = 0
 let weather = null
@@ -345,6 +347,26 @@ function openEditor() {
   editorWin.on('closed', () => { editorWin = null })
 }
 
+function openCutout() {
+  if (cutoutWin) { cutoutWin.show(); cutoutWin.focus(); return }
+  cutoutWin = new BrowserWindow({
+    width: 780,
+    height: 660,
+    minWidth: 680,
+    minHeight: 560,
+    title: '从照片生成角色',
+    backgroundColor: '#f7f9fd',
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  })
+  cutoutWin.loadFile(path.join(__dirname, 'cutout.html'))
+  cutoutWin.on('closed', () => { cutoutWin = null })
+}
+
 function broadcastSettings() {
   const settings = store.readSettings()
   for (const win of BrowserWindow.getAllWindows()) {
@@ -352,6 +374,14 @@ function broadcastSettings() {
   }
   if (tray) tray.setToolTip(settings.name + ' · 桌宠')
   return settings
+}
+
+function broadcastRoles() {
+  const roles = roleList()
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed()) win.webContents.send('roles:changed', roles)
+  }
+  return roles
 }
 
 // -------------------------------------------------------------------- weather
@@ -447,6 +477,16 @@ function createTray() {
 // renderer's hover menu and the tray menu.
 
 // ----------------------------------------------------------------------- IPC
+function decodeImageDataUrl(dataUrl) {
+  if (typeof dataUrl !== 'string') throw new Error('缺少图片数据')
+  const match = dataUrl.match(/^data:(image\/(?:png|jpeg|jpg|webp));base64,([A-Za-z0-9+/=\s]+)$/i)
+  if (!match) throw new Error('图片格式不支持')
+  const buffer = Buffer.from(match[2].replace(/\s/g, ''), 'base64')
+  if (!buffer.length) throw new Error('图片为空')
+  if (buffer.length > 30 * 1024 * 1024) throw new Error('图片超过 30MB')
+  return { buffer, mime: match[1].toLowerCase() }
+}
+
 function roleList() {
   const index = store.readRoles()
   return index.roles.map((r) => ({
@@ -507,6 +547,7 @@ function registerIpc() {
     const entry = store.addRole(name, image.toPNG())
     store.writeSettings({ roleId: entry.id })
     broadcastSettings()
+    broadcastRoles()
     return { ok: true, role: entry, roles: roleList() }
   })
 
@@ -515,7 +556,90 @@ function registerIpc() {
     const s = store.readSettings()
     if (result.ok && s.roleId === id) store.writeSettings({ roleId: 'default' })
     broadcastSettings()
+    broadcastRoles()
     return Object.assign({}, result, { roles: roleList() })
+  })
+
+  // ---- photo cutout -------------------------------------------------------
+  ipcMain.on('cutout:open', openCutout)
+  ipcMain.on('cutout:close', () => { if (cutoutWin) cutoutWin.close() })
+
+  ipcMain.handle('cutout:pick', async () => {
+    const result = await dialog.showOpenDialog(cutoutWin || settingsWin || petWin, {
+      title: '选择一张人像照片',
+      properties: ['openFile'],
+      filters: [{ name: '图片', extensions: ['png', 'jpg', 'jpeg', 'webp'] }],
+    })
+    if (result.canceled || !result.filePaths || !result.filePaths[0]) return { ok: false, canceled: true }
+    const file = result.filePaths[0]
+    let stat
+    try { stat = fs.statSync(file) } catch (err) { return { ok: false, error: '读不到文件' } }
+    if (stat.size > 25 * 1024 * 1024) return { ok: false, error: '图片超过 25MB，请先压缩' }
+    const buffer = fs.readFileSync(file)
+    const image = nativeImage.createFromBuffer(buffer)
+    if (image.isEmpty()) return { ok: false, error: '读不出图片' }
+    const ext = path.extname(file).toLowerCase()
+    const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg'
+    return {
+      ok: true,
+      dataUrl: 'data:' + mime + ';base64,' + buffer.toString('base64'),
+      name: path.basename(file).replace(/\.[^.]+$/, '').slice(0, 30),
+      width: image.getSize().width,
+      height: image.getSize().height,
+    }
+  })
+
+  ipcMain.handle('cutout:run', async (ev, payload) => {
+    let decoded
+    try { decoded = decodeImageDataUrl(payload && payload.dataUrl) } catch (err) {
+      return { ok: false, code: 'BAD_IMAGE', error: err.message }
+    }
+    const image = nativeImage.createFromBuffer(decoded.buffer)
+    if (image.isEmpty()) return { ok: false, code: 'BAD_IMAGE', error: '读不出图片' }
+    try {
+      const result = await cutout.cutoutImage(nativeImage, image, { canvas: 610 })
+      return {
+        ok: true,
+        dataUrl: 'data:image/png;base64,' + result.image.toPNG().toString('base64'),
+        width: 610,
+        height: 610,
+        coverage: result.coverage,
+        cutout: result.cutout,
+        source: result.source,
+      }
+    } catch (err) {
+      const code = (err && err.code) || 'CUTOUT_FAILED'
+      const fallback = cutout.scaleOnly(image, 610)
+      const fallbackSize = fallback.getSize()
+      return {
+        ok: false,
+        code,
+        error: code === 'NO_PERSON'
+          ? '没有检测到清晰人像，可以改用“仅缩放导入”'
+          : code === 'MODEL_MISSING' || code === 'MODEL_LOAD_FAILED'
+            ? '离线抠图模型未就绪，可以改用“仅缩放导入”'
+            : '抠图失败，可以改用“仅缩放导入”',
+        fallbackDataUrl: 'data:image/png;base64,' + fallback.toPNG().toString('base64'),
+        width: fallbackSize.width,
+        height: fallbackSize.height,
+      }
+    }
+  })
+
+  ipcMain.handle('cutout:save', (ev, payload) => {
+    let decoded
+    try { decoded = decodeImageDataUrl(payload && payload.dataUrl) } catch (err) {
+      return { ok: false, error: err.message }
+    }
+    const image = nativeImage.createFromBuffer(decoded.buffer)
+    if (image.isEmpty()) return { ok: false, error: '读不出生成的角色图' }
+    const send = cutout.scaleOnly(image, 610)
+    const name = String((payload && payload.name) || '照片角色').trim().slice(0, 30) || '照片角色'
+    const entry = store.addRole(name, send.toPNG())
+    store.writeSettings({ roleId: entry.id })
+    broadcastSettings()
+    broadcastRoles()
+    return { ok: true, role: entry, roles: roleList() }
   })
 
   ipcMain.handle('weather:get', () => weather)

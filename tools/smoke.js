@@ -15,6 +15,7 @@ const { describe, WMO } = require('../lib/weather')
 const bubble = require('../app/bubble-model')
 const soundModel = require('../app/sound-model')
 const placement = require('../lib/placement')
+const cutoutMath = require('../lib/cutout-math')
 
 let pass = 0
 function ok(name) { pass += 1; console.log('  ✓', name) }
@@ -305,6 +306,57 @@ const PAD = 54
   assert.equal(placement.displayForRect(DISPLAYS, { x: 1860, y: 100, width: 220, height: 220 }).id, '2',
     '大部分在屏幕 2 上')
   ok('显示器归属判定')
+}
+
+// ------------------------------------------------------------------ cutout
+{
+  const alpha = cutoutMath.normalizeMask(new Float32Array([0, 0.25, 0.5, 0.75, 1]), 5)
+  assert.ok(alpha)
+  assert.equal(alpha[0], 0)
+  assert.equal(alpha[4], 1)
+  ok('U2Net mask 归一化与阈值')
+}
+
+{
+  const alpha = new Float32Array([
+    0, 0, 0,
+    0.9, 0.9, 0,
+    0, 0, 0.8,
+  ])
+  const keep = cutoutMath.largestComponent(alpha, 3, 3, 0.5)
+  assert.ok(keep)
+  assert.equal(keep[3], 1)
+  assert.equal(keep[4], 1)
+  assert.equal(keep[8], 0, '丢掉零散前景')
+  ok('保留主要人像连通域')
+}
+
+{
+  const alpha = new Float32Array([
+    0, 0, 0, 0,
+    0, 1, 1, 0,
+    0, 1, 1, 0,
+    0, 0, 0, 0,
+  ])
+  const b = cutoutMath.maskBounds(alpha, 4, 4, 0.5)
+  assert.deepEqual(b, { x: 1, y: 1, width: 2, height: 2 })
+  ok('透明蒙版包围盒')
+}
+
+{
+  const fit = cutoutMath.fitRect(1080, 1920, 610)
+  assert.equal(fit.height, 573)
+  assert.equal(fit.width, 323)
+  assert.equal(fit.y, 31)
+  assert.equal(fit.x, 144)
+  ok('610 画布底部居中适配')
+}
+
+{
+  const model = path.join(__dirname, '..', 'assets', 'models', 'u2net_human_seg.onnx')
+  assert.ok(fs.existsSync(model), '离线模型已随仓库提供')
+  assert.ok(fs.statSync(model).size > 10 * 1024 * 1024, '模型不应是空/占位文件')
+  ok('离线抠图模型存在且非占位')
 }
 
 console.log('\n' + pass + ' checks passed')

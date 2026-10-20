@@ -1,6 +1,6 @@
 {
   "name": "desk-pet",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "Windows 桌面宠物：自定义角色形象、点击看天气/喝水提醒，名称大小模式位置全部可配置",
   "main": "app/main.js",
   "private": true,
@@ -15,7 +15,12 @@
     "verify:signature": "powershell -NoProfile -ExecutionPolicy Bypass -File tools\\verify-signature.ps1",
     "shortcut": "powershell -ExecutionPolicy Bypass -File tools\\make-shortcut.ps1"
   },
-  "keywords": ["desktop-pet", "electron", "weather", "windows"],
+  "keywords": [
+    "desktop-pet",
+    "electron",
+    "weather",
+    "windows"
+  ],
   "license": "MIT",
   "devDependencies": {
     "electron": "^44.9.0",
@@ -33,7 +38,21 @@
       "app/**/*",
       "lib/**/*",
       "assets/**/*",
+      "!assets/models/**",
+      "!node_modules/onnxruntime-node/bin/napi-v3/darwin/**",
+      "!node_modules/onnxruntime-node/bin/napi-v3/linux/**",
+      "!node_modules/onnxruntime-node/bin/napi-v3/win32/arm64/**",
       "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "assets/models",
+        "to": "models",
+        "filter": ["**/*"]
+      }
+    ],
+    "asarUnpack": [
+      "**/node_modules/onnxruntime-node/**"
     ],
     "asar": true,
     "npmRebuild": false,
@@ -48,7 +67,9 @@
       "target": [
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
@@ -56,5 +77,8 @@
       "artifactName": "DeskPet-${version}-portable.${ext}",
       "requestExecutionLevel": "user"
     }
+  },
+  "dependencies": {
+    "onnxruntime-node": "^1.20.1"
   }
 }

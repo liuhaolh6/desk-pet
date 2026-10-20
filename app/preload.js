@@ -31,6 +31,11 @@ contextBridge.exposeInMainWorld('deskPet', {
   listRoles: () => ipcRenderer.invoke('roles:list'),
   importRole: () => ipcRenderer.invoke('roles:import'),
   deleteRole: (id) => ipcRenderer.invoke('roles:delete', id),
+  openCutout: () => ipcRenderer.send('cutout:open'),
+  pickCutoutPhoto: () => ipcRenderer.invoke('cutout:pick'),
+  runCutout: (dataUrl) => ipcRenderer.invoke('cutout:run', { dataUrl }),
+  saveCutout: (payload) => ipcRenderer.invoke('cutout:save', payload),
+  closeCutout: () => ipcRenderer.send('cutout:close'),
 
   // sounds
   listSounds: () => ipcRenderer.invoke('sounds:list'),
@@ -55,6 +60,7 @@ contextBridge.exposeInMainWorld('deskPet', {
 
   // events
   onSettings: (cb) => subscribe('settings:changed', cb),
+  onRoles: (cb) => subscribe('roles:changed', cb),
   onWeather: (cb) => subscribe('weather:changed', cb),
   onRemind: (cb) => subscribe('remind:water', cb),
   onMirror: (cb) => subscribe('pet:mirror', cb),

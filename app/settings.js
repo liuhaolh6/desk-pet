@@ -216,6 +216,11 @@
       }).catch(() => setStatus('导入失败'))
     })
 
+    $('cutoutBtn').addEventListener('click', () => {
+      setStatus('打开抠图窗口…')
+      api.openCutout()
+    })
+
     $('resetPosBtn').addEventListener('click', () => { save({ position: null }, true); setStatus('已回到右下角') })
     $('openDirBtn').addEventListener('click', () => api.openDataDir())
     $('quitBtn').addEventListener('click', () => api.quit())
@@ -431,6 +436,10 @@
       setStatus('读取设置失败')
     }
     api.onSettings((settings) => fill(settings))
+    api.onRoles((roles) => {
+      state.roles = Array.isArray(roles) ? roles : []
+      renderRoles()
+    })
   }
 
   boot()
