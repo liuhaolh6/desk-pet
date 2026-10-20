@@ -52,9 +52,9 @@ body {
     rotate(var(--pet-tilt, 0deg))
     scale(var(--pet-scale-x, 1), var(--pet-scale-y, 1));
   filter: drop-shadow(0 10px 16px rgba(15, 23, 42, 0.2));
-  transition:
-    transform 0.2s var(--ease-spring),
-    filter 0.18s var(--ease-out);
+  /* Only transform animates: animating `filter` re-composites the whole
+     transparent window every frame and flickers on Windows. */
+  transition: transform 0.2s var(--ease-spring);
   will-change: transform;
 }
 
@@ -373,6 +373,15 @@ body.photo-role .pet-wrap.hover #pet {
     transform: none;
     pointer-events: auto;
   }
+}
+
+/* Hybrid touch devices report `hover: hover`, so the block above does not apply.
+   A touch press reveals the menu button for a few seconds instead — using a
+   class that does NOT change #pet's filter, which would flash on press. */
+.pet-wrap.touch-ui .menu-btn {
+  opacity: 0.9;
+  transform: none;
+  pointer-events: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {

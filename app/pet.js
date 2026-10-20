@@ -282,6 +282,18 @@
     petWrap.classList.add('hover')
   }
 
+  // Hybrid touch devices (touch screen + mouse) report `hover: hover`, so the
+  // `@media (hover: none)` menu affordance does not apply. Reveal the menu button
+  // for a few seconds after a touch without touching #pet's filter (which used to
+  // flash on press).
+  let touchUiTimer = 0
+
+  function showTouchUi() {
+    clearTimeout(touchUiTimer)
+    petWrap.classList.add('touch-ui')
+    touchUiTimer = setTimeout(() => petWrap.classList.remove('touch-ui'), 4000)
+  }
+
   function hideHoverSoon() {
     clearTimeout(hoverTimer)
     hoverTimer = setTimeout(() => {
@@ -344,11 +356,22 @@
       showHover()
       toggleMenu()
     })
-    menuBtn.addEventListener('pointerenter', showHover)
-    petWrap.addEventListener('pointerenter', showHover)
-    petWrap.addEventListener('pointerleave', hideHoverSoon)
-    petMenu.addEventListener('pointerenter', showHover)
-    petMenu.addEventListener('pointerleave', hideHoverSoon)
+    // Touch has no hover: firing pointerenter on a touch press used to apply the
+    // hover drop-shadow, which animates `filter` on a transparent window and
+    // shows as a screen flash. Only real pointer hover may trigger it.
+    const hoverForPointer = (ev) => {
+      if (ev && ev.pointerType === 'touch') return
+      showHover()
+    }
+    const leaveForPointer = (ev) => {
+      if (ev && ev.pointerType === 'touch') return
+      hideHoverSoon()
+    }
+    menuBtn.addEventListener('pointerenter', hoverForPointer)
+    petWrap.addEventListener('pointerenter', hoverForPointer)
+    petWrap.addEventListener('pointerleave', leaveForPointer)
+    petMenu.addEventListener('pointerenter', hoverForPointer)
+    petMenu.addEventListener('pointerleave', leaveForPointer)
 
     menuActions.forEach((btn) => {
       btn.addEventListener('click', (ev) => {
@@ -389,6 +412,7 @@
   function wirePet() {
     pet.addEventListener('pointerdown', (ev) => {
       if (ev.button != null && ev.button !== 0) return
+      if (ev.pointerType === 'touch') showTouchUi()
       state.drag = { x: ev.screenX, y: ev.screenY, moved: false, totalX: 0, startAt: performance.now() }
       petWrap.classList.add('pressing')
       try { pet.setPointerCapture(ev.pointerId) } catch (err) {}

@@ -8,7 +8,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 
 - 仓库：<https://github.com/liuhaolh6/desk-pet>（public，main 分支）
 - 本地目录：`D:\project\deskpet`
-- 版本：`0.5.4`（M12 P0 + P1-1~P1-9 可行部分；未签名）；本地 21+ 个提交（含 M10/M11/M12 文档，部分未推送）
+- 版本：`0.5.5`（M12 P0 + P1-1~P1-9 可行部分 + 桌宠窗口屏闪修复；未签名）；本地 21+ 个提交（含 M10/M11/M12 文档，部分未推送）
 - 早期那套「DSH 挂件版」实现已移出仓库，归档在 `D:\project\deskpet-dsh-plugin`（需要参考角色/气泡系统时可以翻）
 
 ## 2. 现在能用的功能（都真机验证过）
@@ -155,6 +155,12 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 40. **仓库基线**：`.gitattributes` 只做二进制标记、**不要加 `text=auto`**（会全仓库重写换行）；
     模型不用 LFS、不重写历史，理由与量化约束见 `MODEL-ASSETS.md`；CI = `npm run check` + `npm test`
     + 合成图 `--fake --assert` + 真实模型正/负例。推送与 tag 仍需用户确认。
+41. **透明窗口不要动画 `filter`，也不要频繁 resize**（0.5.5 屏闪修复，见 `PET-WINDOW-NOTES.md`）：
+    - 触摸按压会补发 `pointerenter`（`pointerType === 'touch'`），**别让它触发 hover**——hover 里的
+      `filter: drop-shadow(...) brightness(1.02)` 在透明窗口上逐帧重合成，按下的瞬间就会闪；
+    - `#pet` 的 transition **只留 `transform`**，别加 `filter`；
+    - `applyBubbleHeight()` 在气泡可见期间**只增不减**（隐藏时才缩回），否则卡片高度一变就 resize 一次；
+    - 改尺寸前重新 `setBackgroundColor('#00000000')`；`tools/smoke.js` 有静态断言，别删。
 
 ## 6. 快速开始
 
@@ -219,6 +225,7 @@ npm run dist
 | `MODEL-ASSETS.md` | 模型/二进制资产决策（不用 LFS、不重写历史、量化约束） |
 | `.gitattributes` | 二进制标记（不含 `text=auto`） |
 | `lib/cutout-worker.js` | utilityProcess 里的抠图执行体（P1-5） |
+| `PET-WINDOW-NOTES.md` | 0.5.5 透明窗口屏闪：原因、证据、修复与验证 |
 | `tools/check-a11y.js` | 静态无障碍回归（结构断言，非 WCAG 审计；CI 会跑） |
 | `.github/workflows/ci.yml` | `npm ci` + 语法 + a11y 静态检查 + `npm test` + 合成图/真实模型断言（未推送） |
 | `app/cutout.html/css/js` | 照片选择、预览、拖动缩放、保存/回退窗口 |

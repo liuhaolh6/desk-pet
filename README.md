@@ -63,7 +63,7 @@ npm run dist      # electron-builder portable，输出 dist/DeskPet-<version>-po
 
 - exe 带图标与版本信息（ProductName / FileVersion / Copyright 等）。
 - 未签名 exe 可能被 SmartScreen 提示「已保护你的电脑」：点「更多信息 → 仍要运行」，或对 exe 签名。
-- 当前 `0.5.4` 仍未签名；免费开源签名方案与 CI 工作流见 [`SIGNING.md`](SIGNING.md)。在 SignPath 审核通过前，不要把它当作已签名发布。
+- 当前 `0.5.5` 仍未签名；免费开源签名方案与 CI 工作流见 [`SIGNING.md`](SIGNING.md)。在 SignPath 审核通过前，不要把它当作已签名发布。
 - 本机打包绕坑（32 位 NSIS mmap、火绒拦临时目录）见 [`M6-PACKAGING.md`](M6-PACKAGING.md)。
 
 ## 使用
@@ -170,7 +170,7 @@ Signing setup and verification: [`SIGNING.md`](SIGNING.md).
 ## 后续
 
 见 [PLAN.md](PLAN.md)；跨对话接手请看 [HANDOFF.md](HANDOFF.md)（现状、决策、已知坑、待办与开场白）。
-当前 `0.5.4` 已有：角色、照片抠图（alpha 修复 + 蒙版/擦除/旋转 + worker 卸载 + token IPC）、天气、喝水、气泡模块化编辑器、音效库、多显示器与贴边吸附、触摸动效、whale classic SVG 思考气泡、悬停菜单、设置重构、内置字体、托盘、设置、置顶、自启、便携打包。待做：推送/tag/CI 实跑、完整无障碍审计、10 张 golden set（见 [`M12-PLAN.md`](M12-PLAN.md)）、代码签名（SignPath 免费 OSS 路线，见 [`SIGNING.md`](SIGNING.md)）。
+当前 `0.5.5` 已有：角色、照片抠图（alpha 修复 + 蒙版/擦除/旋转 + worker 卸载 + token IPC）、天气、喝水、气泡模块化编辑器、音效库、多显示器与贴边吸附、触摸动效、whale classic SVG 思考气泡、悬停菜单、设置重构、内置字体、托盘、设置、置顶、自启、便携打包（0.5.5 修复触摸按压桌宠时的窗口屏闪，见 [`PET-WINDOW-NOTES.md`](PET-WINDOW-NOTES.md)）。待做：推送/tag/CI 实跑、完整无障碍审计、10 张 golden set（见 [`M12-PLAN.md`](M12-PLAN.md)）、代码签名（SignPath 免费 OSS 路线，见 [`SIGNING.md`](SIGNING.md)）。
 
 ## License
 

@@ -266,10 +266,14 @@ function applyBubbleHeight(visible, height) {
   if (!petWin) return
   const s = store.readSettings()
   const size = clamp(Number(s.size) || 220, 80, 480)
-  const target = visible ? clamp(Math.round(Number(height) || 0), 0, 420) : 0
+  const requested = clamp(Math.round(Number(height) || 0), 0, 420)
   // Treat sub-card heights as "no bubble": they are invisible leftovers that
   // otherwise leave a few pixels of reserved space (and shift drag maths).
-  const normalized = target < 40 ? 0 : target
+  const cardHeight = requested < 40 ? 0 : requested
+  // While a bubble/menu chain is visible, only grow. Shrinking between two cards
+  // of different heights resizes the transparent window again, and every
+  // resize can flash on Windows. The shrink happens once, on hide.
+  const normalized = visible ? Math.max(cardHeight, extraBubbleHeight) : 0
   if (normalized === extraBubbleHeight) return
   const b = petWin.getBounds()
   const bottom = b.y + b.height
@@ -280,7 +284,12 @@ function applyBubbleHeight(visible, height) {
     y: bottom - Math.floor(nextH / 2),
   })
   const y = Math.max(display.workArea.y, bottom - nextH)
-  petWin.setBounds({ x: b.x, y, width: windowWidth(size), height: nextH })
+  // Re-assert transparency right before the bounds change: the newly exposed
+  // strip can otherwise be composited with the window background for a frame.
+  if (process.env.DESKPET_OPAQUE !== '1') {
+    try { petWin.setBackgroundColor('#00000000') } catch (err) {}
+  }
+  petWin.setBounds({ x: b.x, y, width: windowWidth(size), height: nextH }, false)
   sendMirror()
 }
 

@@ -663,5 +663,23 @@ const PAD = 54
   ok('离线抠图模型存在且非占位')
 }
 
+{
+  // Pet window flicker regressions (0.5.5): touch must not trigger the hover
+  // drop-shadow, and the sprite must not animate `filter` on a transparent
+  // window. Window resizes must only grow while a bubble is visible.
+  const petJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.js'), 'utf8')
+  const petCss = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.css'), 'utf8')
+  const mainJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main.js'), 'utf8')
+  assert.ok(/pointerType === 'touch'/.test(petJs), '触摸不应触发 hover 样式')
+  const petRule = petCss.match(/#pet\s*\{[\s\S]*?\}/)
+  assert.ok(petRule, '#pet 规则存在')
+  assert.ok(!/transition[\s\S]{0,80}filter/.test(petRule[0]), '#pet 不应过渡 filter')
+  assert.ok(/#pet\s*\{[\s\S]*?transition:\s*transform/.test(petCss), '#pet 只过渡 transform')
+  assert.ok(/visible \? Math\.max\(cardHeight, extraBubbleHeight\) : 0/.test(mainJs), '气泡只增不减，避免反复改窗口尺寸')
+  assert.ok(/showTouchUi/.test(petJs), '触摸需要无 hover 的菜单入口')
+  assert.ok(/\.pet-wrap\.touch-ui \.menu-btn/.test(petCss), 'touch-ui 下菜单按钮可见可点')
+  ok('桌宠窗口：触摸不触发 hover、不过渡 filter、气泡只增不减')
+}
+
 console.log('\n' + pass + ' checks passed')
 fs.rmSync(dir, { recursive: true, force: true })
