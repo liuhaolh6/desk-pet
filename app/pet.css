@@ -65,6 +65,15 @@ body {
   filter: drop-shadow(0 14px 22px rgba(15, 23, 42, 0.24)) brightness(1.02);
 }
 
+/* Photo roles: softer shadow so edge fringe is not amplified. */
+body.photo-role #pet {
+  filter: drop-shadow(0 5px 9px rgba(15, 23, 42, 0.14));
+}
+
+body.photo-role .pet-wrap.hover #pet {
+  filter: drop-shadow(0 8px 13px rgba(15, 23, 42, 0.16)) brightness(1.02);
+}
+
 .pet-wrap.pressing #pet {
   --pet-lift: 0px;
   --pet-scale-x: 1.05;

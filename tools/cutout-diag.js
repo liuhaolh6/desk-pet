@@ -40,6 +40,8 @@ function parseArgs(argv) {
     else if (a === '--expect') out.expect = argv[++i]
     else if (a === '--out') out.out = argv[++i]
     else if (a === '--preprocess') out.preprocess = argv[++i]
+    else if (a === '--no-decontaminate') out.decontaminate = false
+    else if (a === '--mask-out') out.maskOut = argv[++i]
     else if (a === '--canvas') out.canvas = Number(argv[++i]) || 610
     else if (a === '--feather') out.feather = Number(argv[++i])
     else if (a === '--json') out.json = true
@@ -221,14 +223,21 @@ function checksFor(metrics, options = {}) {
     add('边缘过渡 2–4px', metrics.self.edge.avgWidthPx >= 2 && metrics.self.edge.avgWidthPx <= 4,
       metrics.self.edge.avgWidthPx)
   }
-  if (options.timings) {
-    // session.run() is async native work; the "main process block" budget only
-    // covers the synchronous JS stages.
+  if (options.timings && options.assertBlock) {
+    // session.run() is async native work; the sync budget covers the
+    // synchronous JS stages. The app offloads all of this to a utility
+    // process (P1-5), so this is only asserted for the in-process path.
     const syncStages = ['decodeMs', 'resizeMs', 'preprocessMs', 'maskMs', 'composeMs', 'encodeMs']
     const worst = Math.max(...syncStages.map((k) => options.timings[k] || 0))
-    add('单段同步阻塞 ≤50ms', worst <= 50, worst)
+    add('单段同步阻塞 ≤50ms（进程内）', worst <= 50, worst)
   }
   return checks
+}
+
+function syncMax(timings) {
+  if (!timings) return 0
+  const syncStages = ['decodeMs', 'resizeMs', 'preprocessMs', 'maskMs', 'composeMs', 'encodeMs']
+  return Math.max(...syncStages.map((k) => timings[k] || 0))
 }
 
 function printReport(report, opts) {
@@ -238,6 +247,7 @@ function printReport(report, opts) {
     console.log('image      ' + report.source + ' -> ' + report.metrics.size.join('x'))
     if (report.preprocess) console.log('preprocess ' + report.preprocess)
     if (report.ms !== undefined) console.log('time       ' + report.ms + ' ms  ' + JSON.stringify(report.timings || {}))
+    if (report.timings) console.log('sync       in-process max ' + syncMax(report.timings) + 'ms（应用已用 utilityProcess 卸载）')
     if (report.coverage !== undefined) console.log('coverage   ' + round(report.coverage))
     const b = report.metrics.bands
     console.log('bands      zero=' + b.zeroPct + '% faint=' + b.faintPct + '% soft=' + b.softPct +
@@ -335,6 +345,7 @@ async function runNodeInput(opts) {
     const result = await cutout.cutoutImageRGBA(image.data, image.width, image.height, {
       canvas,
       preprocess: opts.preprocess,
+      decontaminate: opts.decontaminate,
     })
     if (expectNoPerson) {
       console.error('FAIL expected NO_PERSON but got a cutout (coverage ' + round(result.coverage) + ')')
@@ -342,6 +353,7 @@ async function runNodeInput(opts) {
       return
     }
     if (opts.out) fs.writeFileSync(opts.out, result.png)
+    if (opts.maskOut) fs.writeFileSync(opts.maskOut, result.maskPng)
     const decoded = png.decodePNG(result.png)
     const metrics = analyze(decoded.data, decoded.width, decoded.height, null)
     const report = {

@@ -12,7 +12,7 @@ const os = require('node:os')
 const fs = require('node:fs')
 const {
   app, BrowserWindow, Tray, Menu, ipcMain, screen, dialog,
-  nativeImage, Notification, protocol, shell,
+  nativeImage, Notification, protocol, shell, utilityProcess,
 } = require('electron')
 
 const { createStore } = require('../lib/store')
@@ -511,6 +511,132 @@ function cutoutErrorMessage(code) {
   return '抠图失败'
 }
 
+// ------------------------------------------------------------------- worker
+// The compose/encode path blocks the main thread for ~60ms and inference for
+// ~600ms; both run in a utility process instead (P1-5). If the worker cannot
+// start (or dies), cutout:run falls back to running in-process.
+let cutoutWorker = null
+let cutoutWorkerSeq = 0
+const cutoutWorkerPending = new Map()
+
+function cutoutWorkerPath() {
+  const script = path.join(__dirname, '..', 'lib', 'cutout-worker.js')
+  if (!app.isPackaged) return script
+  // lib is asarUnpacked so the utility process gets a real file path and can
+  // resolve onnxruntime-node/onnxruntime-common from the same unpacked tree.
+  const unpacked = script.replace('app.asar', 'app.asar.unpacked')
+  try { if (fs.existsSync(unpacked)) return unpacked } catch (err) {}
+  return script
+}
+
+function ensureCutoutWorker() {
+  if (cutoutWorker) return cutoutWorker
+  const worker = utilityProcess.fork(cutoutWorkerPath(), [], { serviceName: 'deskpet-cutout' })
+  worker.on('message', (message) => {
+    const pending = cutoutWorkerPending.get(message && message.id)
+    if (!pending) return
+    cutoutWorkerPending.delete(message.id)
+    clearTimeout(pending.timer)
+    pending.resolve(message)
+  })
+  worker.on('exit', (code) => {
+    log('cutout worker exited code=' + code)
+    cutoutWorker = null
+    for (const pending of cutoutWorkerPending.values()) {
+      clearTimeout(pending.timer)
+      pending.reject(Object.assign(new Error('WORKER_EXITED'), { code: 'WORKER_EXITED' }))
+    }
+    cutoutWorkerPending.clear()
+  })
+  cutoutWorker = worker
+  return worker
+}
+
+function stopCutoutWorker() {
+  if (cutoutWorker) {
+    try { cutoutWorker.kill() } catch (err) {}
+    cutoutWorker = null
+  }
+}
+
+function runCutoutInWorker(rgba, width, height, options) {
+  return new Promise((resolve, reject) => {
+    let worker
+    try { worker = ensureCutoutWorker() } catch (err) {
+      reject(Object.assign(new Error('WORKER_SPAWN_FAILED: ' + err.message), { code: 'WORKER_SPAWN_FAILED' }))
+      return
+    }
+    const id = ++cutoutWorkerSeq
+    const timer = setTimeout(() => {
+      cutoutWorkerPending.delete(id)
+      reject(Object.assign(new Error('WORKER_TIMEOUT'), { code: 'WORKER_TIMEOUT' }))
+    }, 60000)
+    cutoutWorkerPending.set(id, { resolve, reject, timer })
+    const payload = rgba.buffer.slice(rgba.byteOffset, rgba.byteOffset + rgba.byteLength)
+    try {
+      // Electron's postMessage transfer list only accepts MessagePorts; the
+      // ArrayBuffer is structured-cloned (copied) instead.
+      worker.postMessage({
+        type: 'run',
+        id,
+        rgba: payload,
+        width,
+        height,
+        canvas: options.canvas,
+        preprocess: options.preprocess,
+        decontaminate: options.decontaminate,
+      })
+    } catch (err) {
+      cutoutWorkerPending.delete(id)
+      clearTimeout(timer)
+      reject(Object.assign(new Error('WORKER_POST_FAILED: ' + err.message), { code: 'WORKER_POST_FAILED' }))
+    }
+  })
+}
+
+/**
+ * Run the cutout, preferring the utility process. Returns the same shape as
+ * `cutout.cutoutImageRGBA` (png/maskPng/coverage/...), with decode done here.
+ */
+async function runCutoutDecoded(image, options) {
+  const { rgba, width, height } = cutout.loadWorkingRGBA(nativeImage, image)
+  const inline = process.env.DESKPET_CUTOUT_INLINE === '1'
+  if (!inline) {
+    try {
+      const message = await runCutoutInWorker(rgba, width, height, options)
+      if (message && message.ok) {
+        return {
+          png: Buffer.from(message.png),
+          maskPng: Buffer.from(message.maskPng),
+          coverage: message.coverage,
+          bands: message.bands,
+          timings: message.timings,
+          ms: message.ms,
+          preprocess: message.preprocess,
+          source: message.source,
+          working: message.working,
+          cutout: message.cutout,
+        }
+      }
+      throw Object.assign(new Error(message && message.message || 'worker failed'), {
+        code: (message && message.code) || 'CUTOUT_FAILED',
+        coverage: message && message.coverage,
+      })
+    } catch (err) {
+      // A real segmentation answer (NO_PERSON / OVER_SEGMENTED) must be
+      // reported as-is; only infrastructure failures fall back in-process.
+      const code = (err && err.code) || 'CUTOUT_FAILED'
+      if (['NO_PERSON', 'OVER_SEGMENTED', 'MODEL_MISSING', 'MODEL_LOAD_FAILED', 'NO_OUTPUT', 'BAD_OUTPUT_SHAPE', 'BAD_IMAGE'].includes(code)) {
+        throw err
+      }
+      log('cutout worker failed, running in-process', code, String(err && err.message || err))
+      stopCutoutWorker()
+      return cutout.cutoutImageRGBA(rgba, width, height, options)
+    }
+  }
+  return cutout.cutoutImageRGBA(rgba, width, height, options)
+}
+
 function roleList() {
   const index = store.readRoles()
   return index.roles.map((r) => ({
@@ -631,7 +757,7 @@ function registerIpc() {
     }
     const inputSize = image.getSize()
     try {
-      const result = await cutout.cutoutImage(nativeImage, image, { canvas: 610 })
+      const result = await runCutoutDecoded(image, { canvas: 610 })
       const dataUrl = 'data:image/png;base64,' + result.png.toString('base64')
       cutoutTrace({
         ok: true,
@@ -899,6 +1025,6 @@ if (!hasLock) {
     screen.on('display-metrics-changed', ensureOnScreen)
   }).catch((err) => log('whenReady failed', (err && err.stack) || String(err)))
 
-  app.on('before-quit', () => { quitting = true })
+  app.on('before-quit', () => { quitting = true; stopCutoutWorker() })
   app.on('window-all-closed', () => { /* keep running in the tray */ })
 }

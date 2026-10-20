@@ -494,6 +494,48 @@ const PAD = 54
 }
 
 {
+  // Edge pixels must take colour from the subject, not from the background
+  // they happen to sit on (classic green/blue halo).
+  const size = 200
+  const src = Buffer.alloc(size * size * 4)
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const p = (y * size + x) * 4
+      const inside = (x - 100) * (x - 100) + (y - 100) * (y - 100) <= 70 * 70
+      src[p] = inside ? 200 : 0
+      src[p + 1] = inside ? 40 : 200
+      src[p + 2] = inside ? 40 : 0
+      src[p + 3] = 255
+    }
+  }
+  const mask = new Uint8Array(size * size)
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if ((x - 100) * (x - 100) + (y - 100) * (y - 100) <= 70 * 70) mask[y * size + x] = 1
+    }
+  }
+  const out = pixels.composeMaskedCanvas({
+    src, sw: size, sh: size, mask, mw: size, mh: size,
+    bounds: { x: 0, y: 0, width: size, height: size },
+    fit: { x: 0, y: 0, width: size, height: size, scale: 1 },
+    canvas: size,
+    feather: 2,
+  })
+  let mid = 0
+  let greenish = 0
+  for (let i = 0; i < size * size; i++) {
+    const a = out[i * 4 + 3]
+    if (a >= 32 && a <= 223) {
+      mid++
+      if (out[i * 4 + 1] > out[i * 4]) greenish++
+    }
+  }
+  assert.ok(mid > 0)
+  assert.equal(greenish, 0, '边缘颜色来自主体，而不是绿色背景')
+  ok('边缘去色污（背景色不渗入）')
+}
+
+{
   // End-to-end geometry: disc mask -> 610 canvas. Background must stay clear,
   // the subject solid, and the edge soft over 2–4 px.
   const size = 320

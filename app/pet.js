@@ -84,6 +84,9 @@
     const role = (state.roles || []).find((r) => r.id === settings.roleId)
     const src = role ? role.url : 'pet-role://default/'
     if (pet.getAttribute('src') !== src) pet.setAttribute('src', src)
+    // Photo-derived roles have soft alpha edges; the normal desktop shadow
+    // amplifies any leftover fringe, so use a lighter one for them.
+    document.body.classList.toggle('photo-role', !!(role && role.mode))
   }
 
   // ---------------------------------------------------------------- queue
@@ -483,6 +486,14 @@
         else resizeForBubble(measureBubble())
       }
     })
+    // Role list can change without a settings write (import/cutout/delete).
+    // Without this the pet keeps the stale list and falls back to the default
+    // sprite after saving a new role.
+    api.onRoles((roles) => {
+      state.roles = Array.isArray(roles) ? roles : []
+      if (state.settings) applySettings(state.settings)
+    })
+
     api.onWeather((w) => {
       state.weather = w
       if (state.currentCard === 'weather' && bubble.classList.contains('show')) {
