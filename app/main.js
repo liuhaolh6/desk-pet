@@ -126,6 +126,7 @@ function ensureOnScreen() {
       width: windowWidth(size),
       height: size + extra,
     })
+    sendMirror()
   }
 }
 
@@ -137,6 +138,28 @@ function petTopLeft() {
   // The pet always sits at the bottom of the window, so its top can be derived
   // from the window bottom regardless of how much bubble space is reserved.
   return { x: b.x, y: b.y + b.height - size }
+}
+
+/** Which screen edge the pet is hugging, for the renderer's mirror effect. */
+function mirrorSide() {
+  if (!petWin) return 'none'
+  const b = petWin.getBounds()
+  const s = store.readSettings()
+  const size = clamp(Number(s.size) || 220, 80, 480)
+  const area = screen.getDisplayMatching(b).workArea
+  // Compare the pet's rect, not the window rect: the window has WIN_PAD on
+  // both sides, so its right edge is normally off-screen even when the pet is
+  // sitting 24px away from the edge.
+  const pet = placement.petRectOf({ x: b.x, y: petTopLeft().y }, size, WIN_PAD)
+  const margin = 20
+  if (pet.x <= area.x + margin) return 'left'
+  if (pet.x + pet.width >= area.x + area.width - margin) return 'right'
+  return 'none'
+}
+
+function sendMirror() {
+  if (!petWin || petWin.isDestroyed()) return
+  try { petWin.webContents.send('pet:mirror', mirrorSide()) } catch (err) {}
 }
 
 // ------------------------------------------------------------------ role URLs
@@ -232,6 +255,7 @@ function createPetWindow() {
     log('pet-visible=' + petWin.isVisible() + ' onTop=' + petWin.isAlwaysOnTop())
     petWin.webContents.send('settings:changed', store.readSettings())
     if (weather) petWin.webContents.send('weather:changed', weather)
+    sendMirror()
   })
 }
 
@@ -255,6 +279,7 @@ function applyBubbleHeight(visible, height) {
   })
   const y = Math.max(display.workArea.y, bottom - nextH)
   petWin.setBounds({ x: b.x, y, width: windowWidth(size), height: nextH })
+  sendMirror()
 }
 
 function applySettingsSideEffects(prev, next) {
@@ -264,6 +289,7 @@ function applySettingsSideEffects(prev, next) {
   if (windowWidth(size) !== g.width) {
     const bottom = g.y + g.height
     petWin.setBounds({ x: g.x, y: bottom - (size + extraBubbleHeight), width: windowWidth(size), height: size + extraBubbleHeight })
+    sendMirror()
   }
   if (!prev || prev.alwaysOnTop !== next.alwaysOnTop) {
     petWin.setAlwaysOnTop(!!next.alwaysOnTop, 'screen-saver')
@@ -582,6 +608,7 @@ function registerIpc() {
       width: windowWidth(size),
       height: size + extra,
     })
+    sendMirror()
   })
 
   ipcMain.on('pet:drag-end', () => {
@@ -591,6 +618,7 @@ function registerIpc() {
     const pos = petTopLeft()
     const display = placement.displayAt(getDisplays(), { x: pos.x + size / 2, y: pos.y + size / 2 })
     store.writeSettings({ position: { x: pos.x, y: pos.y, displayId: display ? display.id : null } })
+    sendMirror()
   })
 
   ipcMain.on('pet:bubble', (ev, payload) => {
@@ -598,6 +626,7 @@ function registerIpc() {
   })
 
   ipcMain.on('pet:menu', showPetMenu)
+  ipcMain.on('pet:hide', () => { if (petWin) petWin.hide() })
   ipcMain.on('pet:open-settings', openSettings)
   ipcMain.on('pet:open-editor', openEditor)
   ipcMain.on('pet:water-done', () => {

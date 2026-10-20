@@ -8,6 +8,7 @@ Thumbs.db
 
 # local runtime state
 .userdata*/
+.m10-*/
 app.log
 pet-capture.png
 shot-*.png

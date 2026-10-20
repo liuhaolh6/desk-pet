@@ -16,7 +16,41 @@
     if (!node) return
     node.textContent = text
     clearTimeout(setStatus.timer)
-    setStatus.timer = setTimeout(() => { node.textContent = '' }, 2200)
+    setStatus.timer = setTimeout(() => { node.textContent = '改动会自动写入' }, 2200)
+  }
+
+  // --------------------------------------------------------------- panel nav
+  function selectPanel(id) {
+    const nav = Array.from(document.querySelectorAll('.nav-item'))
+    const target = nav.find((btn) => btn.dataset.panel === id) || nav[0]
+    if (!target) return
+    const panelId = target.dataset.panel
+    nav.forEach((btn) => {
+      const on = btn === target
+      btn.classList.toggle('active', on)
+      btn.setAttribute('aria-current', on ? 'page' : 'false')
+    })
+    document.querySelectorAll('.panel').forEach((panel) => {
+      const on = panel.dataset.panel === panelId
+      panel.classList.toggle('active', on)
+      panel.hidden = !on
+    })
+    const title = $('panelTitle')
+    const hint = $('panelHint')
+    if (title) title.textContent = target.dataset.title || ''
+    if (hint) hint.textContent = target.dataset.hint || ''
+    // Focus the first control so keyboard users don't have to tab through the
+    // whole sidebar after switching sections.
+    const first = document.querySelector('.panel.active input, .panel.active select, .panel.active textarea, .panel.active button')
+    if (first && document.activeElement && document.activeElement.classList.contains('nav-item')) {
+      first.focus({ preventScroll: true })
+    }
+  }
+
+  function wireNav() {
+    document.querySelectorAll('.nav-item').forEach((btn) => {
+      btn.addEventListener('click', () => selectPanel(btn.dataset.panel))
+    })
   }
 
   function save(patch, immediate) {
@@ -383,6 +417,7 @@
   }
 
   async function boot() {
+    wireNav()
     wire()
     try {
       const state0 = await api.getState()

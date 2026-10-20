@@ -9,7 +9,12 @@
   const model = window.DeskPetBubble
   const sound = window.DeskPetSound
   const pet = document.getElementById('pet')
+  const petWrap = document.getElementById('petWrap')
+  const petFlip = document.getElementById('petFlip')
+  const menuBtn = document.getElementById('menuBtn')
+  const petMenu = document.getElementById('petMenu')
   const bubble = document.getElementById('bubble')
+  const menuActions = Array.from(petMenu.querySelectorAll('button[data-action]'))
 
   const state = {
     settings: null,
@@ -24,6 +29,12 @@
     drag: null,
     weatherMarked: false,
     weatherFetchedAt: 0,
+    menuOpen: false,
+    menuDismissAt: 0,
+    bubbleToken: 0,
+    showTimer: 0,
+    shrinkTimer: 0,
+    menuShowTimer: 0,
   }
 
   // ------------------------------------------------------------------ utils
@@ -129,25 +140,45 @@
   }
 
   function measureBubble() {
-    return Math.ceil(bubble.getBoundingClientRect().height) + 14
+    // +30 leaves room for the two thought-dots below the cloud (20px) and a
+    // small top margin (10px). offsetHeight ignores the closed-state transform.
+    return Math.ceil(bubble.offsetHeight) + 30
   }
 
   function showBubble(node) {
     clearTimer()
+    clearTimeout(state.showTimer)
+    clearTimeout(state.shrinkTimer)
+    if (state.menuOpen) closeMenu(true)
+    const token = ++state.bubbleToken
+    bubble.classList.remove('show')
     bubble.innerHTML = ''
     bubble.appendChild(node)
-    bubble.classList.add('show')
-    resizeForBubble(measureBubble())
+    // Reserve the window height first, then fade the cloud in on the next
+    // frame. Showing it before the OS resize lands clips the top of the cloud.
+    const height = measureBubble()
+    resizeForBubble(height)
+    void bubble.offsetHeight
+    state.showTimer = setTimeout(() => {
+      if (state.bubbleToken !== token) return
+      bubble.classList.add('show')
+    }, 50)
     const sec = Number(state.settings.bubble && state.settings.bubble.autoHideSeconds) || 0
     if (sec > 0) state.timer = setTimeout(hideBubble, sec * 1000)
   }
 
   function hideBubble() {
     clearTimer()
+    clearTimeout(state.showTimer)
+    state.bubbleToken += 1
     state.currentCard = null
     state.weatherMarked = false
     bubble.classList.remove('show')
-    resizeForBubble(0)
+    // Let the fade-out finish before removing the reserved window space.
+    clearTimeout(state.shrinkTimer)
+    state.shrinkTimer = setTimeout(() => {
+      if (!bubble.classList.contains('show') && !state.menuOpen) resizeForBubble(0)
+    }, 200)
   }
 
   function advance() {
@@ -239,6 +270,113 @@
     return actions
   }
 
+  // ----------------------------------------------------------------- hover
+  let hoverTimer = 0
+
+  function showHover() {
+    clearTimeout(hoverTimer)
+    petWrap.classList.add('hover')
+  }
+
+  function hideHoverSoon() {
+    clearTimeout(hoverTimer)
+    hoverTimer = setTimeout(() => {
+      if (!state.menuOpen) petWrap.classList.remove('hover')
+    }, 260)
+  }
+
+  // ------------------------------------------------------------------ menu
+  function measureMenu() {
+    return Math.ceil(petMenu.offsetHeight) + 20
+  }
+
+  function openMenu() {
+    if (state.menuOpen) return
+    if (bubble.classList.contains('show')) hideBubble()
+    clearTimeout(state.shrinkTimer)
+    clearTimeout(state.showTimer)
+    state.menuOpen = true
+    petMenu.hidden = false
+    petWrap.classList.add('hover', 'menu-open')
+    void petMenu.offsetHeight
+    // Reserve the window height before the panel becomes visible.
+    const height = measureMenu()
+    api.setBubble(true, height)
+    clearTimeout(state.menuShowTimer)
+    state.menuShowTimer = setTimeout(() => {
+      if (!state.menuOpen) return
+      petMenu.classList.add('open')
+      const first = petMenu.querySelector('button')
+      if (first) first.focus({ preventScroll: true })
+    }, 50)
+  }
+
+  function closeMenu(immediate) {
+    if (!state.menuOpen) return
+    state.menuOpen = false
+    clearTimeout(state.menuShowTimer)
+    petMenu.classList.remove('open')
+    petWrap.classList.remove('menu-open')
+    const finish = () => {
+      if (state.menuOpen) return
+      petMenu.hidden = true
+      // Do not shrink the window if a bubble was opened in the meantime.
+      if (!bubble.classList.contains('show')) api.setBubble(false, 0)
+    }
+    if (immediate) finish()
+    else setTimeout(finish, 180)
+    if (!petMenu.matches(':hover')) hideHoverSoon()
+  }
+
+  function toggleMenu() {
+    if (state.menuOpen) closeMenu()
+    else openMenu()
+  }
+
+  function wireMenu() {
+    menuBtn.addEventListener('click', (ev) => {
+      ev.preventDefault()
+      ev.stopPropagation()
+      showHover()
+      toggleMenu()
+    })
+    menuBtn.addEventListener('pointerenter', showHover)
+    petWrap.addEventListener('pointerenter', showHover)
+    petWrap.addEventListener('pointerleave', hideHoverSoon)
+    petMenu.addEventListener('pointerenter', showHover)
+    petMenu.addEventListener('pointerleave', hideHoverSoon)
+
+    menuActions.forEach((btn) => {
+      btn.addEventListener('click', (ev) => {
+        ev.preventDefault()
+        ev.stopPropagation()
+        const action = btn.dataset.action
+        closeMenu()
+        if (action === 'settings') api.openSettings()
+        else if (action === 'editor') api.openEditor()
+        else if (action === 'weather') api.refreshWeather()
+        else if (action === 'hide') api.hidePet()
+        else if (action === 'quit') api.quit()
+      })
+    })
+
+    document.addEventListener('pointerdown', (ev) => {
+      if (!state.menuOpen) return
+      if (petMenu.contains(ev.target) || menuBtn.contains(ev.target)) return
+      closeMenu()
+      state.menuDismissAt = Date.now()
+    }, true)
+
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape' && state.menuOpen) {
+        closeMenu()
+        menuBtn.focus({ preventScroll: true })
+      }
+    })
+
+    window.addEventListener('blur', () => closeMenu(true))
+  }
+
   // ------------------------------------------------------------------ input
   // A drag ends with a synthetic click; suppress it so dragging never pops a
   // bubble open.
@@ -247,11 +385,8 @@
   function wirePet() {
     pet.addEventListener('pointerdown', (ev) => {
       if (ev.button != null && ev.button !== 0) return
-      // Drop the bubble first: dragging with reserved bubble space above makes
-      // Windows clamp the window back on screen and the pet drifts off-screen.
-      if (bubble.classList.contains('show')) hideBubble()
-      state.drag = { x: ev.screenX, y: ev.screenY, moved: false }
-      pet.classList.add('dragging')
+      state.drag = { x: ev.screenX, y: ev.screenY, moved: false, totalX: 0, startAt: performance.now() }
+      petWrap.classList.add('pressing')
       try { pet.setPointerCapture(ev.pointerId) } catch (err) {}
     })
 
@@ -261,7 +396,17 @@
       const dx = ev.screenX - d.x
       const dy = ev.screenY - d.y
       if (!d.moved && Math.abs(dx) + Math.abs(dy) < 4) return
-      d.moved = true
+      if (!d.moved) {
+        d.moved = true
+        // Drop the bubble only once a real drag starts. Hiding it on every
+        // pointerdown used to reset the click queue before `advance()` ran.
+        if (bubble.classList.contains('show')) hideBubble()
+        petWrap.classList.remove('pressing')
+        petWrap.classList.add('dragging')
+      }
+      d.totalX += dx
+      const tilt = clamp(d.totalX * 0.15, -3, 3)
+      petWrap.style.setProperty('--drag-tilt', tilt.toFixed(2) + 'deg')
       api.drag({ dx, dy })
       d.x = ev.screenX
       d.y = ev.screenY
@@ -270,11 +415,17 @@
     function endDrag(ev) {
       const d = state.drag
       state.drag = null
-      pet.classList.remove('dragging')
+      petWrap.classList.remove('dragging')
+      petWrap.style.setProperty('--drag-tilt', '0deg')
       try { pet.releasePointerCapture(ev.pointerId) } catch (err) {}
       if (d && d.moved) {
+        petWrap.classList.remove('pressing')
         suppressClickUntil = Date.now() + 600
         api.dragEnd()
+      } else {
+        const elapsed = performance.now() - (d ? d.startAt : 0)
+        if (elapsed < 36) setTimeout(() => petWrap.classList.remove('pressing'), 36 - elapsed)
+        else petWrap.classList.remove('pressing')
       }
     }
     pet.addEventListener('pointerup', endDrag)
@@ -284,8 +435,9 @@
     // double click from advancing twice.
     let clickTimer = 0
     pet.addEventListener('click', () => {
-      if (pet.classList.contains('dragging')) return
+      if (petWrap.classList.contains('dragging')) return
       if (Date.now() < suppressClickUntil) return
+      if (Date.now() - state.menuDismissAt < 260) return
       if (clickTimer) return
       clickTimer = setTimeout(() => {
         clickTimer = 0
@@ -296,6 +448,7 @@
 
     pet.addEventListener('contextmenu', (ev) => {
       ev.preventDefault()
+      if (state.menuOpen) closeMenu(true)
       api.showMenu()
     })
 
@@ -307,7 +460,11 @@
 
   // ------------------------------------------------------------------- boot
   async function boot() {
+    wireMenu()
     wirePet()
+    api.onMirror((side) => {
+      petFlip.style.setProperty('--pet-flip', side === 'none' ? 1 : -1)
+    })
     try {
       const initial = await api.getState()
       state.roles = initial.roles || []
@@ -322,6 +479,9 @@
       const prevLayout = JSON.stringify(state.layout)
       const prevName = state.settings && state.settings.name
       applySettings(settings)
+      // Size/theme changes can move the menu anchor; just close it and let the
+      // next hover measure again.
+      if (state.menuOpen) closeMenu(true)
       // Only redraw when the bubble itself changed; settings broadcasts caused by
       // our own weather bookkeeping must not trigger another render/sound.
       const changed = JSON.stringify(state.layout) !== prevLayout || settings.name !== prevName

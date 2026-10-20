@@ -47,6 +47,7 @@ contextBridge.exposeInMainWorld('deskPet', {
   dragEnd: () => ipcRenderer.send('pet:drag-end'),
   setBubble: (visible, height) => ipcRenderer.send('pet:bubble', { visible: !!visible, height: height || 0 }),
   showMenu: () => ipcRenderer.send('pet:menu'),
+  hidePet: () => ipcRenderer.send('pet:hide'),
   openSettings: () => ipcRenderer.send('pet:open-settings'),
   openEditor: () => ipcRenderer.send('pet:open-editor'),
   drinkDone: () => ipcRenderer.send('pet:water-done'),
@@ -57,6 +58,7 @@ contextBridge.exposeInMainWorld('deskPet', {
   onSettings: (cb) => subscribe('settings:changed', cb),
   onWeather: (cb) => subscribe('weather:changed', cb),
   onRemind: (cb) => subscribe('remind:water', cb),
+  onMirror: (cb) => subscribe('pet:mirror', cb),
 
   platform: process.platform,
 })

@@ -1,9 +1,4 @@
-:root {
-  --ink: #1f2b4d;
-  --muted: #7b88a8;
-  --line: rgba(32, 49, 112, 0.16);
-  --accent: #203170;
-}
+/* Editor uses the shared tokens; only editor-specific layout lives here. */
 
 * { box-sizing: border-box; }
 
@@ -12,9 +7,9 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #f7f9fd;
+  background: var(--bg);
   color: var(--ink);
-  font: 13px/1.55 'Microsoft YaHei UI', 'Segoe UI', system-ui, sans-serif;
+  font: 400 var(--text-md)/1.55 var(--font-ui);
   overflow: hidden;
 }
 

@@ -4,12 +4,28 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>桌宠</title>
+  <link rel="stylesheet" href="tokens.css">
   <link rel="stylesheet" href="pet.css">
 </head>
 <body>
   <div id="stage">
     <div id="bubble" class="bubble" aria-live="polite"></div>
-    <img id="pet" alt="桌宠" draggable="false">
+    <div id="petWrap" class="pet-wrap">
+      <div id="petFlip" class="pet-flip">
+        <img id="pet" alt="桌宠" draggable="false">
+      </div>
+      <button id="menuBtn" class="menu-btn" type="button" aria-label="打开桌宠菜单" title="菜单">
+        <span></span><span></span><span></span>
+      </button>
+      <div id="petMenu" class="pet-menu" role="menu" aria-label="桌宠菜单" hidden>
+        <button type="button" role="menuitem" data-action="settings">设置</button>
+        <button type="button" role="menuitem" data-action="editor">编辑气泡</button>
+        <button type="button" role="menuitem" data-action="weather">刷新天气</button>
+        <div class="pet-menu-sep" role="separator"></div>
+        <button type="button" role="menuitem" data-action="hide">隐藏桌宠</button>
+        <button type="button" role="menuitem" data-action="quit" class="danger">退出</button>
+      </div>
+    </div>
   </div>
   <script src="bubble-model.js"></script>
   <script src="sound-model.js"></script>

@@ -8,7 +8,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 
 - 仓库：<https://github.com/liuhaolh6/desk-pet>（public，main 分支）
 - 本地目录：`D:\project\deskpet`
-- 版本：`0.2.0`，已推送 7 个提交
+- 版本：`0.4.0`，已推送 15 个提交
 - 早期那套「DSH 挂件版」实现已移出仓库，归档在 `D:\project\deskpet-dsh-plugin`（需要参考角色/气泡系统时可以翻）
 
 ## 2. 现在能用的功能（都真机验证过）
@@ -24,8 +24,9 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 | 喝水：间隔提醒、今日杯数、免打扰、隐藏时系统通知 | ✅ |
 | 设置：名字、大小、置顶、自启、模式、城市、刷新、间隔、气泡、音效 | ✅ |
 | 气泡模块化编辑器 / 音效库（M7/M8） | ✅ |
-| M6 打包：portable exe（图标 / 版本信息 / 便携数据目录） | ✅ 产物 `dist/DeskPet-0.2.0-portable.exe`；启动已验证，托盘对象已创建（图标未显示，见 §5.12） |
-| `npm test`（19 项，存储 / 角色 / 天气码 / 气泡布局 / 音效） | ✅ |
+| M6 打包：portable exe（图标 / 版本信息 / 便携数据目录） | ✅ 当前产物 `dist/DeskPet-0.4.0-portable.exe`；启动已验证，托盘图标本机不显示（见 §5.13） |
+| M10 手感与视觉（Q 弹 / 思考气泡 / 悬停菜单 / 设置重构 / 内置字体） | ✅ 见第 12 节、`M10-NOTES.md` |
+| `npm test`（26 项，存储 / 角色 / 天气码 / 气泡布局 / 音效 / 多显示器） | ✅ |
 
 ## 3. 关键决策（别推翻，除非有理由）
 
@@ -35,7 +36,8 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 4. **仓库不放个人照片**：默认角色是 `tools/make-default.py` 生成的占位图。
 5. **数据目录可覆盖**：`DESKPET_DATA_DIR`，因为受限环境写不了 `%APPDATA%`。
 6. **打包用 portable，不做安装器**：`electron-builder` 的 `portable` target，双击即用；数据优先写在 exe 同级 `desk-pet-data/`，整个文件夹可搬走。
-7. **0.2.0 = M6 发布版本**：图标在 `build/icon.ico`，exe 版本信息由 `package.json` 的 `version` / `author` / `description` 生成。
+7. **0.4.0 = M10 发布版本**：M6 的 portable 构建配置保留；图标在 `build/icon.ico`，exe 版本信息由 `package.json` 的 `version` / `author` / `description` 生成。
+8. **字体随包内置**：Noto Sans SC 子集 → `DeskPet Sans`（OFL）。不要改回纯系统字体，否则跨机排版差异大。
 
 ## 4. 待办（按建议顺序）
 
@@ -45,6 +47,8 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 | **M7 气泡编辑器** | 多行排版、逐模块样式、拖拽排序、模块库 | ✅ 已完成，见第 8 节 |
 | **M8 音效库** | 自定义片段、音量、试听 | ✅ 已完成，见第 9 节 |
 | **M9 多显示器** | 记住每块屏的位置、贴边吸附 | ✅ 已完成，见第 10 节 |
+| **M10 手感与视觉** | Q 弹 / 思考气泡 / 悬停菜单 / 设置重构 / 字体排版 | ✅ 已完成，见第 12 节 |
+| **M11 照片抠图** | 离线 U2Net 生成角色 | ⬜ 下一里程碑 |
 | 小改进 | 天气卡文案换行（现在「80% 湿度」可能断行）、托盘的「暂停提醒」开关 | 低优先 |
 
 ## 5. 已知坑（踩过的，别再踩）
@@ -59,31 +63,39 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 7. **打包版不带 `--no-sandbox` 会静默退出**（exit=-2147483645/0x80000003，连 app.log 都不写）：本机安全策略下 Chromium 沙箱起不来。
    双击/快捷方式必须带该参数（`tools/make-shortcut.ps1` 已默认带上）；开机自启也已在代码里带上。
 8. **双击会被拆成两次单击**：已加 240ms 去抖，别再改回去。
-8. **32 位 NSIS 编译大包会崩**：数据块超过约 16 MB 时 `makensis` 报
+9. **32 位 NSIS 编译大包会崩**：数据块超过约 16 MB 时 `makensis` 报
    `Internal compiler error #12345: error creating mmap the size of ...`。
    3.0.4.1 / 1.2.1（3.12）的 32 位编译器都会中招。本机改用 64 位 NSIS 编译器包装：
    `.tools/nsis-custom/makensis.cmd` + `ELECTRON_BUILDER_NSIS_DIR`，详见 `M6-PACKAGING.md` §3.1。
-9. **未签名 exe 会被 SmartScreen / 安全软件拦**：双击出现「Windows 已保护你的电脑」；
+10. **未签名 exe 会被 SmartScreen / 安全软件拦**：双击出现「Windows 已保护你的电脑」；
    本机 Lenovo Anti-Virus（火绒引擎）还会把未签名进程写 `%LOCALAPPDATA%\Temp` 拦成 `ACCESS_DENIED`，
    NSIS portable 报 `Error writing temporary file. Make sure your temp folder is valid.`
    → 签名/加白名单；测试时把 `TEMP`/`TMP` 指到可写目录（如 `D:\project\deskpet\.tmp-runtime`），
    并用普通用户令牌启动（计划任务/Explorer）。
-10. **`ELECTRON_RUN_AS_NODE=1`**：DSH 会话环境自带；直接启动打包/开发 Electron 会变成 Node 模式
+11. **`ELECTRON_RUN_AS_NODE=1`**：DSH 会话环境自带；直接启动打包/开发 Electron 会变成 Node 模式
     （`bad option: --no-sandbox`）。测试前 `Remove-Item Env:ELECTRON_RUN_AS_NODE` 或设空。
-11. **从 DSH 前台启动 GUI 会挂住工具调用**：工具会等整棵进程树。用计划任务/WMI/Explorer 分离启动，
+12. **从 DSH 前台启动 GUI 会挂住工具调用**：工具会等整棵进程树。用计划任务/WMI/Explorer 分离启动，
     不要在前台直接跑桌宠。
-12. **托盘图标在本机不显示**：`Tray` 对象和菜单创建成功（日志 `tray created empty=false menu=...`），
+13. **托盘图标在本机不显示**：`Tray` 对象和菜单创建成功（日志 `tray created empty=false menu=...`），
     但 Windows 11 通知区和溢出区都看不到图标，`tray.getBounds()` 为 `0,0,0,0`。
     宠物窗口、右键菜单、设置窗口正常。疑似 Win11 26200 + 安全软件；待签名或干净机器复验，
     M6 的「托盘可用」只验证到对象/菜单创建。
-13. **气泡渲染不能回写设置**（M7 后引入、已修）：天气卡曾在每次重绘时写 `lastWeatherShownAt`，
+14. **气泡渲染不能回写设置**（M7 后引入、已修）：天气卡曾在每次重绘时写 `lastWeatherShownAt`，
     导致「主进程广播设置 → 前端重绘 → 再写」死循环：音效连响、天气被反复请求。
     现在每次展示只写一次，重绘传 `playSound:false`，天气刷新限流 60s。
-14. **拖动不能依赖气泡预留高度**（已修）：窗口顶部为气泡留了空间，若把「角色顶」当「窗口顶」摆，
+15. **拖动不能依赖气泡预留高度**（已修）：窗口顶部为气泡留了空间，若把「角色顶」当「窗口顶」摆，
     Windows 会把窗口夹回屏内，角色每拖一次下沉一截直至出屏。
     现在按下即收起气泡，位置用「窗口底 − 角色尺寸」反推，并抑制拖动后补发的 click。
-15. **替换音效时删干净旧 `beep()`**（已修）：M8 改成 `playSound()` 时漏了一处，每次弹卡抛
+16. **替换音效时删干净旧 `beep()`**（已修）：M8 改成 `playSound()` 时漏了一处，每次弹卡抛
     `ReferenceError: beep is not defined`，气泡渲染随之中断。
+17. **气泡/菜单先预留窗口高度再显示**：先 `setBubble` 加高窗口，延迟 50ms 再显示；隐藏后延迟 200ms 缩回。
+    顺序反过来，云朵/菜单顶部会被窗口裁掉；立即缩回则会出现透明残影。
+18. **单击队列别在 pointerdown 收起气泡**：只在真正开始拖动（位移 >4px）时 `hideBubble()`。
+    旧实现每次按下都收起，导致第二下点击永远回到第一张卡。
+19. **镜像用宠物矩形而不是窗口矩形**：窗口有 `WIN_PAD=54`，窗口右缘本来就在屏外；用窗口矩形会
+    在默认右下角位置误翻转。用 `placement.petRectOf` + 20px 阈值。
+20. **字体子集**：`tools/make-font.py` 生成 `DeskPetSans-{Regular,Semibold}.woff2`，OFL/NOTICE 随包；
+    不要提交 17MB 源字体，也不要依赖系统字体保证排版。
 
 ## 6. 快速开始
 
@@ -117,14 +129,18 @@ npm run dist
 |---|---|
 | `app/main.js` | 窗口、托盘、IPC、天气调度、提醒定时器、启动日志（`app.log`） |
 | `app/preload.js` | contextBridge 白名单 API（`window.deskPet`） |
-| `app/pet.html/css/js` | 宠物窗口：精灵、气泡卡片、点击队列、拖拽 |
-| `app/settings.html/css/js` | 设置窗口 |
+| `app/pet.html/css/js` | 宠物窗口：精灵、思考气泡、触摸动效、悬停菜单、点击队列、拖拽 |
+| `app/settings.html/css/js` | 设置窗口（侧栏分类 / 卡片 / 即时保存） |
+| `app/tokens.css` | 设计 token、字号/间距/圆角、@font-face |
+| `assets/fonts/` | DeskPet Sans 子集 + OFL/NOTICE |
+| `tools/make-font.py` | 生成字体子集 |
 | `lib/store.js` | 配置/角色/缓存的原子读写（可脱离 Electron 测试） |
 | `lib/weather.js` | Open-Meteo 天气与城市搜索 |
 | `tools/smoke.js` | `npm test` |
 | `tools/make-assets.py` | 生成 icon/tray/ico/default |
 | `build/icon.ico` | Windows 多尺寸图标（make-assets.py 生成） |
 | `M6-PACKAGING.md` | M6 portable 打包记录 / 验证 / 本机限制 |
+| `M10-NOTES.md` | M10 记录 / 验证 / 截图 |
 
 ## 8. 最近变更（M7 气泡模块化编辑器）
 
@@ -176,8 +192,18 @@ npm run dist
 
 注意：未签名 exe 首次双击仍会碰到 SmartScreen（需“更多信息 → 仍要运行”）；可以从 `dist\win-unpacked` 直接重建快捷方式，不必重新打包。
 
-## 12. 新对话开场白（直接粘贴）
+## 12. 最近变更（M10 手感与视觉包，0.4.0）
 
-> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`PLAN.md` 和 `M6-PACKAGING.md`。
-> M6 portable 打包、M7 气泡编辑器、M8 音效库都已完成；下一步做 M9（多显示器记忆与贴边吸附）。
-> 已知坑见 HANDOFF 第 5 节。
+- 交互：按压 Q 弹 / 松手回弹 / 悬停微放大 / 拖动倾斜 / 贴边镜像；`pet.css` 用 CSS 变量组合 transform，`pet.js` 做手势仲裁（240ms 双击去抖、600ms 拖动抑制、36ms 按下帧）。
+- 思考气泡：云朵感圆角 + 两个错落思考点，0/130/260ms 分段入场；`measureBubble` +30，先预留窗口高度再显示，隐藏后延迟 200ms 缩回。
+- 悬停菜单：☰ 150ms 淡入，自绘 5 项菜单（设置 / 编辑气泡 / 刷新天气 / 隐藏 / 退出），复用 `pet:bubble` 临时加高窗口；Esc / 点外部 / blur 关闭。点角色本体仍只走卡片队列。
+- 设置：左侧 7 类导航 + 右侧卡片 + 字段说明 + 角色图库 + 响应式音效行；保持即时保存；`settings.js` 增加 `selectPanel`。
+- 字体：`DeskPet Sans`（Noto Sans SC 子集，OFL，约 2.1MB），`tokens.css` 统一 token；编辑器也接入。
+- 修复：点击队列被 pointerdown 重置、默认位置误镜像、气泡/菜单高度时序。
+- 验证：`npm test` 26 项；CDP 测悬停/按压/队列/菜单/120–360px/镜像/全部设置面板无横向溢出；打包版字体 `document.fonts.check` 通过、控制台无 error。截图在 `docs/m10/`，详情 `M10-NOTES.md`。
+
+## 13. 新对话开场白（直接粘贴）
+
+> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`PLAN.md` 和 `M10-NOTES.md`。
+> M10（0.4.0，手感/思考气泡/悬停菜单/设置重构/内置字体）已完成；下一步做 M11 照片抠图
+> （离线 U2Net + 抠图窗口，参考 `D:\project\whale-role`）。已知坑见 HANDOFF 第 5 节。

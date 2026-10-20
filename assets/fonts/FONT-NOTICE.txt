@@ -1,0 +1,31 @@
+DeskPet Sans — bundled UI font subsets
+======================================
+
+Files:
+  DeskPetSans-Regular.woff2   (weight 400)
+  DeskPetSans-Semibold.woff2  (weight 600)
+
+These files are a Modified Version of Noto Sans SC / Source Han Sans.
+
+Copyright notice (from the upstream font):
+  © 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.
+
+Authors (from the upstream font):
+  Ryoko NISHIZUKA 西塚涼子 (kana, bopomofo & ideographs);
+  Paul D. Hunt (Latin, Greek & Cyrillic);
+  Sandoll Communications 산돌커뮤니케이션, Soo-young JANG 장수영 &
+  Joo-yeon KANG 강주연 (hangul elements, letters & syllables)
+
+Modifications by the desk-pet project (2026-10-20):
+  - instanced the variable font to weights 400 and 600;
+  - subset to ASCII, GB2312, CJK punctuation and glyphs used by the app;
+  - renamed the family to "DeskPet Sans" so the Reserved Font Name
+    "Source" is not used by this Modified Version.
+
+The modified font is distributed under the SIL Open Font License 1.1.
+See OFL.txt in this folder for the full license text.
+
+Upstream source on the build machine:
+  C:\Windows\Fonts\NotoSansSC-VF.ttf  (Noto Sans SC Version 2.04)
+
+Build script: tools/make-font.py
