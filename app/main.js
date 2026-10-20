@@ -351,9 +351,9 @@ function openCutout() {
   if (cutoutWin) { cutoutWin.show(); cutoutWin.focus(); return }
   cutoutWin = new BrowserWindow({
     width: 780,
-    height: 660,
+    height: 760,
     minWidth: 680,
-    minHeight: 560,
+    minHeight: 600,
     title: '从照片生成角色',
     backgroundColor: '#f7f9fd',
     autoHideMenuBar: true,
@@ -644,6 +644,7 @@ function registerIpc() {
         coverage: result.coverage,
         bands: result.bands,
         cutout: result.cutout,
+        preprocess: result.preprocess,
         timings: result.timings,
         ms: Date.now() - startedAt,
       })
@@ -651,6 +652,8 @@ function registerIpc() {
         ok: true,
         mode: 'cutout',
         dataUrl,
+        maskDataUrl: 'data:image/png;base64,' + result.maskPng.toString('base64'),
+        preprocess: result.preprocess,
         width: 610,
         height: 610,
         coverage: result.coverage,

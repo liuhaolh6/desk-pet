@@ -11,6 +11,7 @@ body {
   padding: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background:
     radial-gradient(circle at 5% 0%, rgba(126, 162, 255, 0.16), transparent 34%),
     var(--bg);
@@ -128,11 +129,72 @@ button, input { font: inherit; }
   margin: 0 auto;
 }
 
+/* Preview switch: result / original / mask. */
+.view-row {
+  display: flex;
+  justify-content: center;
+  width: min(100%, 460px);
+  margin: 0 auto;
+}
+
+.seg-group {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: #fff;
+}
+
+.seg {
+  min-height: 26px;
+  padding: 3px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.seg.is-on {
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  font-weight: 600;
+}
+
+.seg:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Compact tool rows inside cards. */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+
+.chip-row button { width: auto; margin: 0; }
+
+button.ghost[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+}
+
+/* Editing mode: painting instead of dragging. */
+.stage.is-editing { cursor: crosshair; }
+.stage.is-editing:active { cursor: crosshair; }
+
+[hidden] { display: none !important; }
+
 .side {
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .card {

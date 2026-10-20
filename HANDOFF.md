@@ -8,7 +8,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 
 - 仓库：<https://github.com/liuhaolh6/desk-pet>（public，main 分支）
 - 本地目录：`D:\project\deskpet`
-- 版本：`0.5.1`（M12 P0 alpha 修复；未签名）；本地 21+ 个提交（含 M10/M11/M12 文档，部分未推送）
+- 版本：`0.5.2`（M12 P0 alpha 修复 + P1-1~P1-4 抠图体验；未签名）；本地 21+ 个提交（含 M10/M11/M12 文档，部分未推送）
 - 早期那套「DSH 挂件版」实现已移出仓库，归档在 `D:\project\deskpet-dsh-plugin`（需要参考角色/气泡系统时可以翻）
 
 ## 2. 现在能用的功能（都真机验证过）
@@ -25,7 +25,8 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 | 设置：名字、大小、置顶、自启、模式、城市、刷新、间隔、气泡、音效 | ✅ |
 | 气泡模块化编辑器 / 音效库（M7/M8） | ✅ |
 | M6 打包：portable exe（图标 / 版本信息 / 便携数据目录） | ✅ 当前产物 `dist/DeskPet-0.5.0-portable.exe`；启动已验证，托盘图标本机不显示（见 §5.13） |
-| M11 照片抠图（离线 U2Net + 抠图窗口 + 回退） | ✅ 0.5.1 修复 alpha/映射/回退语义，开发版/解包版/portable 均 CDP 走通；`npm test` 41 项 |
+| M11 照片抠图（离线 U2Net + 抠图窗口 + 回退） | ✅ 0.5.1 修复 alpha/映射/回退语义，开发版/解包版/portable 均 CDP 走通；`npm test` 42 项 |
+| M12.2 抠图体验（蒙版视图 / 擦除恢复 / 旋转翻转） | ✅ 0.5.2，见 `M12.2-NOTES.md`；P1-5~P1-9 未完成 |
 | M10 手感与视觉（Q 弹 / 思考气泡 / 悬停菜单 / 设置重构 / 内置字体） | ✅ 见第 12 节、`M10-NOTES.md`、`M10.1-NOTES.md`、`M10.2-NOTES.md` |
 | `npm test`（41 项，存储 / 角色 / 天气码 / 气泡布局 / 音效 / 多显示器 / 抠图 alpha） | ✅ |
 
@@ -50,7 +51,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 | **M9 多显示器** | 记住每块屏的位置、贴边吸附 | ✅ 已完成，见第 10 节 |
 | **M10 手感与视觉** | Q 弹 / 思考气泡 / 悬停菜单 / 设置重构 / 字体排版 | ✅ 已完成，见第 12 节 |
 | **M11 照片抠图** | 离线 U2Net 生成角色 | ✅ 已完成，见第 13 节、`M11-NOTES.md`；质量缺陷由 M12 修复 |
-| **M12 抠图质量修复** | alpha 合成/映射、回退语义、诊断与评测 | ✅ 0.5.1 P0-1~P0-8 完成，验收集与打包记录见 `M12-NOTES.md`；P1（预处理 A/B、蒙版视图、擦除）未做 |
+| **M12 抠图质量修复** | alpha 合成/映射、回退语义、诊断与评测 | ✅ 0.5.1 P0-1~P0-8；0.5.2 P1-1~P1-4（预处理 A/B、蒙版视图、擦除、旋转）；P1-5~P1-9 未完成 |
 | **发布签名** | SignPath Foundation 免费 OSS 签名 | ⬜ 工作流/申请材料已就绪，待申请与配置 secrets；当前 exe 仍未签名 |
 | 小改进 | 天气卡文案换行（现在「80% 湿度」可能断行）、托盘的「暂停提醒」开关 | 低优先 |
 
@@ -130,7 +131,15 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
     `--input <png>`（纯 Node 跑真模型）、`--decode`（Electron 把 JPEG 转 straight RGBA PNG）。
     每次抠图的 trace 写在 `<data>/cutout-trace.jsonl`（>256KB 轮转）。
 33. **coverage 双侧门禁**：`<0.02 → NO_PERSON`、`>0.90 → OVER_SEGMENTED`，都会走回退并要求二次确认；
-    不要再“自动放开保存”，也不要只看 31/41 项测试全绿当摘图质量证明。
+    不要再“自动放开保存”，也不要只看 31/41/42 项测试全绿当抠图质量证明。
+34. **squash vs letterbox 不是主因**（0.5.2 实测）：修好 alpha/映射后，两种预处理在可用样例上的
+    coverage/背景/主体/边缘差异 <1%。默认 letterbox 只是为了保持长宽比；不要再拿单张照片的
+    “76% vs 43%”当结论，要改预处理先补 10 张 golden set。`--preprocess squash` 可随时回退。
+35. **手动擦除必须存“图像空间”蒙版**：擦除层是 610×610 alpha 蒙版，绘制时用与图片相同的
+    translate/rotate/scale 做 `destination-in`；指针坐标必须反旋转/反翻转再映射到图像像素。
+    如果按画布坐标直接擦，缩放/旋转后笔画会漂移。
+36. **抠图窗口变高后要保留内部滚动**：窗口 780×760，`.side { overflow-y:auto }`；删掉会在
+    1366×768 等小屏把“修补边缘”卡片裁掉。
 
 ## 6. 快速开始
 
@@ -189,6 +198,8 @@ npm run dist
 | `tools/make-cutout-fixtures.js` | 生成可公开的合成 fixture（人像+GT、负例、alpha 色块） |
 | `tools/fixtures/` | 合成测试图（不含个人照片） |
 | `M12-NOTES.md` | 0.5.1 抠图修复实测、未覆盖项、回滚 |
+| `M12.2-NOTES.md` | 0.5.2 蒙版视图/擦除/旋转与 squash-vs-letterbox A/B |
+| `.github/workflows/ci.yml` | `npm ci` + `npm test` + 合成图 alpha 断言（未推送） |
 | `app/cutout.html/css/js` | 照片选择、预览、拖动缩放、保存/回退窗口 |
 | `assets/models/u2net_human_seg.onnx` | 量化后 44MB 离线人像分割模型 |
 | `SIGNING.md` | SignPath Foundation 免费 OSS 签名申请 / CI / 验签 |
@@ -273,8 +284,10 @@ npm run dist
 
 **M12 结果（0.5.1）**：P0-1~P0-8 已实施；同一张本地照片的远背景平均 alpha 23.07→0、非边缘半透明 8.25%→0%、边缘 7.67px→2.23px；`npm test` 41 项；开发版与解包版 GUI（CDP）均走通“拖入→抠图→保存”和“负例→未抠图（整图）→二次确认保存”，角色库显示“未抠图”。10 张 golden set 与 G5 人工核验仍未做，详见 `M12-NOTES.md` §5。
 
+**M12.2 结果（0.5.2）**：新增结果/原图/蒙版三态、图像空间擦除/恢复/撤销 3 步、旋转/翻转；squash vs letterbox A/B 差异 <1%（默认 letterbox 仅保持长宽比）；`npm test` 42 项。P1-5（worker）、P1-6（去色污）、P1-7（阴影）未做，P1-8/9 仅做基础项，详见 `M12.2-NOTES.md`。
+
 ## 14. 新对话开场白（直接粘贴）
 
-> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`M12-NOTES.md`、`M12-PLAN.md`、`M12-HANDOFF.md`。
-> M12 P0（0.5.1）已修 alpha 合成/映射/形态学/羽化/回退语义/诊断，`npm test` 41 项；开发版与解包版 GUI 已验证，10 张 golden set 尚未复验。
-> 下一步是 P1-1 预处理 A/B、P1-2/P1-3 蒙版视图与手动擦除；换模型放 P2。签名仍待 SignPath 审核，见 SIGNING.md。
+> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`M12.2-NOTES.md`、`M12-NOTES.md`、`M12-PLAN.md`。
+> 0.5.2 已完成 M12 P0 + P1-1~P1-4（蒙版视图、擦除/恢复、旋转/翻转）；`npm test` 42 项。
+> 下一步：P1-5 utilityProcess/token IPC、P1-6 去色污、P1-7 阴影降级、P1-8 WCAG、P1-9 推送/CI/tag；10 张 golden set 仍是缺口。签名待 SignPath。

@@ -25,6 +25,13 @@
           <span>支持 JPG / PNG / WebP，自动抠出人像</span>
         </div>
       </div>
+      <div id="viewRow" class="view-row" hidden>
+        <div class="seg-group" role="group" aria-label="预览视图">
+          <button type="button" class="seg is-on" data-view="result" aria-pressed="true">结果</button>
+          <button type="button" class="seg" data-view="original" aria-pressed="false">原图</button>
+          <button id="maskViewBtn" type="button" class="seg" data-view="mask" aria-pressed="false" hidden>蒙版</button>
+        </div>
+      </div>
       <div class="stage-tools">
         <span id="modeLabel" class="pill">等待照片</span>
         <button id="resetBtn" class="ghost compact" type="button">重置位置</button>
@@ -50,10 +57,30 @@
           <input id="zoom" type="range" min="60" max="160" value="100">
         </label>
         <p class="hint">拖动画面调整位置，滚轮可以缩放。</p>
+        <div class="chip-row" role="group" aria-label="旋转与翻转">
+          <button id="rotateLeftBtn" class="ghost compact" type="button" title="左转 90°">↺ 左转</button>
+          <button id="rotateRightBtn" class="ghost compact" type="button" title="右转 90°">↻ 右转</button>
+          <button id="flipBtn" class="ghost compact" type="button" title="水平翻转" aria-pressed="false">⇋ 翻转</button>
+        </div>
         <div class="button-row">
           <button id="fallbackBtn" class="ghost" type="button" disabled>仅缩放导入</button>
           <button id="saveBtn" class="primary" type="button" disabled>保存为角色</button>
         </div>
+      </section>
+
+      <section class="card" id="editCard" hidden>
+        <h2>3. 修补边缘</h2>
+        <div class="chip-row" role="group" aria-label="修补工具">
+          <button id="eraseBtn" class="ghost compact" type="button" aria-pressed="false" aria-keyshortcuts="E">擦除</button>
+          <button id="restoreBtn" class="ghost compact" type="button" aria-pressed="false" aria-keyshortcuts="R">恢复</button>
+          <button id="undoBtn" class="ghost compact" type="button" disabled aria-keyshortcuts="Control+Z">撤销</button>
+          <button id="resetEditBtn" class="ghost compact" type="button" disabled>重置</button>
+        </div>
+        <label class="range" for="brush">
+          <span>笔刷 <em id="brushVal">24px</em></span>
+          <input id="brush" type="range" min="8" max="80" value="24" aria-label="笔刷大小（8 到 80 像素）">
+        </label>
+        <p class="hint">E 擦除 / R 恢复 / [ ] 调笔刷 / Ctrl+Z 撤销；编辑时暂停拖动。</p>
       </section>
 
       <p class="privacy">照片和角色图都只写在本机数据目录；抠图模型已随应用离线打包。</p>

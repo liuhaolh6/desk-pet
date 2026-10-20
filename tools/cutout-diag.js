@@ -39,6 +39,7 @@ function parseArgs(argv) {
     else if (a === '--gt') out.gt = argv[++i]
     else if (a === '--expect') out.expect = argv[++i]
     else if (a === '--out') out.out = argv[++i]
+    else if (a === '--preprocess') out.preprocess = argv[++i]
     else if (a === '--canvas') out.canvas = Number(argv[++i]) || 610
     else if (a === '--feather') out.feather = Number(argv[++i])
     else if (a === '--json') out.json = true
@@ -235,6 +236,7 @@ function printReport(report, opts) {
     console.log(JSON.stringify(report, null, 2))
   } else {
     console.log('image      ' + report.source + ' -> ' + report.metrics.size.join('x'))
+    if (report.preprocess) console.log('preprocess ' + report.preprocess)
     if (report.ms !== undefined) console.log('time       ' + report.ms + ' ms  ' + JSON.stringify(report.timings || {}))
     if (report.coverage !== undefined) console.log('coverage   ' + round(report.coverage))
     const b = report.metrics.bands
@@ -330,7 +332,10 @@ async function runNodeInput(opts) {
   const canvas = opts.canvas || 610
   const expectNoPerson = opts.expect === 'no-person'
   try {
-    const result = await cutout.cutoutImageRGBA(image.data, image.width, image.height, { canvas })
+    const result = await cutout.cutoutImageRGBA(image.data, image.width, image.height, {
+      canvas,
+      preprocess: opts.preprocess,
+    })
     if (expectNoPerson) {
       console.error('FAIL expected NO_PERSON but got a cutout (coverage ' + round(result.coverage) + ')')
       process.exitCode = 1
@@ -342,6 +347,7 @@ async function runNodeInput(opts) {
     const report = {
       source: opts.input,
       ok: true,
+      preprocess: result.preprocess,
       ms: Date.now() - started,
       timings: result.timings,
       coverage: result.coverage,
@@ -405,13 +411,14 @@ function electronRun(opts) {
       const image = nativeImage.createFromPath(file)
       if (image.isEmpty()) throw new Error('empty image')
       const canvas = opts.canvas || 610
-      const result = await cutout.cutoutImage(nativeImage, image, { canvas })
+      const result = await cutout.cutoutImage(nativeImage, image, { canvas, preprocess: opts.preprocess })
       if (opts.out) fs.writeFileSync(opts.out, result.png)
       const decoded = png.decodePNG(result.png)
       const metrics = analyze(decoded.data, decoded.width, decoded.height, null)
       const report = {
         source: file,
         ok: true,
+        preprocess: result.preprocess,
         ms: Date.now() - started,
         timings: result.timings,
         coverage: result.coverage,

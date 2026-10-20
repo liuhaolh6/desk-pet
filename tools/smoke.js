@@ -18,6 +18,7 @@ const placement = require('../lib/placement')
 const cutoutMath = require('../lib/cutout-math')
 const pixels = require('../lib/cutout-pixels')
 const pngCodec = require('../lib/png')
+const cutout = require('../lib/cutout')
 
 let pass = 0
 function ok(name) { pass += 1; console.log('  ✓', name) }
@@ -582,6 +583,35 @@ const PAD = 54
   store.deleteRole(entry.id)
   store.deleteRole(cut.id)
   ok('角色记录抠图/回退标记')
+}
+
+{
+  const w = 640
+  const h = 960
+  const rgba = Buffer.alloc(w * h * 4, 255)
+  const lb = cutout.buildModelInput(rgba, w, h, 'letterbox')
+  assert.equal(lb.mode, 'letterbox')
+  assert.deepEqual(lb.box, { x: 53, y: 0, width: 213, height: 320 })
+  assert.equal(lb.input.length, 3 * 320 * 320)
+  assert.ok(lb.input[5] < -1.5, 'letterbox 左侧 padding 为黑')
+  assert.ok(lb.input[160] > 1, '有效区是白色内容')
+  const sq = cutout.buildModelInput(rgba, w, h, 'squash')
+  assert.equal(sq.mode, 'squash')
+  assert.deepEqual(sq.box, { x: 0, y: 0, width: 320, height: 320 })
+
+  const box = { x: 53, y: 0, width: 213, height: 320 }
+  const scores = new Float32Array(320 * 320)
+  for (let y = 0; y < 320; y++) {
+    for (let x = 0; x < 320; x++) {
+      if (x < 53 || x >= 266) scores[y * 320 + x] = 1 // padding only
+    }
+  }
+  for (let y = 150; y < 170; y++) for (let x = 150; x < 170; x++) scores[y * 320 + x] = 1
+  const out = cutout.scoresFromBox(scores, box)
+  assert.equal(out.length, 320 * 320)
+  assert.equal(out[160 * 320 + 160], 1, '有效区中心保留')
+  assert.equal(out[5], 0, 'padding 被裁掉，不参与蒙版')
+  ok('letterbox 预处理与蒙版反变换')
 }
 
 {
