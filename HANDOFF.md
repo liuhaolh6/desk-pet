@@ -8,7 +8,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 
 - 仓库：<https://github.com/liuhaolh6/desk-pet>（public，main 分支）
 - 本地目录：`D:\project\deskpet`
-- 版本：`0.5.0`，已推送 19 个提交
+- 版本：`0.5.0`；本地 20 个提交（含 M10/M11/M12 文档，部分未推送）
 - 早期那套「DSH 挂件版」实现已移出仓库，归档在 `D:\project\deskpet-dsh-plugin`（需要参考角色/气泡系统时可以翻）
 
 ## 2. 现在能用的功能（都真机验证过）
@@ -49,7 +49,8 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 | **M8 音效库** | 自定义片段、音量、试听 | ✅ 已完成，见第 9 节 |
 | **M9 多显示器** | 记住每块屏的位置、贴边吸附 | ✅ 已完成，见第 10 节 |
 | **M10 手感与视觉** | Q 弹 / 思考气泡 / 悬停菜单 / 设置重构 / 字体排版 | ✅ 已完成，见第 12 节 |
-| **M11 照片抠图** | 离线 U2Net 生成角色 | ✅ 已完成，见第 13 节、`M11-NOTES.md` |
+| **M11 照片抠图** | 离线 U2Net 生成角色 | ✅ 已完成，见第 13 节、`M11-NOTES.md`；质量缺陷由 M12 修复 |
+| **M12 抠图质量修复** | alpha 合成/映射、回退语义、诊断与评测 | ⬜ 计划见 `M12-PLAN.md`、交接见 `M12-HANDOFF.md` |
 | **发布签名** | SignPath Foundation 免费 OSS 签名 | ⬜ 工作流/申请材料已就绪，待申请与配置 secrets；当前 exe 仍未签名 |
 | 小改进 | 天气卡文案换行（现在「80% 湿度」可能断行）、托盘的「暂停提醒」开关 | 低优先 |
 
@@ -116,6 +117,10 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
     原生模块 `asarUnpack`；只保留 win32 x64 二进制，否则 portable 会多出 180MB。
 28. **抠图失败必须回退**：`cutout:run` 捕获 `NO_PERSON`/`MODEL_*`，返回 `fallbackDataUrl`；
     抠图窗口自动切“仅缩放导入”，不能把用户卡在错误页。
+29. **抠图“背景变淡”不是单一模型问题**（M11 复盘）：`applyAlpha()` 的 straight alpha 被
+    `nativeImage.createFromBitmap` 按预乘解释，透明像素再经 `composeCanvas()` 的 `resize()` 会变成半透明；
+    `mask² + a<0.45` 又把模型中等响应压成 45%–91% 的 alpha。另有回退整图可直接保存、无角色标记的问题。
+    修复前先读 `M12-PLAN.md` / `M12-HANDOFF.md`；不要把“31 项测试全绿”当抠图质量证明。
 
 ## 6. 快速开始
 
@@ -163,7 +168,9 @@ npm run dist
 | `M10-NOTES.md` | M10 记录 / 验证 / 截图 |
 | `M10.1-NOTES.md` | 0.4.1 交互收尾：去双击/右键、whale 气泡与菜单样式 |
 | `M10.2-NOTES.md` | 0.4.2 气泡外观：whale classic SVG 框 + 适配 |
-| `M11-NOTES.md` | 0.5.0 照片抠图：模型/量化/窗口/回退/验证 |
+| `M11-NOTES.md` | 0.5.0 照片抠图：模型/量化/窗口/回退/验证（质量结论已由 M12 修正） |
+| `M12-PLAN.md` | M12 抠图质量修复计划书（P0/P1/P2、验收、风险） |
+| `M12-HANDOFF.md` | M12 抠图链路交接（代码地图、坑、复现、下一步） |
 | `lib/cutout.js` | 离线 U2Net + nativeImage 抠图 |
 | `lib/cutout-math.js` | 蒙版归一化/连通域/包围盒/适配纯函数 |
 | `app/cutout.html/css/js` | 照片选择、预览、拖动缩放、保存/回退窗口 |
@@ -244,10 +251,12 @@ npm run dist
 - 打包：模型走 `extraResources/models`（不能放 asar）；`onnxruntime-node` 走 `asarUnpack`，排除 darwin/linux/win32-arm64，portable 153MB。
 - 验证：`npm test` 31 项；开发版/打包版 CDP 都完成“拖入→抠图→保存角色”，无人像图片回退成功，控制台无 error。详见 `M11-NOTES.md`。
 
-注意：复杂背景/多人/发丝可能有残留；当前是自动胸像裁切，没有手动橡皮擦。
+注意：复杂背景/多人/发丝可能有残留；当前是自动胸像裁切，没有手动橡皮擦。**2026-10-20 复盘确认该描述低估了缺陷**：保存 PNG 有大片半透明背景，且回退可保存整图；质量修复计划见 `M12-PLAN.md` / `M12-HANDOFF.md`。
+
+**M12 复盘结论**：用户所说“只是把背景变淡”是保存 PNG 的真实 alpha 问题，不是棋盘格视觉。已证实两条：① straight-alpha + `nativeImage` 预乘解释 + `resize` 把透明区雾化；② `mask² + a<0.45` 把背景压成 45%–91% 半透明。另有回退整图可直接保存、无角色标记。M12 先修这些，再对预处理 squash/letterbox 做 A/B；换模型放 P2。
 
 ## 14. 新对话开场白（直接粘贴）
 
-> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`PLAN.md`、`M11-NOTES.md` 和 `SIGNING.md`。
-> M11 照片抠图（0.5.0）已完成；签名走 SignPath Foundation 免费 OSS 路线，工作流已就绪但尚未申请/配置。
-> 下一步：处理 SignPath 申请/签名，或继续打磨抠图（手动擦除/多人选择）和打包体验。已知坑见 HANDOFF 第 5 节。
+> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`M12-PLAN.md`、`M12-HANDOFF.md`。
+> M11（0.5.0）已完成但抠图质量有缺陷：保存 PNG 背景半透明/回退可存整图；M12 是当前优先。
+> 先按 M12-PLAN 的 P0 修 alpha 预乘/resize、映射、回退语义和诊断测试；预处理 A/B 与换模型放后面。签名仍待 SignPath 审核，见 SIGNING.md。已知坑见 HANDOFF 第 5 节。

@@ -52,13 +52,15 @@ Windows 桌面宠物（Electron），独立于 DSH。目标：默认好看、开
 | M8 音效库 | ✅ | 自定义片段、音量、试听、事件级音量回退 |
 | M9 多显示器与吸附 | ✅ | 记住所属显示器、离屏夹回、四边吸附（阈值可调） |
 | M10 手感与视觉包 | ✅ | Q 弹/whale 思考气泡/悬停菜单/设置重构/字体；26 项测试 + CDP 回归；0.4.1 去双击/右键、0.4.2 classic SVG 泡泡外观 |
-| M11 照片抠图 | ✅ | 离线 U2Net + 抠图窗口；自动胸像裁切、拖动/缩放、保存角色、失败回退；31 项测试 |
+| M11 照片抠图 | ✅ 功能完成 | 离线 U2Net + 抠图窗口、保存/回退；**质量缺陷由 M12 修复**，31 项测试不含 alpha 质量 |
+| M12 抠图质量修复 | ⬜ | 预乘/resize、alpha 映射、连通域/羽化、回退标记、诊断测试；见 `M12-PLAN.md` / `M12-HANDOFF.md` |
 | 发布签名 | ⬜ | SignPath Foundation 免费 OSS 路线；工作流/申请材料已就绪，待审核与配置 |
 
 ## 4. 已知限制
 
 - 已提供 portable exe（`dist/DeskPet-0.5.0-portable.exe`），无需安装；**当前仍未签名**，SmartScreen / 部分安全软件会拦截。免费开源签名方案见 `SIGNING.md`，工作流已就绪但需 SignPath 审核与仓库 secrets。
-- 照片抠图模型随包（44MB），只保留 Windows x64 原生依赖；复杂背景可能残留，当前裁成胸像。
+- 照片抠图模型随包（44MB），只保留 Windows x64 原生依赖；**0.5.0 抠图质量不达标**：保存 PNG 有大片半透明背景、回退可存整图；M12 修复前不建议把它当“高质量抠图”宣传。
+- M12 已确认：`nativeImage` 预乘/resize 会雾化透明区；`mask²+0.45` 会把背景压成半透明；详见 `M12-PLAN.md`。
 - 本机 Lenovo Anti-Virus（火绒引擎）会拦未签名进程写 `%LOCALAPPDATA%\Temp`，NSIS portable 报 “Error writing temporary file”；需签名 / 加白名单，或把 TEMP 指到可写目录。
 - 便携版把数据写在 exe 同级 `desk-pet-data/`；可用 `DESKPET_DATA_DIR` 覆盖。
 - `--no-sandbox` 在受限环境里可能需要；正常桌面环境不需要。
@@ -82,5 +84,6 @@ Windows 桌面宠物（Electron），独立于 DSH。目标：默认好看、开
 - [x] M10.1：双击/桌宠右键无响应；设置走悬停 ☰；气泡/菜单字体与时序对齐 whale-widget
 - [x] M10.2：气泡采用 whale classic SVG 框，天气卡与短卡文字都在白框内
 - [x] M11：照片抠图窗口、离线模型、保存角色、无人像回退、31 项测试通过
+- [ ] M12：alpha 预乘/映射修复，背景残留/半透明带/回退语义达标；真图 alpha 回归通过
 - [ ] 托盘图标在 Windows 通知区可见（本机未显示，待签名 / 干净机器复验）
 - [ ] 发布 exe 带有效 Authenticode 签名（SignPath Foundation，审核中）
