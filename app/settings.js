@@ -297,6 +297,7 @@
       const check = document.createElement('input')
       check.type = 'checkbox'
       check.checked = !!event.enabled
+      check.setAttribute('aria-label', meta.label + '：启用音效')
       check.onchange = () => saveSoundEvent(meta.key, { enabled: check.checked })
       toggle.appendChild(check)
       row.appendChild(toggle)
@@ -307,6 +308,7 @@
       row.appendChild(name)
 
       const select = fragmentOptions(event.fragment)
+      select.setAttribute('aria-label', meta.label + '：音效片段')
       select.onchange = () => saveSoundEvent(meta.key, { fragment: select.value })
       row.appendChild(select)
 
@@ -314,6 +316,7 @@
       vol.className = 'vol'
       const range = document.createElement('input')
       range.type = 'range'
+      range.setAttribute('aria-label', meta.label + '：音量')
       range.min = '0'
       range.max = '100'
       range.step = '5'

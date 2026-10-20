@@ -28,6 +28,7 @@ function parseArgs(argv) {
     if (argv[i] === '--port') out.port = Number(argv[++i]) || 9229
     else if (argv[i] === '--out') out.out = argv[++i]
     else if (argv[i] === '--json') out.json = true
+    else if (argv[i] === '--flow') out.flow = true
     else if (argv[i] === '--help') out.help = true
   }
   return out
@@ -50,7 +51,11 @@ async function connect(target) {
   }
   const send = (method, params = {}) => new Promise((res, rej) => {
     const n = ++id
-    pending.set(n, (m) => (m.error ? rej(new Error(method + ': ' + JSON.stringify(m.error))) : res(m.result)))
+    const timer = setTimeout(() => { pending.delete(n); rej(new Error(method + ': timed out')) }, 20000)
+    pending.set(n, (m) => {
+      clearTimeout(timer)
+      return m.error ? rej(new Error(method + ': ' + JSON.stringify(m.error))) : res(m.result)
+    })
     ws.send(JSON.stringify({ id: n, method, params }))
   })
   const evaluate = async (expression) => {
@@ -82,6 +87,14 @@ window.__a11y = (() => {
     if (r.width <= 0 || r.height <= 0) return false;
     const s = getComputedStyle(el);
     return s.display !== 'none' && s.visibility !== 'hidden' && s.opacity !== '0';
+  };
+  // Keyboard reachability: an element may be opacity:0 until it is focused
+  // (the pet menu button does exactly that), so do not filter those out.
+  const isFocusable = (el) => {
+    const r = el.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) return false;
+    const s = getComputedStyle(el);
+    return s.display !== 'none' && s.visibility !== 'hidden' && !el.disabled;
   };
   const desc = (el) => {
     const id = el.id ? '#' + el.id : '';
@@ -117,12 +130,25 @@ window.__a11y = (() => {
     }
     return [255, 255, 255];
   };
-  const interactive = () => Array.from(document.querySelectorAll(
+  const interactive = (includeTransparent) => Array.from(document.querySelectorAll(
     'a[href],button,input,select,textarea,[tabindex]:not([tabindex="-1"]),[role="button"],[role="switch"],[role="tab"],[role="slider"]'
-  )).filter(isVisible);
+  )).filter(includeTransparent ? isFocusable : isVisible);
+  // The effective pointer target is the control itself or its label, whichever
+// is larger: a checkbox may be 16px inside a large label, while a text field is
+// larger than its (short) field label.
+  const targetBox = (el) => {
+    const boxes = [el.getBoundingClientRect()];
+    if (el.id) {
+      const lab = document.querySelector('label[for="' + el.id + '"]');
+      if (lab && isVisible(lab)) boxes.push(lab.getBoundingClientRect());
+    }
+    const wrap = el.closest('label');
+    if (wrap && isVisible(wrap)) boxes.push(wrap.getBoundingClientRect());
+    return boxes.reduce((a, b) => (b.width * b.height > a.width * a.height ? b : a));
+  };
 
   return {
-    desc, accessibleName, isVisible, interactive, contrast, effectiveBg, parseColor,
+    desc, accessibleName, isVisible, isFocusable, interactive, contrast, effectiveBg, parseColor, targetBox,
     contrastReport: () => {
       const findings = [];
       const els = Array.from(document.querySelectorAll('body *'));
@@ -152,14 +178,42 @@ window.__a11y = (() => {
     },
     targetSizeReport: (min) => {
       const findings = [];
-      for (const el of interactive()) {
-        const r = el.getBoundingClientRect();
-        if (r.width + 0.5 >= min && r.height + 0.5 >= min) continue;
-        findings.push({ el: desc(el), name: accessibleName(el), w: Math.round(r.width), h: Math.round(r.height) });
+      for (const el of interactive(false)) {
+        const candidates = [el.getBoundingClientRect()];
+        if (el.id) {
+          const lab = document.querySelector('label[for="' + el.id + '"]');
+          if (lab && isVisible(lab)) candidates.push(lab.getBoundingClientRect());
+        }
+        const wrap = el.closest('label');
+        if (wrap && isVisible(wrap)) candidates.push(wrap.getBoundingClientRect());
+        // Pass if any candidate box (control or its label) meets the minimum.
+        if (candidates.some((r) => r.width + 0.5 >= min && r.height + 0.5 >= min)) continue;
+        const best = candidates.reduce((a, b) => (b.width * b.height > a.width * a.height ? b : a));
+        findings.push({ el: desc(el), name: accessibleName(el), w: Math.round(best.width), h: Math.round(best.height) });
       }
       return findings;
     },
-    focusOrder: () => interactive().map((el) => desc(el) + ' [' + accessibleName(el) + ']'),
+    focusOrder: () => interactive(true).map((el) => desc(el) + ' [' + accessibleName(el) + ']'),
+    // reduced motion: anything that still animates for more than 50ms.
+    motionReport: () => {
+      const toMs = (v) => {
+        const out = [];
+        for (const part of String(v).split(',')) {
+          const s = part.trim();
+          const n = parseFloat(s);
+          if (!isFinite(n)) continue;
+          out.push(s.endsWith('ms') ? n : n * 1000);
+        }
+        return out.length ? Math.max.apply(null, out) : 0;
+      };
+      const findings = [];
+      for (const el of Array.from(document.querySelectorAll('body *')).slice(0, 300)) {
+        const cs = getComputedStyle(el);
+        const ms = Math.max(toMs(cs.transitionDuration), toMs(cs.animationDuration));
+        if (ms > 50) findings.push({ el: desc(el), ms: Math.round(ms) });
+      }
+      return findings;
+    },
     unnamedInteractive: () => interactive().filter((el) => !accessibleName(el)).map(desc),
     overflow: () => ({
       innerWidth: window.innerWidth,
@@ -293,19 +347,108 @@ async function auditPage(conn, label, report, options) {
 
   // 8. reduced motion
   await conn.send('Emulation.setEmulatedMedia', { media: 'screen', features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] })
-  await sleep(100)
-  const motion = await conn.evaluate(`JSON.stringify((() => {
-    const sample = Array.from(document.querySelectorAll('body *')).slice(0, 200);
-    const long = sample.filter((el) => {
-      const d = getComputedStyle(el).transitionDuration;
-      return d && d !== '0s' && d.split(',').some((v) => parseFloat(v) > 0);
-    }).length;
-    return { long };
-  })())`).then(JSON.parse)
+  await sleep(150)
+  const motion = await conn.evaluate('JSON.stringify(window.__a11y.motionReport())').then(JSON.parse)
   await conn.send('Emulation.setEmulatedMedia', { media: '', features: [] })
   await sleep(80)
-  report.push({ page: label, check: 'reduced-motion', ok: motion.long === 0, detail: motion })
-  console.log((motion.long === 0 ? '  PASS  ' : '  FAIL  ') + 'reduced-motion 下无长过渡（' + motion.long + ' 个元素仍有 transition）')
+  report.push({ page: label, check: 'reduced-motion', ok: motion.length === 0, detail: motion.slice(0, 8) })
+  console.log((motion.length === 0 ? '  PASS  ' : '  FAIL  ') + 'reduced-motion 下无 >50ms 过渡（' + motion.length + ' 个元素）')
+  for (const m of motion.slice(0, 5)) console.log('        ' + m.el + ' ' + m.ms + 'ms')
+// 9. sweep every panel/tab: contrast and target size can differ per section.
+  if (label === 'settings.html' || label === 'editor.html') {
+    const sel = label === 'settings.html' ? '.nav-item' : '#tabs .tab'
+    const count = await conn.evaluate('document.querySelectorAll(' + JSON.stringify(sel) + ').length')
+    for (let i = 0; i < count; i++) {
+      const title = await conn.evaluate('(() => { const els = document.querySelectorAll(' + JSON.stringify(sel) + '); const el = els[' + i + ']; if (!el) return null; el.click(); return (el.textContent || "").trim().slice(0, 20) })()')
+      await sleep(250)
+      const c = await conn.evaluate('JSON.stringify(window.__a11y.contrastReport())').then(JSON.parse)
+      const t = await conn.evaluate('JSON.stringify(window.__a11y.targetSizeReport(24))').then(JSON.parse)
+      const unnamed = await conn.evaluate('JSON.stringify(window.__a11y.unnamedInteractive())').then(JSON.parse)
+      report.push({ page: label + ' / ' + title, check: '对比度', ok: c.length === 0, detail: c.slice(0, 6) })
+      report.push({ page: label + ' / ' + title, check: '目标尺寸 ≥24×24', ok: t.length === 0, detail: t.slice(0, 6) })
+      report.push({ page: label + ' / ' + title, check: '可访问名称', ok: unnamed.length === 0, detail: unnamed.slice(0, 6) })
+      console.log('  ' + (c.length === 0 ? 'PASS  ' : 'FAIL  ') + '面板「' + title + '」对比度 ' + (c.length ? c.length + ' 处' : 'ok'))
+      if (unnamed.length) console.log('  FAIL  面板「' + title + '」无名控件: ' + JSON.stringify(unnamed.slice(0, 5)))
+      for (const f of c.slice(0, 4)) console.log('        ' + f.el + ' ratio=' + f.ratio + ' "' + f.text + '" ' + f.color + ' on ' + f.bg)
+      if (t.length) {
+        console.log('  FAIL  面板「' + title + '」小目标 ' + t.length + ' 个')
+        for (const f of t.slice(0, 4)) console.log('        ' + f.el + ' ' + f.w + 'x' + f.h + ' "' + f.name + '"')
+      }
+    }
+  }
+}
+
+async function pressKey(conn, key, code, vk, text) {
+  await conn.send('Input.dispatchKeyEvent', {
+    type: 'keyDown', key, code, windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk,
+    text: text === undefined ? '' : text, unmodifiedText: text === undefined ? '' : text,
+  })
+  await conn.send('Input.dispatchKeyEvent', {
+    type: 'keyUp', key, code, windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk,
+  })
+  await sleep(250)
+}
+
+async function waitForEval(conn, expr, test, timeout = 25000) {
+  const start = Date.now()
+  let last
+  while (Date.now() - start < timeout) {
+    last = await conn.evaluate(expr)
+    if (test(last)) return last
+    await sleep(200)
+  }
+  return last
+}
+
+/**
+ * Keyboard-only operation of the cutout window (WCAG 2.1.1). The photo is
+ * loaded through the same IPC the drag/drop path uses, because the native file
+ * dialog cannot be driven from CDP; everything after that is keyboard only.
+ */
+async function keyboardFlow(conn, report) {
+  section('cutout.html 键盘-only 流程')
+  const b64 = fs.readFileSync(path.join(__dirname, '..', 'tools', 'fixtures', 'synthetic-portrait.png')).toString('base64')
+  await conn.evaluate(`(async () => {
+    const b = atob(${JSON.stringify(b64)});
+    const a = new Uint8Array(b.length);
+    for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+    const f = new File([a], 'synthetic-portrait.png', { type: 'image/png' });
+    const dt = new DataTransfer(); dt.items.add(f);
+    document.getElementById('stage').dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+    return 'ok';
+  })()`)
+  await waitForEval(conn, 'document.getElementById("runBtn").disabled', (v) => v === false)
+
+  const steps = []
+  steps.push(['选择照片后状态可读', await conn.evaluate('document.getElementById("status").textContent.includes("载入")')])
+
+  const focusRun = await conn.evaluate('(() => { const b = document.getElementById("runBtn"); b.focus(); return document.activeElement === b ? "runBtn" : (document.activeElement && document.activeElement.id) })()')
+  await pressKey(conn, 'Enter', 'Enter', 13, String.fromCharCode(13))
+  const mode = await waitForEval(conn, 'document.getElementById("modeLabel").textContent', (v) => v === '已抠图')
+  steps.push(['Enter 激活“开始抠图”', mode === '已抠图', 'focus=' + focusRun])
+
+  await conn.evaluate('document.querySelector(".seg[data-view=\\"mask\\"]").focus()')
+  await pressKey(conn, 'Enter', 'Enter', 13, String.fromCharCode(13))
+  steps.push(['Enter 切换到蒙版视图', await conn.evaluate('document.querySelector(".seg[data-view=\\"mask\\"]").getAttribute("aria-pressed") === "true"')])
+
+  await conn.evaluate('document.querySelector(".seg[data-view=\\"result\\"]").focus()')
+  await pressKey(conn, 'Enter', 'Enter', 13, String.fromCharCode(13))
+  await conn.evaluate('document.getElementById("eraseBtn").focus()')
+  await pressKey(conn, 'Enter', 'Enter', 13, String.fromCharCode(13))
+  steps.push(['Enter 进入擦除模式', await conn.evaluate('document.getElementById("stage").classList.contains("is-editing")')])
+  await pressKey(conn, 'Escape', 'Escape', 27)
+  steps.push(['Escape 退出擦除并归还焦点', await conn.evaluate('!document.getElementById("stage").classList.contains("is-editing") && document.activeElement.id === "eraseBtn"')])
+
+  await conn.evaluate('document.getElementById("saveBtn").focus()')
+  await pressKey(conn, 'Enter', 'Enter', 13, String.fromCharCode(13))
+  const saved = await waitForEval(conn, 'document.getElementById("status").textContent', (v) => /保存|角色/.test(String(v)), 12000)
+  steps.push(['Enter 保存为角色', /保存|角色/.test(String(saved))])
+
+  for (const [name, ok, extra] of steps) {
+    report.push({ page: 'cutout.html 键盘流程', check: name, ok: !!ok, detail: extra || '' })
+    console.log('  ' + (ok ? 'PASS  ' : 'FAIL  ') + name + (ok || !extra ? '' : '  (' + extra + ')'))
+  }
+  return steps.every(([, ok]) => ok)
 }
 
 async function openWindow(pet, method, urlPart, port, timeout = 8000) {
@@ -322,6 +465,8 @@ async function openWindow(pet, method, urlPart, port, timeout = 8000) {
 
 async function main() {
   const opts = parseArgs(process.argv.slice(2))
+  const watchdog = setTimeout(() => { console.error('audit watchdog: giving up after 240s'); process.exit(3) }, 240000)
+  watchdog.unref && watchdog.unref()
   if (opts.help) { console.log(fs.readFileSync(__filename, 'utf8').split('*/')[0]); return }
   const list = await targets(opts.port)
   const petTarget = list.find((x) => x.url.includes('pet.html'))
@@ -353,6 +498,15 @@ async function main() {
   }
 
   console.log('\n== 汇总 ==')
+  if (opts.flow) {
+    const cut = pages.find(([l]) => l === 'cutout.html')
+    if (cut) {
+      try { await keyboardFlow(cut[1], report) } catch (err) {
+        report.push({ page: 'cutout.html 键盘流程', check: 'keyboard flow', ok: false, detail: err.message })
+        console.error('  FAIL  键盘流程: ' + err.message)
+      }
+    }
+  }
   const failed = report.filter((r) => !r.ok)
   console.log('检查项 ' + report.length + '，失败 ' + failed.length)
   for (const f of failed) console.log('  FAIL  ' + f.page + ' / ' + f.check)

@@ -53,7 +53,7 @@ Windows 桌面宠物（Electron），独立于 DSH。目标：默认好看、开
 | M9 多显示器与吸附 | ✅ | 记住所属显示器、离屏夹回、四边吸附（阈值可调） |
 | M10 手感与视觉包 | ✅ | Q 弹/whale 思考气泡/悬停菜单/设置重构/字体；26 项测试 + CDP 回归；0.4.1 去双击/右键、0.4.2 classic SVG 泡泡外观 |
 | M11 照片抠图 | ✅ 功能完成 | 离线 U2Net + 抠图窗口、保存/回退；质量缺陷已由 M12 P0 修复 |
-| M12 抠图质量修复 | 🟡 P0 + P1-1~P1-9 可行部分完成（0.5.4） | alpha/映射/回退、蒙版/擦除/旋转、utilityProcess、去色污、阴影、token IPC、无障碍基础；见 `M12*-NOTES.md`；推送/tag/完整 WCAG/10 张 golden set 未做 |
+| M12 抠图质量修复 | 🟡 P0 + P1-1~P1-9 可行部分完成（0.5.4/0.5.5） | alpha/映射/回退、蒙版/擦除/旋转、utilityProcess、去色污、阴影、token IPC、无障碍基础；见 `M12*-NOTES.md` / `A11Y-AUDIT.md`；无障碍可自动化部分 82 项已全过（0.5.5），NVDA/真实高对比度、推送/tag、10 张 golden set 未做 |
 | 发布签名 | ⬜ | SignPath Foundation 免费 OSS 路线；工作流/申请材料已就绪，待审核与配置 |
 
 ## 4. 已知限制
@@ -88,6 +88,7 @@ Windows 桌面宠物（Electron），独立于 DSH。目标：默认好看、开
 - [x] M12.2 P1-1~P1-4：蒙版三态、擦除/恢复/撤销、旋转/翻转；squash/letterbox A/B 差异 <1%
 - [x] M12.3 P1-5~P1-7：utilityProcess 卸载（主进程 IPC max 7ms）、边缘去色污、照片角色阴影
 - [x] M12.4 P1-8/P1-9（可行部分）：token IPC、无障碍基础、CI/模型资产基线
-- [ ] 推送 origin / 打 tag / CI 实跑 / 完整 WCAG / 10 张 golden set
+- [x] M12.5 无障碍审计（可自动化 82 项全过，见 `A11Y-AUDIT.md`）
+- [ ] NVDA/VoiceOver 与真实高对比度主题实测 / 推送 origin / 打 tag / CI 实跑 / 10 张 golden set
 - [ ] 托盘图标在 Windows 通知区可见（本机未显示，待签名 / 干净机器复验）
 - [ ] 发布 exe 带有效 Authenticode 签名（SignPath Foundation，审核中）

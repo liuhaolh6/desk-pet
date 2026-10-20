@@ -25,7 +25,10 @@
 
   --ink: #202a44;
   --ink-2: #46536f;
-  --muted: #7d89a5;
+  /* Secondary text must still clear WCAG AA 4.5:1 on --surface-3 (#eef2fa):
+     #7d89a5 measured 3.12:1, this value measures ~4.8:1 there and ~5.4:1 on white. */
+  --muted: #5d6a86;
+  --muted-deco: #8d99b4;
   --line: rgba(32, 49, 112, 0.14);
   --line-strong: rgba(32, 49, 112, 0.24);
   --accent: #2a4bd7;

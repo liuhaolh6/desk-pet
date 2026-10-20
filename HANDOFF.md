@@ -28,7 +28,8 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 | M11 照片抠图（离线 U2Net + 抠图窗口 + 回退） | ✅ 0.5.1 修复 alpha/映射/回退语义，开发版/解包版/portable 均 CDP 走通；`npm test` 42 项 |
 | M12.2 抠图体验（蒙版视图 / 擦除恢复 / 旋转翻转） | ✅ 0.5.2，见 `M12.2-NOTES.md` |
 | M12.3 主进程卸载 / 去色污 / 照片阴影 | ✅ 0.5.3，见 `M12.3-NOTES.md` |
-| M12.4 无障碍基础 / token IPC / 仓库基线 | ✅ 0.5.4，见 `M12.4-NOTES.md`；未推送、未 tag、未做完整 WCAG |
+| M12.4 无障碍基础 / token IPC / 仓库基线 | ✅ 0.5.4，见 `M12.4-NOTES.md` |
+| M12.5 完整无障碍审计（可自动化部分） | ✅ 0.5.5，82 项 0 失败（含键盘-only 流程），见 `A11Y-AUDIT.md`；未做 NVDA/真实高对比度 |
 | M10 手感与视觉（Q 弹 / 思考气泡 / 悬停菜单 / 设置重构 / 内置字体） | ✅ 见第 12 节、`M10-NOTES.md`、`M10.1-NOTES.md`、`M10.2-NOTES.md` |
 | `npm test`（41 项，存储 / 角色 / 天气码 / 气泡布局 / 音效 / 多显示器 / 抠图 alpha） | ✅ |
 
@@ -161,6 +162,13 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
     - `#pet` 的 transition **只留 `transform`**，别加 `filter`；
     - `applyBubbleHeight()` 在气泡可见期间**只增不减**（隐藏时才缩回），否则卡片高度一变就 resize 一次；
     - 改尺寸前重新 `setBackgroundColor('#00000000')`；`tools/smoke.js` 有静态断言，别删。
+42. **无障碍基线别回退**（0.5.5 审计，见 `A11Y-AUDIT.md`）：
+    - `--muted` 必须对 `#eef2fa` ≥4.5:1（当前 `#5d6a86`）；次要文字不要再用 `#7d89a5`/`#8890a8` 这类浅色；
+    - 滑杆、复选框 label、图标按钮都要 ≥24×24（2.5.8）；`input[type=range] { height: 24px }` 不要删；
+    - 四个窗口 CSS 都要有 `prefers-reduced-motion` 全量规则；编辑器要保留 720px 以下的单列回流；
+    - 桌宠 `☰` 菜单要能用键盘聚焦显示（`.pet-wrap:focus-within .menu-btn`）；
+    - 动态创建的音效控件要有 `aria-label`；改完跑 `node tools/check-a11y.js` 与
+      `node tools/a11y-audit.js --port <调试端口> --flow`（82 项应全过）。
 
 ## 6. 快速开始
 
@@ -227,6 +235,8 @@ npm run dist
 | `lib/cutout-worker.js` | utilityProcess 里的抠图执行体（P1-5） |
 | `PET-WINDOW-NOTES.md` | 0.5.5 透明窗口屏闪：原因、证据、修复与验证 |
 | `tools/check-a11y.js` | 静态无障碍回归（结构断言，非 WCAG 审计；CI 会跑） |
+| `tools/a11y-audit.js` | CDP 无障碍审计（82 项：AX 名称/对比度/目标尺寸/焦点/键盘流程/回流/forced-colors/reduced-motion） |
+| `A11Y-AUDIT.md` | 0.5.5 无障碍审计报告（结论、方法、修复、未验证项） |
 | `.github/workflows/ci.yml` | `npm ci` + 语法 + a11y 静态检查 + `npm test` + 合成图/真实模型断言（未推送） |
 | `app/cutout.html/css/js` | 照片选择、预览、拖动缩放、保存/回退窗口 |
 | `assets/models/u2net_human_seg.onnx` | 量化后 44MB 离线人像分割模型 |
@@ -318,8 +328,10 @@ npm run dist
 
 **M12.4 结果（0.5.4）**：token IPC（原图不再进渲染层）、画布 `aria-live` 替代文本与 `Q/W/F` 键盘构图、进出修补的焦点管理；`.gitattributes`/`MODEL-ASSETS.md`/`npm run check`/CI 真实模型正负例。推送与 tag 未做，详见 `M12.4-NOTES.md`。
 
+**M12.5 结果（0.5.5）**：CDP 无障碍审计 82 项全过（4 窗口 + 设置 7 面板 + 编辑器标签页 + 键盘-only 抠图流程）；修了对比度令牌、气泡默认色、20px 高控件、无名音效控件、reduced-motion 覆盖、编辑器 320px 回流、桌宠菜单键盘可达；`tools/check-a11y.js` 扩到 30+ 项静态回归。未做 NVDA/VoiceOver 与真实高对比度主题，详见 `A11Y-AUDIT.md`。
+
 ## 14. 新对话开场白（直接粘贴）
 
-> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`M12.4-NOTES.md`、`M12.3-NOTES.md`、`M12.2-NOTES.md`、`M12-NOTES.md`、`M12-PLAN.md`。
+> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`A11Y-AUDIT.md`、`PET-WINDOW-NOTES.md`、`M12.4-NOTES.md`、`M12-PLAN.md`。
 > 0.5.4 已完成 M12 P0 + P1-1~P1-9 的可行部分（蒙版/擦除/旋转、utilityProcess、去色污、阴影、token IPC、基础无障碍、CI/模型资产基线）；`npm test` 43 项。
 > 剩余：push/tag/CI 实跑、完整 WCAG 审计、10 张 golden set、P2 模型 A/B。签名待 SignPath。

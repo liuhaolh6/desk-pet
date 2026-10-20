@@ -115,12 +115,13 @@ button:disabled { opacity: .45; cursor: default; }
 .chip.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(32, 49, 112, .14); }
 .chip.dragover { border-color: var(--accent); background: #eef3ff; }
 
-.chip .grip { color: #b6c0d8; cursor: grab; font-size: 12px; }
+.chip .grip { color: var(--muted); cursor: grab; font-size: 12px; }
 .chip .label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
 .chip .kind { color: var(--muted); font-size: 11px; }
 
 .row-actions { display: flex; gap: 4px; flex: 0 0 auto; }
-.row-actions button { padding: 1px 6px; font-size: 11px; }
+/* WCAG 2.2 AA 2.5.8: keep every icon button at least 24x24. */
+.row-actions button { padding: 1px 6px; font-size: 11px; min-width: 24px; min-height: 24px; }
 
 .side { min-height: 0; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
 
@@ -140,7 +141,7 @@ button:disabled { opacity: .45; cursor: default; }
   padding: 3px 6px; font: inherit; color: var(--ink); background: #fff;
 }
 .field input[type=color] { width: 34px; height: 24px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
-.field .clear { padding: 1px 6px; font-size: 11px; }
+.field .clear { padding: 1px 6px; font-size: 11px; min-width: 24px; min-height: 24px; }
 
 .preview {
   border-top: 1px solid var(--line);
@@ -173,3 +174,32 @@ button:disabled { opacity: .45; cursor: default; }
 .lib-empty { color: var(--muted); font-size: 12px; }
 
 .status { position: fixed; right: 14px; bottom: 10px; color: var(--muted); font-size: 12px; }
+
+/* WCAG 1.4.10 reflow: at 320 CSS px (400% zoom on a 1280px window) the two
+   column layout and the toolbar must stack instead of scrolling sideways. */
+@media (max-width: 720px) {
+  header { flex-wrap: wrap; }
+  .tabs { flex-wrap: wrap; }
+  .body {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .canvas { flex: 0 0 auto; }
+  .rows { flex: 0 0 auto; overflow-y: visible; }
+  .side { flex: 0 0 auto; overflow: visible; }
+  .field { flex-wrap: wrap; }
+  .row-actions { flex-wrap: wrap; }
+  .chip .label { max-width: 100%; }
+  .status { position: static; margin: 6px 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

@@ -60,7 +60,7 @@ CDP 采样（开发版，`transparent: true`）：
 ## 5. 产物
 
 - `package.json` / `package-lock.json` → `0.5.5`；
-- `dist/DeskPet-0.5.5-portable.exe`（构建后回填大小/哈希）；
+- `dist/DeskPet-0.5.5-portable.exe`：153,075,231 字节，SHA-256 `0ddaa5bc55e6d1fc3be572003cadb25d86557ec036de362b949de02917331280`（该构建同时包含 `A11Y-AUDIT.md` 的无障碍修复）；
 - `dist/win-unpacked/DeskPet.exe`：FileVersion `0.5.5`；
 - 仍未签名。
 

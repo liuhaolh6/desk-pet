@@ -114,6 +114,56 @@ const cutoutHtml = read('app/cutout.html')
   const petJs = read('app/pet.js')
   const petTag = (petHtml.match(/<img[^>]*\bid="pet"[^>]*>/i) || [''])[0]
   check('桌宠图片有可访问名称（HTML 或 JS）', !!attr(petTag, 'alt') || /pet\.alt\s*=/.test(petJs))
+  const petCss = read('app/pet.css')
+  check('桌宠菜单可被键盘聚焦并显示', /\.pet-wrap:focus-within\s+\.menu-btn/.test(petCss))
+}
+
+// ------------------------------------------------------- contrast (1.4.3 AA)
+{
+  const hexToRgb = (hex) => {
+    const h = hex.replace('#', '')
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]
+  }
+  const lum = ([r, g, b]) => {
+    const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4) }
+    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+  }
+  const ratio = (a, b) => {
+    const l1 = lum(hexToRgb(a)), l2 = lum(hexToRgb(b))
+    const hi = Math.max(l1, l2), lo = Math.min(l1, l2)
+    return (hi + 0.05) / (lo + 0.05)
+  }
+  const tokens = read('app/tokens.css')
+  const token = (name) => {
+    const m = tokens.match(new RegExp('--' + name + ':\\s*(#[0-9a-fA-F]{6})'))
+    return m ? m[1] : null
+  }
+  for (const [name, bg] of [['muted', '#ffffff'], ['muted', '#eef2fa'], ['muted', '#f4f7fc'], ['ink-2', '#eef2fa']]) {
+    const color = token(name)
+    const r = color ? ratio(color, bg) : 0
+    check('--' + name + ' 对 ' + bg + ' ≥4.5', r >= 4.5, Math.round(r * 100) / 100)
+  }
+  const bubble = read('app/bubble-model.js')
+  const defaults = Array.from(bubble.matchAll(/color:\s*'(#[0-9a-fA-F]{6})'/g)).map((m) => m[1])
+  const bad = defaults.filter((c) => ratio(c, '#ffffff') < 4.5)
+  check('气泡默认文字色对白 ≥4.5', bad.length === 0, bad.join(',') || defaults.length + ' 个默认色')
+}
+
+// ------------------------------------------------- reduced motion + targets
+for (const file of ['app/cutout.css', 'app/pet.css', 'app/settings.css', 'app/editor.css']) {
+  const css = read(file)
+  check(file + ' 支持 prefers-reduced-motion', /@media\s*\(prefers-reduced-motion:\s*reduce\)/.test(css))
+}
+{
+  const settingsCss = read('app/settings.css')
+  const cutoutCss = read('app/cutout.css')
+  const editorCss = read('app/editor.css')
+  check('settings 滑杆 ≥24px', /input\[type=range\][\s\S]{0,400}?height:\s*24px/.test(settingsCss))
+  check('cutout 缩放滑杆 ≥24px', /\.range input\s*\{[^}]*height:\s*24px/.test(cutoutCss))
+  check('editor 图标按钮 ≥24px', /\.row-actions button\s*\{[^}]*min-height:\s*24px/.test(editorCss))
+  check('音效行复选框标签 ≥24px', /\.sound-row > label\.check\s*\{[^}]*min-height:\s*24px/.test(settingsCss))
+  const settingsJs = read('app/settings.js')
+  check('音效控件有可访问名称', (settingsJs.match(/setAttribute\('aria-label'/g) || []).length >= 3)
 }
 
 console.log('')

@@ -111,7 +111,9 @@
           [module('weather.icon'), module('weather.city'), module('weather.temp', { bold: true, size: 15 })],
           [module('weather.text')],
           [textModule('今日 '), module('weather.range'), textModule(' · 降水 '), module('weather.precip')],
-          [module('weather.hint', { size: 11, color: '#8890a8' }), module('weather.updated', { size: 11, color: '#8890a8' })],
+          // #5d6a86 keeps the 11px hint line at ~4.8:1 on white (WCAG AA);
+          // #8890a8 only reached 3.18:1.
+          [module('weather.hint', { size: 11, color: '#5d6a86' }), module('weather.updated', { size: 11, color: '#5d6a86' })],
         ],
       },
       {

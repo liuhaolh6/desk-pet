@@ -62,7 +62,9 @@ body {
   --pet-lift: -2px;
   --pet-scale-x: 1.03;
   --pet-scale-y: 1.03;
-  filter: drop-shadow(0 14px 22px rgba(15, 23, 42, 0.24)) brightness(1.02);
+  /* Deliberately no `filter` change here: swapping the drop-shadow on a
+     transparent window re-composites it and can flash. The lift+scale already
+     signals hover. */
 }
 
 /* Photo roles: softer shadow so edge fringe is not amplified. */
@@ -71,7 +73,7 @@ body.photo-role #pet {
 }
 
 body.photo-role .pet-wrap.hover #pet {
-  filter: drop-shadow(0 8px 13px rgba(15, 23, 42, 0.16)) brightness(1.02);
+  /* Same as above: photo roles keep their constant softer shadow. */
 }
 
 .pet-wrap.pressing #pet {
@@ -132,6 +134,7 @@ body.photo-role .pet-wrap.hover #pet {
 
 .pet-wrap.hover .menu-btn,
 .pet-wrap.menu-open .menu-btn,
+.pet-wrap:focus-within .menu-btn,
 .menu-btn:focus-visible {
   opacity: 1;
   transform: none;
@@ -385,14 +388,13 @@ body.photo-role .pet-wrap.hover #pet {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #pet,
-  .pet-flip,
-  .menu-btn,
-  .pet-menu,
-  .bubble,
-  .bubble::before,
-  .bubble::after {
+  /* One rule for the whole window: state changes stay instant. */
+  *,
+  *::before,
+  *::after {
     transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 
   .pet-wrap.hover #pet {

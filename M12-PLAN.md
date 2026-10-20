@@ -33,10 +33,10 @@
 | P1-5 主进程解耦 | ✅ | utilityProcess 跑推理/合成/编码；抠图中主进程 IPC 往返 max 7ms（进程内对照 644ms）；worker 失败自动退回进程内 |
 | P1-6 去色污 | ✅ | 边缘色取最近主体色（两次方向扫描 O(n)）；红主体/绿背景边缘绿色像素 12→0 |
 | P1-7 阴影降级 | ✅ | `photo-role` 下浅阴影；顺带修复保存新角色后桌宠不刷新（`pet.js` 补 `onRoles`） |
-| P1-8 无障碍 | ✅ 基础 | 画布 `aria-live` 替代文本、`Q/W/F` 构图快捷键、进出修补焦点管理、`aria-keyshortcuts`；完整 WCAG/NVDA 审计未做 |
-| P1-9 仓库/CI | ✅ 本地部分 | `.gitattributes`、`MODEL-ASSETS.md`、`npm run check`、`tools/check-a11y.js`、CI（语法 + a11y 静态 + 单测 + 合成图 + 真实模型正/负例）；**未推送/未 tag/未在 GitHub 实跑** |
+| P1-8 无障碍 | ✅ 已审计（可自动化部分） | 0.5.4 做基础；0.5.5 用 `tools/a11y-audit.js` 审计 **82 项 0 失败**：AX 名称、对比度（7 面板 + 编辑器标签页）、≥24×24、焦点可见性/顺序、键盘-only 抠图流程、320px 回流、forced-colors、reduced-motion；报告 `A11Y-AUDIT.md`。NVDA/VoiceOver 与真实高对比度主题未做 |
+| P1-9 仓库/CI | ✅ 本地部分 | `.gitattributes`、`MODEL-ASSETS.md`、`npm run check`、`tools/check-a11y.js`（30+ 静态断言）、CI（语法 + a11y 静态 + 单测 + 合成图 + 真实模型正/负例）；**未推送/未 tag/未在 GitHub 实跑** |
 
-实测与未覆盖项见 `M12.2-NOTES.md` / `M12.3-NOTES.md` / `M12.4-NOTES.md`。**P1-1~P1-9 的可行项已全部落地（0.5.2~0.5.4）**；剩下的推送到远端、CI 实跑、完整无障碍审计与 10 张 golden set 属外部/环境依赖项。
+实测与未覆盖项见 `M12.2-NOTES.md` / `M12.3-NOTES.md` / `M12.4-NOTES.md` / `A11Y-AUDIT.md`。**P1-1~P1-9 的可行项已全部落地（0.5.2~0.5.5）**；剩下的推送、CI 实跑、NVDA/真实高对比度实测与 10 张 golden set 属外部/环境依赖项。
 
 ## 1. 问题与结论
 

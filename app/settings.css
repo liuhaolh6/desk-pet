@@ -425,6 +425,7 @@ input[type=number],
 select,
 textarea {
   width: 100%;
+  min-height: 24px; /* WCAG 2.2 AA 2.5.8: slider/field targets stay >= 24px */
   padding: 7px 10px;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-sm);
@@ -455,6 +456,8 @@ textarea {
 input[type=range] {
   accent-color: var(--accent);
   cursor: pointer;
+  /* WCAG 2.2 AA 2.5.8: the slider is the pointer target, so give it 24px. */
+  height: 24px;
 }
 
 button {
@@ -646,6 +649,8 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 24px;
+  min-height: 24px; /* WCAG 2.2 AA 2.5.8: the label is the 16px checkbox's target */
 }
 
 .sound-row input[type=checkbox] {
@@ -808,4 +813,15 @@ button:disabled {
   .field-label { padding-top: 0; }
   .sound-row { grid-template-columns: 20px minmax(0, 1fr) auto; }
   .sound-row .vol { grid-column: 2 / 3; }
+}
+
+/* WCAG 2.3.3 / reduced motion: keep state changes instant. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

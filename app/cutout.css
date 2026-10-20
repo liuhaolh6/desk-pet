@@ -257,7 +257,7 @@ button.ghost[aria-pressed="true"] {
 
 .range em { font-style: normal; color: var(--ink); }
 
-.range input { width: 100%; accent-color: var(--accent); }
+.range input { width: 100%; accent-color: var(--accent); height: 24px; }
 
 .hint,
 .privacy {
