@@ -219,7 +219,8 @@ npm run dist
 | `MODEL-ASSETS.md` | 模型/二进制资产决策（不用 LFS、不重写历史、量化约束） |
 | `.gitattributes` | 二进制标记（不含 `text=auto`） |
 | `lib/cutout-worker.js` | utilityProcess 里的抠图执行体（P1-5） |
-| `.github/workflows/ci.yml` | `npm ci` + `npm test` + 合成图 alpha 断言（未推送） |
+| `tools/check-a11y.js` | 静态无障碍回归（结构断言，非 WCAG 审计；CI 会跑） |
+| `.github/workflows/ci.yml` | `npm ci` + 语法 + a11y 静态检查 + `npm test` + 合成图/真实模型断言（未推送） |
 | `app/cutout.html/css/js` | 照片选择、预览、拖动缩放、保存/回退窗口 |
 | `assets/models/u2net_human_seg.onnx` | 量化后 44MB 离线人像分割模型 |
 | `SIGNING.md` | SignPath Foundation 免费 OSS 签名申请 / CI / 验签 |

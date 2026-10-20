@@ -25,6 +25,9 @@ jobs:
       - name: Syntax check
         run: npm run check
 
+      - name: Accessibility regression (static)
+        run: node tools/check-a11y.js
+
       - name: Unit tests + alpha assertions
         run: npm test
 
