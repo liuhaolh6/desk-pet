@@ -1,0 +1,94 @@
+name: Build and sign Windows release
+
+# Dormant until the repository variables below are configured. This avoids
+# failing tag pushes while the SignPath Foundation application is pending.
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: sign-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-sign:
+    if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' && vars.SIGNPATH_PROJECT_SLUG != '' }}
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Read package version
+        id: pkg
+        shell: pwsh
+        run: |
+          $v = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build portable exe
+        run: npm run dist
+
+      - name: Upload unsigned artifact
+        id: unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: deskpet-unsigned
+          path: dist/DeskPet-*-portable.exe
+          archive: false
+          if-no-files-found: error
+
+      - name: Submit SignPath signing request
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG }}
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          parameters: |
+            version: "${{ steps.pkg.outputs.version }}"
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 1800
+          output-artifact-directory: signed
+          skip-decompress: true
+
+      - name: Upload signed artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deskpet-signed
+          path: signed/*.exe
+          archive: false
+          if-no-files-found: error
+
+      - name: Verify signed exe
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Path signed -Filter *.exe -File
+          if (-not $files) { throw 'No signed exe found in signed/' }
+          $files | ForEach-Object {
+            $sig = Get-AuthenticodeSignature -FilePath $_.FullName
+            Write-Host ("{0}: {1}" -f $_.Name, $sig.Status)
+            if ($sig.Status -ne 'Valid') { throw ("Invalid signature: {0} ({1})" -f $_.Name, $sig.StatusMessage) }
+          }

@@ -52,10 +52,11 @@ Windows 桌面宠物（Electron），独立于 DSH。目标：默认好看、开
 | M9 多显示器与吸附 | ✅ | 记住所属显示器、离屏夹回、四边吸附（阈值可调） |
 | M10 手感与视觉包 | ✅ | Q 弹/whale 思考气泡/悬停菜单/设置重构/字体；26 项测试 + CDP 回归；0.4.1 去双击/右键、0.4.2 classic SVG 泡泡外观 |
 | M11 照片抠图 | ⬜ | 离线 U2Net → 透明角色；独立预览/框选窗口 |
+| 发布签名 | ⬜ | SignPath Foundation 免费 OSS 路线；工作流/申请材料已就绪，待审核与配置 |
 
 ## 4. 已知限制
 
-- 已提供 portable exe（`dist/DeskPet-0.4.2-portable.exe`），无需安装；未签名，SmartScreen / 部分安全软件会拦截。
+- 已提供 portable exe（`dist/DeskPet-0.4.2-portable.exe`），无需安装；**当前仍未签名**，SmartScreen / 部分安全软件会拦截。免费开源签名方案见 `SIGNING.md`，工作流已就绪但需 SignPath 审核与仓库 secrets。
 - 本机 Lenovo Anti-Virus（火绒引擎）会拦未签名进程写 `%LOCALAPPDATA%\Temp`，NSIS portable 报 “Error writing temporary file”；需签名 / 加白名单，或把 TEMP 指到可写目录。
 - 便携版把数据写在 exe 同级 `desk-pet-data/`；可用 `DESKPET_DATA_DIR` 覆盖。
 - `--no-sandbox` 在受限环境里可能需要；正常桌面环境不需要。
@@ -80,3 +81,4 @@ Windows 桌面宠物（Electron），独立于 DSH。目标：默认好看、开
 - [x] M10.2：气泡采用 whale classic SVG 框，天气卡与短卡文字都在白框内
 - [ ] 托盘图标在 Windows 通知区可见（本机未显示，待签名 / 干净机器复验）
 - [ ] M11：导入照片自动生成透明角色（离线 U2Net）
+- [ ] 发布 exe 带有效 Authenticode 签名（SignPath Foundation，审核中）

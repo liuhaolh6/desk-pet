@@ -8,7 +8,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 
 - 仓库：<https://github.com/liuhaolh6/desk-pet>（public，main 分支）
 - 本地目录：`D:\project\deskpet`
-- 版本：`0.4.2`，已推送 17 个提交
+- 版本：`0.4.2`，已推送 18 个提交
 - 早期那套「DSH 挂件版」实现已移出仓库，归档在 `D:\project\deskpet-dsh-plugin`（需要参考角色/气泡系统时可以翻）
 
 ## 2. 现在能用的功能（都真机验证过）
@@ -49,6 +49,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 | **M9 多显示器** | 记住每块屏的位置、贴边吸附 | ✅ 已完成，见第 10 节 |
 | **M10 手感与视觉** | Q 弹 / 思考气泡 / 悬停菜单 / 设置重构 / 字体排版 | ✅ 已完成，见第 12 节 |
 | **M11 照片抠图** | 离线 U2Net 生成角色 | ⬜ 下一里程碑 |
+| **发布签名** | SignPath Foundation 免费 OSS 签名 | ⬜ 工作流/申请材料已就绪，待申请与配置 secrets；当前 exe 仍未签名 |
 | 小改进 | 天气卡文案换行（现在「80% 湿度」可能断行）、托盘的「暂停提醒」开关 | 低优先 |
 
 ## 5. 已知坑（踩过的，别再踩）
@@ -103,6 +104,9 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 23. **气泡外观用 whale classic SVG 框**：`pet.html` 里的 `M 827 248 ...` 路径 + 两个 ellipse；
     SVG 做了水平 1.35 拉伸与重新居中、内容 padding `6 24 54`，否则多行中文会超出椭圆。
     改 viewBox/比例前先跑 `cdp-fullshot` 确认「今日 — · 降水 —」仍在白框内。
+24. **不要声称当前 exe 已签名**：`0.4.2` 仍是未签名构建；签名走 SignPath Foundation 免费 OSS 路线，
+    工作流只在配置了 `SIGNPATH_*` 变量后才运行。自签名只能本机测试，不解决用户端 SmartScreen。
+    详见 `SIGNING.md`。
 
 ## 6. 快速开始
 
@@ -150,6 +154,10 @@ npm run dist
 | `M10-NOTES.md` | M10 记录 / 验证 / 截图 |
 | `M10.1-NOTES.md` | 0.4.1 交互收尾：去双击/右键、whale 气泡与菜单样式 |
 | `M10.2-NOTES.md` | 0.4.2 气泡外观：whale classic SVG 框 + 适配 |
+| `SIGNING.md` | SignPath Foundation 免费 OSS 签名申请 / CI / 验签 |
+| `THIRD-PARTY-NOTICES.md` | whale-widget / Noto Sans / Electron 许可与归属 |
+| `.github/workflows/sign-release.yml` | 构建 + SignPath 签名工作流（配置变量前休眠） |
+| `tools/verify-signature.ps1` | Authenticode 签名/时间戳校验 |
 
 ## 8. 最近变更（M7 气泡模块化编辑器）
 
@@ -212,9 +220,11 @@ npm run dist
 - 验证：`npm test` 26 项；CDP 测悬停/按压/队列/菜单/120–360px/镜像/全部设置面板无横向溢出；打包版字体 `document.fonts.check` 通过、控制台无 error。截图在 `docs/m10/`，详情 `M10-NOTES.md`。
 - **0.4.1 收尾**：移除桌宠双击/右键（设置只走悬停 ☰ / 托盘）；气泡文字色/描边/入场时序与菜单按钮/面板参数对齐 whale-widget；气泡隐藏后 540ms 再缩窗口。详见 `M10.1-NOTES.md`。
 - **0.4.2 外观**：气泡换成 whale classic SVG 框（路径 + 双 ellipse），SVG 水平拉伸 1.35 并重新居中、内容 padding `6 24 54`，多行中文不裁切；截图 `docs/m10/pet-bubble.png`。详见 `M10.2-NOTES.md`。
+- **签名脚手架**：选定 SignPath Foundation 免费 OSS 路线；新增 `.github/workflows/sign-release.yml`、`SIGNING.md`、`tools/verify-signature.ps1` 和 `npm run verify:signature`。当前 `0.4.2` 仍未签名，审核通过后由 CI 签。
 
 ## 13. 新对话开场白（直接粘贴）
 
-> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`PLAN.md`、`M10-NOTES.md`、`M10.1-NOTES.md` 和 `M10.2-NOTES.md`。
+> 继续 `D:\project\deskpet` 的桌面宠物项目，先读 `HANDOFF.md`、`PLAN.md`、`M10.2-NOTES.md` 和 `SIGNING.md`。
 > M10/M10.1/M10.2（0.4.2，手感/whale 气泡外观/悬停菜单/设置重构/内置字体/去双击右键）已完成；
+> 签名走 SignPath Foundation 免费 OSS 路线，工作流已就绪但尚未申请/配置。
 > 下一步做 M11 照片抠图（离线 U2Net + 抠图窗口，参考 `D:\project\whale-role`）。已知坑见 HANDOFF 第 5 节。

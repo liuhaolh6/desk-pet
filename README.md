@@ -62,6 +62,7 @@ npm run dist      # electron-builder portable，输出 dist/DeskPet-<version>-po
 
 - exe 带图标与版本信息（ProductName / FileVersion / Copyright 等）。
 - 未签名 exe 可能被 SmartScreen 提示「已保护你的电脑」：点「更多信息 → 仍要运行」，或对 exe 签名。
+- 当前 `0.4.2` 仍未签名；免费开源签名方案与 CI 工作流见 [`SIGNING.md`](SIGNING.md)。在 SignPath 审核通过前，不要把它当作已签名发布。
 - 本机打包绕坑（32 位 NSIS mmap、火绒拦临时目录）见 [`M6-PACKAGING.md`](M6-PACKAGING.md)。
 
 ## 使用
@@ -147,11 +148,24 @@ build/
 | `DESKPET_OPEN_SETTINGS=1` | 启动后直接打开设置窗口 |
 | `DESKPET_OPEN_EDITOR=1` | 启动后直接打开气泡编辑器 |
 
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org).
+
+- Committers and reviewers: [@liuhaolh6](https://github.com/liuhaolh6)
+- Approvers: [@liuhaolh6](https://github.com/liuhaolh6)
+
+This is currently a single-maintainer project; the same maintainer acts in these roles. If SignPath requires separation of duties, a second approver will be added before release signing is enabled.
+
+Privacy / network access: DeskPet stores settings, role images, weather cache and sounds locally. It requests weather and city-search data from [Open-Meteo](https://open-meteo.com/) using the configured city/coordinates; there is no account, telemetry, or upload of settings/roles. No other network requests are made.
+
+Signing setup and verification: [`SIGNING.md`](SIGNING.md).
+
 ## 后续
 
 见 [PLAN.md](PLAN.md)；跨对话接手请看 [HANDOFF.md](HANDOFF.md)（现状、决策、已知坑、待办与开场白）。
-当前 `0.4.2` 已有：角色、天气、喝水、气泡模块化编辑器、音效库、多显示器与贴边吸附、触摸动效、whale classic SVG 思考气泡、悬停菜单、设置重构、内置字体、托盘、设置、置顶、自启、便携打包。待做：M11 照片抠图（离线 U2Net）、代码签名。
+当前 `0.4.2` 已有：角色、天气、喝水、气泡模块化编辑器、音效库、多显示器与贴边吸附、触摸动效、whale classic SVG 思考气泡、悬停菜单、设置重构、内置字体、托盘、设置、置顶、自启、便携打包。待做：M11 照片抠图（离线 U2Net）、代码签名（SignPath 免费 OSS 路线，见 [`SIGNING.md`](SIGNING.md)）。
 
 ## License
 
-MIT
+MIT. Third-party notices: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
