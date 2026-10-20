@@ -14,6 +14,7 @@
   const menuBtn = document.getElementById('menuBtn')
   const petMenu = document.getElementById('petMenu')
   const bubble = document.getElementById('bubble')
+  const bubbleContent = document.getElementById('bubbleContent')
   const menuActions = Array.from(petMenu.querySelectorAll('button[data-action]'))
 
   const state = {
@@ -140,9 +141,9 @@
   }
 
   function measureBubble() {
-    // +30 leaves room for the two thought-dots below the cloud (20px) and a
-    // small top margin (10px). offsetHeight ignores the closed-state transform.
-    return Math.ceil(bubble.offsetHeight) + 30
+    // The whale SVG tails live inside the bubble box, so only a small top
+    // margin is needed beyond the measured height.
+    return Math.ceil(bubble.offsetHeight) + 8
   }
 
   function showBubble(node) {
@@ -152,12 +153,10 @@
     if (state.menuOpen) closeMenu(true)
     const token = ++state.bubbleToken
     bubble.classList.remove('show')
-    bubble.innerHTML = ''
-    const content = el('div', 'bubble-content')
-    content.appendChild(node)
-    bubble.appendChild(content)
-    // Reserve the window height first, then fade the cloud in on the next
-    // frame. Showing it before the OS resize lands clips the top of the cloud.
+    bubbleContent.innerHTML = ''
+    bubbleContent.appendChild(node)
+    // Reserve the window height first, then let the whale frame/text fade in
+    // on its own staggered delays. Showing before the OS resize clips the top.
     const height = measureBubble()
     resizeForBubble(height)
     void bubble.offsetHeight

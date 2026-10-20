@@ -5,6 +5,7 @@
 > SHA-256：`fddc6d2ebef5c02bbce45674cfd076c452314a99f79eb04f597fb77d8a51cf7d`
 >
 > 0.4.1 的交互收尾（去掉双击/桌宠右键、气泡/菜单对齐 whale-widget）见 `M10.1-NOTES.md`。
+> 0.4.2 的泡泡外观（classic SVG 框）见 `M10.2-NOTES.md`。
 
 ## 1. 这轮做了什么
 
@@ -69,7 +70,7 @@ PYTHONPATH=.tools/pylibs python tools/make-font.py
 |---|---|
 | ![悬停](docs/m10/pet-hover.png) | 悬停时 ☰ 出现，角色微放大 |
 | ![菜单](docs/m10/pet-menu.png) | 悬停菜单（窗口向上扩展） |
-| ![思考气泡](docs/m10/pet-bubble-dark.png) | 深色背景下看两个思考点 |
+| ![思考气泡](docs/m10/pet-bubble.png) | whale classic SVG 泡泡框（M10.2 更新） |
 | ![设置-外观](docs/m10/settings-appearance.png) | 重构后的设置外观页 |
 | ![设置-音效](docs/m10/settings-sound.png) | 窄窗口下音效事件行自动换行 |
 
