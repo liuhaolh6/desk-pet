@@ -34,7 +34,7 @@
     menuDismissAt: 0,
     bubbleToken: 0,
     showTimer: 0,
-    shrinkTimer: 0,
+    lastReserve: -1,
     menuShowTimer: 0,
   }
 
@@ -179,6 +179,10 @@
 
   async function resizeForBubble(height) {
     const extra = Math.max(0, Math.round(height))
+    if (window.DESKPET_TRACE_BUBBLE && extra !== state.lastReserve) {
+      state.lastReserve = extra
+      console.log('bubble-resize', extra)
+    }
     let res = { reserve: extra, side: 'above' }
     try {
       const granted = await api.setBubble(extra > 0, extra)
@@ -261,21 +265,18 @@
     return Math.ceil(bubble.getBoundingClientRect().height) + 8
   }
 
-  /** Re-measure after a size change; only reserve while something is visible. */
+  /** Re-measure after a size change. The strip stays reserved (0.6.4). */
   async function syncBubbleSpace() {
     syncBubbleMetrics()
     fitBubbleText()
-    // `wantBubble` is set before the window grows: the resize event it triggers
-    // arrives before `.show` is added, and used to cancel the reservation.
     if (state.menuOpen) return resizeForBubble(Math.max(bubbleReserve(), measureMenu()))
-    return resizeForBubble(state.wantBubble ? bubbleReserve() : 0)
+    return resizeForBubble(bubbleReserve())
   }
 
   async function showBubble(node) {
     state.wantBubble = true
     clearTimer()
     clearTimeout(state.showTimer)
-    clearTimeout(state.shrinkTimer)
     if (state.menuOpen) closeMenu(true)
     const token = ++state.bubbleToken
     bubble.classList.remove('show')
@@ -309,15 +310,9 @@
     state.currentCard = null
     state.weatherMarked = false
     bubble.classList.remove('show')
-    // 0.6.3 (user request): while nothing is shown the window shrinks back to
-    // the pet, so the desktop is not covered by an invisible rectangle. Cards
-    // inside one chain still never resize (see showBubble).
+    // 0.6.4: no shrink here. Resizing the transparent window is what produced
+    // the flicker; the strip is click-through instead (main-process hit poll).
     scheduleRectReport()
-    clearTimeout(state.shrinkTimer)
-    state.shrinkTimer = setTimeout(() => {
-      if (state.menuOpen || state.wantBubble || bubble.classList.contains('show')) return
-      resizeForBubble(0)
-    }, 520)
   }
 
   function wireBubbleClick() {
@@ -482,7 +477,6 @@
   function openMenu() {
     if (state.menuOpen) return
     if (bubble.classList.contains('show')) hideBubble()
-    clearTimeout(state.shrinkTimer)
     clearTimeout(state.showTimer)
     state.menuOpen = true
     petMenu.hidden = false
@@ -511,7 +505,7 @@
     const finish = () => {
       if (state.menuOpen) return
       petMenu.hidden = true
-      if (!bubble.classList.contains('show')) resizeForBubble(0)
+      if (!bubble.classList.contains('show')) resizeForBubble(bubbleReserve())
     }
     if (immediate) finish()
     else setTimeout(finish, 180)
@@ -693,10 +687,9 @@
     wireBubbleClick()
     // 0.6.1: reserve the bubble strip once and keep it; content swaps never
     // resize the transparent window again.
-    applyBubbleRoom({ side: 'above', reserve: 0 })
     syncBubbleMetrics()
     fitBubbleText()
-    resizeForBubble(0).catch(() => {})
+    resizeForBubble(bubbleReserve()).catch(() => {})
     window.addEventListener('resize', () => { syncBubbleSpace().catch(() => {}) })
     reportHitRects()
     window.addEventListener('resize', scheduleRectReport)
