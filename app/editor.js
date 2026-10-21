@@ -30,6 +30,10 @@
       name: (state.settings && state.settings.name) || '小芳桌宠',
       cups: card && card.id === 'water' ? 3 : 2,
       nextAt: Date.now() + 42 * 60000,
+      interval: 60,
+      quiet: { from: 23, to: 8 },
+      lastDrinkAt: Date.now() - 18 * 60000,
+      waterTip: '慢慢喝，别急呀',
     }
   }
 
@@ -94,7 +98,7 @@
 
   // ------------------------------------------------------------------- rows
   function moduleLabel(mod) {
-    if (mod.type === 'text') return mod.text || '（这里还空着）'
+    if (mod.type === 'text') return '写好的文字'
     return model.TYPE_MAP[mod.type] ? model.TYPE_MAP[mod.type].label : mod.type
   }
 
@@ -115,19 +119,6 @@
       rowEl.className = 'row'
       rowEl.dataset.ri = String(ri)
 
-      const handle = document.createElement('div')
-      handle.className = 'row-handle'
-      handle.textContent = '⠿'
-      handle.title = '按住拖动这一行'
-      handle.draggable = true
-      handle.addEventListener('dragstart', (ev) => {
-        state.drag = { kind: 'row', ri, ci: -1 }
-        ev.dataTransfer.effectAllowed = 'move'
-        ev.dataTransfer.setData('text/plain', 'row')
-      })
-      handle.addEventListener('dragend', () => { state.drag = null })
-      rowEl.appendChild(handle)
-
       const chips = document.createElement('div')
       chips.className = 'chips'
 
@@ -135,31 +126,10 @@
       if (!row.length) {
         const empty = document.createElement('span')
         empty.className = 'lib-empty'
-        empty.textContent = '这一行空着（去右边加点内容）'
+        empty.textContent = '这一行空着，点右边的 ＋ 加点内容'
         chips.appendChild(empty)
       }
       rowEl.appendChild(chips)
-
-      rowEl.addEventListener('dragover', (ev) => {
-        if (!state.drag || state.drag.kind !== 'module') return
-        ev.preventDefault()
-        rowEl.classList.add('dragover')
-      })
-      rowEl.addEventListener('dragleave', () => rowEl.classList.remove('dragover'))
-      rowEl.addEventListener('drop', (ev) => {
-        rowEl.classList.remove('dragover')
-        if (!state.drag) return
-        ev.preventDefault()
-        if (state.drag.kind === 'row') {
-          if (state.drag.ri !== ri) moveRow(state.drag.ri, ri)
-          state.drag = null
-          return
-        }
-        if (state.drag.kind === 'module') {
-          moveModule(state.drag.ri, state.drag.ci, ri, card.rows[ri].length)
-          state.drag = null
-        }
-      })
 
       const actions = document.createElement('div')
       actions.className = 'row-actions'
@@ -167,6 +137,7 @@
         const b = document.createElement('button')
         b.textContent = label
         b.title = title
+        b.setAttribute('aria-label', title)
         b.onclick = fn
         return b
       }
@@ -192,17 +163,8 @@
   function makeChip(card, mod, ri, ci) {
     const chip = document.createElement('div')
     chip.className = 'chip' + (state.sel && state.sel.ri === ri && state.sel.ci === ci ? ' selected' : '')
-    const grip = document.createElement('span')
-    grip.className = 'grip'
-    grip.textContent = '⠿'
-    grip.draggable = true
-    grip.addEventListener('dragstart', (ev) => {
-      state.drag = { kind: 'module', ri, ci }
-      ev.dataTransfer.effectAllowed = 'move'
-      ev.dataTransfer.setData('text/plain', 'module')
-    })
-    grip.addEventListener('dragend', () => { state.drag = null })
-    chip.appendChild(grip)
+    chip.setAttribute('role', 'button')
+    chip.tabIndex = 0
 
     const label = document.createElement('span')
     label.className = 'label'
@@ -216,25 +178,11 @@
     kind.textContent = moduleLabel(mod)
     chip.appendChild(kind)
 
-    chip.onclick = () => { state.sel = { ri, ci }; renderAll() }
-
-    chip.addEventListener('dragover', (ev) => {
-      if (!state.drag || state.drag.kind !== 'module') return
-      ev.preventDefault()
-      ev.stopPropagation()
-      chip.classList.add('dragover')
-    })
-    chip.addEventListener('dragleave', () => chip.classList.remove('dragover'))
-    chip.addEventListener('drop', (ev) => {
-      chip.classList.remove('dragover')
-      if (!state.drag || state.drag.kind !== 'module') return
-      ev.preventDefault()
-      ev.stopPropagation()
-      const from = state.drag
-      const targetIndex = (from.ri === ri && from.ci < ci) ? ci - 1 : ci
-      moveModule(from.ri, from.ci, ri, targetIndex)
-      state.drag = null
-    })
+    const pick = () => { state.sel = { ri, ci }; renderAll() }
+    chip.onclick = pick
+    chip.onkeydown = (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); pick() }
+    }
     return chip
   }
 
@@ -277,7 +225,7 @@
     if (!mod) {
       const empty = document.createElement('div')
       empty.className = 'lib-empty'
-      empty.textContent = '先点一块内容，或者从下面的「我的收藏」里放进来'
+      empty.textContent = '先点一块内容，右边就能改它写什么、长什么样'
       box.appendChild(empty)
       return
     }
@@ -421,7 +369,6 @@
       markDirty()
       renderAll()
     })
-    op('收进收藏', () => saveToLibrary(mod))
     box.appendChild(ops)
   }
 
@@ -443,53 +390,6 @@
     return input
   }
 
-  // --------------------------------------------------------------- library
-  function renderLibrary() {
-    const box = $('library')
-    box.innerHTML = ''
-    if (!state.layout.library.length) {
-      const empty = document.createElement('span')
-      empty.className = 'lib-empty'
-      empty.textContent = '收藏还空着：选中一块内容，再点「收进收藏」，它就会出现在这里'
-      box.appendChild(empty)
-      return
-    }
-    state.layout.library.forEach((entry) => {
-      const chip = document.createElement('span')
-      chip.className = 'lib-chip'
-      chip.textContent = entry.label
-      chip.title = '点一下就放进这一行'
-      chip.onclick = () => insertFromLibrary(entry)
-      box.appendChild(chip)
-    })
-  }
-
-  function insertFromLibrary(entry) {
-    const card = currentCard()
-    if (!card) return
-    if (!card.rows.length) card.rows.push([])
-    const ri = state.sel ? state.sel.ri : card.rows.length - 1
-    const row = card.rows[ri] || card.rows[card.rows.length - 1]
-    const copy = JSON.parse(JSON.stringify(entry.module))
-    copy.id = model.uid()
-    row.push(copy)
-    state.sel = { ri, ci: row.length - 1 }
-    markDirty()
-    renderAll()
-    status('放好啦：「' + entry.label + '」')
-  }
-
-  function saveToLibrary(mod) {
-    const label = mod.type === 'text' ? (mod.text || '文字') : (model.TYPE_MAP[mod.type] ? model.TYPE_MAP[mod.type].label : mod.type)
-    const copy = JSON.parse(JSON.stringify(mod))
-    copy.id = model.uid()
-    state.layout.library.push({ id: model.uid('lib'), label: String(label).slice(0, 20), module: copy })
-    markDirty()
-    renderAll()
-    status('收进收藏啦')
-  }
-
-  // --------------------------------------------------------------- preview
   function renderPreview() {
     const box = $('preview')
     box.innerHTML = ''
@@ -534,7 +434,6 @@
     renderTabs()
     renderRows()
     renderInspector()
-    renderLibrary()
     renderPreview()
   }
 

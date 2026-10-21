@@ -139,6 +139,34 @@
     if (state.timer) { clearTimeout(state.timer); state.timer = 0 }
   }
 
+  // ------------------------------------------- mouse passthrough (0.6.1)
+  // The window keeps a fixed bubble strip reserved, so most of its area is
+  // transparent. Without this, that empty strip would swallow desktop clicks.
+  // Default is click-through with `forward: true`, which still delivers moves,
+  // so a hit test can flip interactivity on when the pointer is over the pet,
+  // the bubble or the menu.
+  let interactive = null
+  function setInteractive(next) {
+    const want = !!next
+    if (want === interactive) return
+    interactive = want
+    try { api.setInteractive(want) } catch (err) {}
+  }
+
+  const lastPointer = { x: -1, y: -1 }
+  function refreshInteractive() {
+    setInteractive(lastPointer.x >= 0 ? overInteractive(lastPointer.x, lastPointer.y) : false)
+  }
+
+  function overInteractive(x, y) {
+    if (petWrap.classList.contains('dragging')) return true
+    const node = document.elementFromPoint(x, y)
+    if (!node || !node.closest) return false
+    if (node.closest('#petWrap') || node.closest('#menuBtn') || node.closest('#petMenu')) return true
+    const b = node.closest('#bubble')
+    return !!(b && b.classList.contains('show'))
+  }
+
   /**
  * Ask the main process for bubble space. It returns how much it granted and on
  * which side of the pet (`above`, or `below` when the pet is near the top of the
@@ -163,10 +191,77 @@
     document.body.style.setProperty('--bubble-room', reserve + 'px')
   }
 
-  function measureBubble() {
-    // The whale SVG tails live inside the bubble box, so only a small top
-    // margin is needed beyond the measured height.
-    return Math.ceil(bubble.offsetHeight) + 8
+  // ------------------------------------------------- bubble geometry (0.6.1)
+  // Contract borrowed from dsh-whale-widget: one fixed-aspect SVG frame, one
+  // scale unit (--u), text inside the frame's safe area. Font sizes authored in
+  // the editor are px at BUBBLE_REF_W, and are re-expressed in --u at render
+  // time, so shape and text always scale together and text cannot overflow.
+  const BUBBLE_REF_W = 300
+  const BUBBLE_MIN_W = 220
+  const BUBBLE_MAX_W = 340
+
+  function syncBubbleMetrics() {
+    const avail = Math.round(window.innerWidth) - 12
+    const w = Math.max(BUBBLE_MIN_W, Math.min(BUBBLE_MAX_W, avail))
+    document.body.style.setProperty('--bubble-w', w + 'px')
+    document.body.style.setProperty('--u', (w / 1026).toFixed(4) + 'px')
+    measureBubbleCentre()
+  }
+
+  /**
+ * Centre the text on where the cloud is actually painted, not on the viewBox
+ * geometry: the frame has a wide arc plus an 18-unit stroke, so the geometric
+ * bbox centre and the painted centre differ by ~6% (that was the "text sits to
+ * the left" bug). Measured in screen space against the bubble box.
+ */
+  function measureBubbleCentre() {
+    try {
+      const shape = bubble.querySelector('.bubble-bshape')
+      if (!shape) return
+      const br = bubble.getBoundingClientRect()
+      const sr = shape.getBoundingClientRect()
+      if (!br.width || !br.height || !sr.width || !sr.height) return
+      const vx = ((sr.left + sr.width / 2 - br.left) / br.width) * 100
+      const vy = ((sr.top + sr.height / 2 - br.top) / br.height) * 100
+      if (!isFinite(vx) || !isFinite(vy)) return
+      bubble.style.setProperty('--bubble-vx', vx.toFixed(2) + '%')
+      bubble.style.setProperty('--bubble-vy', vy.toFixed(2) + '%')
+    } catch (err) {}
+  }
+
+  /** Editor px -> --u multiples (1026 design units per frame width). */
+  function scaleModuleCss(css) {
+    if (!css) return ''
+    const k = 1026 / BUBBLE_REF_W
+    return css
+      .replace(/font-size:\s*([\d.]+)px/g, (m, n) => 'font-size:calc(var(--u) * ' + (Number(n) * k).toFixed(2) + ')')
+      .replace(/border-radius:\s*([\d.]+)px/g, (m, n) => 'border-radius:calc(var(--u) * ' + (Number(n) * k).toFixed(2) + ')')
+      .replace(/padding:\s*0\s+([\d.]+)px/g, (m, n) => 'padding:0 calc(var(--u) * ' + (Number(n) * k).toFixed(2) + ')')
+  }
+
+  /** Shrink the text layer until it fits its safe area (never grows past 1). */
+  function fitBubbleText() {
+    let fit = 1
+    for (let i = 0; i < 4; i++) {
+      document.body.style.setProperty('--bubble-fit', fit.toFixed(3))
+      const cw = bubbleContent.clientWidth
+      const ch = bubbleContent.clientHeight
+      if (!cw || !ch) break
+      const need = Math.min(1, cw / Math.max(bubbleContent.scrollWidth, 1), ch / Math.max(bubbleContent.scrollHeight, 1))
+      if (need >= 0.995) break
+      fit = Math.max(0.45, fit * need * 0.97)
+    }
+  }
+
+  function bubbleReserve() {
+    return Math.ceil(bubble.getBoundingClientRect().height) + 8
+  }
+
+  /** Measure the (constant) bubble box once space or size changes. */
+  async function syncBubbleSpace() {
+    syncBubbleMetrics()
+    fitBubbleText()
+    return resizeForBubble(bubbleReserve())
   }
 
   async function showBubble(node) {
@@ -178,15 +273,18 @@
     bubble.classList.remove('show')
     bubbleContent.innerHTML = ''
     bubbleContent.appendChild(node)
-    // Reserve the window space first (and learn which side the bubble goes on),
-    // then let the whale frame/text fade in on its own staggered delays.
-    const height = measureBubble()
-    await resizeForBubble(height)
+    // The space is constant per pet size (see 0.6.1 fixed reserve), so this
+    // call never resizes the window between two cards: it only re-decides which
+    // side of the pet can host the bubble.
+    syncBubbleMetrics()
+    fitBubbleText()
+    await resizeForBubble(bubbleReserve())
     if (state.bubbleToken !== token) return
     void bubble.offsetHeight
     state.showTimer = setTimeout(() => {
       if (state.bubbleToken !== token) return
       bubble.classList.add('show')
+      refreshInteractive()
     }, 50)
     const sec = Number(state.settings.bubble && state.settings.bubble.autoHideSeconds) || 0
     if (sec > 0) state.timer = setTimeout(hideBubble, sec * 1000)
@@ -199,11 +297,9 @@
     state.currentCard = null
     state.weatherMarked = false
     bubble.classList.remove('show')
-    // Let the fade-out finish before removing the reserved window space.
-    clearTimeout(state.shrinkTimer)
-    state.shrinkTimer = setTimeout(() => {
-      if (!bubble.classList.contains('show') && !state.menuOpen) resizeForBubble(0)
-    }, 540)
+    // 0.6.1: the reserved bubble strip stays (fixed reserve), so hiding never
+    // resizes the transparent window - the last remaining flash source.
+    refreshInteractive()
   }
 
   function advance() {
@@ -225,15 +321,41 @@
     renderCard(card, id)
   }
 
+  const WATER_TIPS = [
+    '慢慢喝，别急呀',
+    '温温的水最舒服',
+    '喝一口，歇一会儿',
+    '我在旁边陪你喝',
+    '小口小口，刚刚好',
+  ]
+
+  /** One warm line that fits the current hour and cup count. */
+  function waterTip(cups, hour) {
+    if (hour >= 22 || hour < 6) return '太晚啦，抿一小口就好'
+    if (cups <= 1) return '才刚开始，慢慢来呀'
+    if (cups >= 8) return '今天很乖，睡前少喝一点点'
+    return WATER_TIPS[(cups + hour) % WATER_TIPS.length]
+  }
+
   function contextFor(card) {
     const s = state.settings
     const w = s.water || {}
+    const cups = card.id === 'water' ? cupsToday() + 1 : cupsToday()
+    const quietFrom = Number(w.quietFrom)
+    const quietTo = Number(w.quietTo)
+    const quiet = Number.isFinite(quietFrom) && Number.isFinite(quietTo) && quietFrom !== quietTo
+      ? { from: quietFrom, to: quietTo }
+      : null
     return {
       weather: state.weather,
       phrases: (s.bubble && s.bubble.phrases) || [],
       name: s.name,
-      cups: card.id === 'water' ? cupsToday() + 1 : cupsToday(),
+      cups,
       nextAt: (Number(w.lastDrinkAt) || 0) + (Number(w.intervalMinutes) || 60) * 60000,
+      interval: Number(w.intervalMinutes) || 60,
+      quiet,
+      lastDrinkAt: Number(w.lastDrinkAt) || 0,
+      waterTip: waterTip(cups, new Date().getHours()),
     }
   }
 
@@ -249,7 +371,8 @@
       const line = el('div', 'bubble-row')
       row.forEach((item) => {
         const span = el('span', 'bubble-mod', item.text)
-        if (item.css) span.setAttribute('style', item.css)
+        const css = scaleModuleCss(item.css)
+        if (css) span.setAttribute('style', css)
         line.appendChild(span)
       })
       frame.appendChild(line)
@@ -535,8 +658,19 @@
   async function boot() {
     wireMenu()
     wirePet()
-    // Default bubble geometry until the main process grants something else.
+    // 0.6.1: reserve the bubble strip once and keep it; content swaps never
+    // resize the transparent window again.
     applyBubbleRoom({ side: 'above', reserve: 0 })
+    syncBubbleMetrics()
+    fitBubbleText()
+    resizeForBubble(bubbleReserve()).catch(() => {})
+    window.addEventListener('resize', () => { syncBubbleSpace().catch(() => {}) })
+    document.addEventListener('mousemove', (ev) => {
+      lastPointer.x = ev.clientX
+      lastPointer.y = ev.clientY
+      setInteractive(overInteractive(ev.clientX, ev.clientY))
+    }, { passive: true })
+    document.addEventListener('mouseleave', () => setInteractive(false))
     api.onMirror((side) => {
       petFlip.style.setProperty('--pet-flip', side === 'none' ? 1 : -1)
     })

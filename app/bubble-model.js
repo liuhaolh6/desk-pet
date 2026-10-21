@@ -35,6 +35,11 @@
     { key: 'weather.hint', label: '天气：离线提示', sample: '离线缓存' },
     { key: 'water.cups', label: '喝水：今天几杯', sample: '3' },
     { key: 'water.next', label: '喝水：还有多久', sample: '再过 42 分钟' },
+    { key: 'water.progress', label: '喝水：今天进度', sample: '●●●○○○○○' },
+    { key: 'water.interval', label: '喝水：多久提醒一次', sample: '每 60 分钟' },
+    { key: 'water.quiet', label: '喝水：安静时段', sample: '安静 23 点到 8 点' },
+    { key: 'water.last', label: '喝水：上次什么时候', sample: '上次 22:12' },
+    { key: 'water.tip', label: '喝水：一句叮嘱', sample: '慢慢喝，别急呀' },
     { key: 'time', label: '当前时间', sample: '22:12' },
     { key: 'date', label: '今天的日期', sample: '10月19日 周日' },
   ]
@@ -129,8 +134,11 @@
         name: '喝水',
         action: true,
         rows: [
-          [textModule('💧 喝水时间到', { bold: true })],
-          [textModule('今天第 '), module('water.cups'), textModule(' 杯，慢慢喝呀')],
+          [textModule('💧 该喝水啦', { bold: true })],
+          [module('water.progress'), textModule(' 今天第 '), module('water.cups'), textModule(' 杯')],
+          [module('water.next')],
+          [module('water.interval'), textModule(' · '), module('water.quiet')],
+          [module('water.tip')],
         ],
       },
       {
@@ -242,6 +250,27 @@
       case 'weather.updated': return ok ? '更新于 ' + fmtTime(w.updatedAt) : ''
       case 'weather.hint': return ok && w.stale ? '离线缓存' : ''
       case 'water.cups': return String((ctx && ctx.cups) || 0)
+      case 'water.progress': {
+        const n = Math.max(0, Math.min(8, Math.round(Number(ctx && ctx.cups) || 0)))
+        return '●'.repeat(n) + '○'.repeat(8 - n)
+      }
+      case 'water.interval': {
+        const mins = Math.round(Number(ctx && ctx.interval) || 0)
+        return mins > 0 ? '每 ' + mins + ' 分钟' : '还没设提醒'
+      }
+      case 'water.quiet': {
+        const q = (ctx && ctx.quiet) || null
+        if (!q) return '不设安静时段'
+        return '安静 ' + q.from + ' 点到 ' + q.to + ' 点'
+      }
+      case 'water.last': {
+        const at = Number(ctx && ctx.lastDrinkAt) || 0
+        if (!at) return '今天还没喝呢'
+        const d = new Date(at)
+        return '上次 ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
+      }
+      case 'water.tip':
+        return (ctx && ctx.waterTip) || '慢慢喝，别急呀'
       case 'water.next': {
         const due = ctx && ctx.nextAt
         if (!due) return ''
