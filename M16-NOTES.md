@@ -95,3 +95,12 @@ bubble.addEventListener('click', () => { if (state.menuOpen) return; hideBubble(
 - `app/bubble-model.js`：`valueOf` 的 weather 分支、`resolveCard` 剪枝
 - `app/pet.css`：`.bubble.show { pointer-events: auto; cursor: pointer }`
 - `tools/smoke.js`：4 条新断言
+## 6. 构建产物
+
+| 文件 | 大小 | SHA-256 |
+| --- | --- | --- |
+| `dist/DeskPet-0.6.3-portable.exe` | 153,754,213 B | `83c2282506f77094fd298732b28f2503483fd4cb1ae1d5ef14dcf26fd7535a02` |
+
+- `dist/win-unpacked/DeskPet.exe` 的 `FileVersion` = `0.6.3`、`ProductVersion` = `0.6.3.0`。
+- 打包版实测：空闲 `innerHeight=220`、气泡展开 `444`、点气泡收起回 `220`，卡片文案与开发版一致。
+- 打包版启动时**不要**带 `ELECTRON_RUN_AS_NODE`（会把 exe 当 node 跑，报 `bad option: --no-sandbox`）。
