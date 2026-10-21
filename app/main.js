@@ -271,6 +271,10 @@ function createPetWindow() {
   })
 
   petWin.setAlwaysOnTop(!!s.alwaysOnTop, 'screen-saver')
+  // 0.6.1: the window keeps a fixed bubble strip reserved, so most of its area
+  // is transparent. Click-through by default (forwarded so the renderer still
+  // sees moves); the renderer flips it back on while over the pet/bubble/menu.
+  try { petWin.setIgnoreMouseEvents(true, { forward: true }) } catch (err) {}
   petWin.loadFile(path.join(__dirname, 'pet.html'))
   petWin.on('closed', () => { petWin = null })
   petWin.webContents.on('console-message', (event, level, message, line, source) => {
@@ -1067,6 +1071,12 @@ function registerIpc() {
     const display = placement.displayAt(getDisplays(), { x: pos.x + size / 2, y: pos.y + size / 2 })
     store.writeSettings({ position: { x: pos.x, y: pos.y, displayId: display ? display.id : null } })
     sendMirror()
+  })
+
+  ipcMain.on('pet:interactive', (ev, on) => {
+    const win = BrowserWindow.fromWebContents(ev.sender)
+    if (!win || win.isDestroyed()) return
+    try { win.setIgnoreMouseEvents(!on, { forward: true }) } catch (err) {}
   })
 
   ipcMain.handle('pet:bubble', (ev, payload) => {

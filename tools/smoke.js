@@ -740,5 +740,37 @@ const PAD = 54
   ok('桌宠窗口：气泡加高不移动桌宠、上下两侧自适应')
 }
 
+{
+  // 0.6.1 bubble contract: fixed-aspect frame, text in the measured safe area,
+  // fixed reserve (no window resize between cards), and the enriched water card.
+  const petCss = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.css'), 'utf8')
+  const petJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.js'), 'utf8')
+  const petHtml = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.html'), 'utf8')
+  const mainJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main.js'), 'utf8')
+  const modelJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'bubble-model.js'), 'utf8')
+  assert.ok(/aspect-ratio:\s*1026\s*\/\s*700/.test(petCss), '气泡框保持 1026:700 固定比例（不再拉伸）')
+  assert.ok(!/preserveAspectRatio="none"/.test(petHtml), 'SVG 不再用 preserveAspectRatio=none 拉伸云朵')
+  assert.ok(/left: var\(--bubble-vx/.test(petCss) && /top: var\(--bubble-vy/.test(petCss), '文字层按实测云朵中心定位')
+  assert.ok(/measureBubbleCentre/.test(petJs), '云朵中心由渲染矩形实测')
+  assert.ok(/--bubble-fit/.test(petCss) && /fitBubbleText/.test(petJs), '文字超框时按比例收缩而不是溢出')
+  assert.ok(/white-space: normal/.test(petCss), '长文本先换行')
+  assert.ok(/bubbleReserve/.test(petJs) && !/shrinkTimer,\s*540/.test(petJs), '气泡空间固定预留，内容切换不 resize')
+  assert.ok(/setIgnoreMouseEvents\(true, \{ forward: true \}\)/.test(mainJs), '固定预留区默认鼠标穿透')
+  assert.ok(/pet:interactive/.test(mainJs) && /setInteractive/.test(petJs), '悬停桌宠/气泡时恢复可交互')
+
+  for (const key of ['water.progress', 'water.interval', 'water.quiet', 'water.last', 'water.tip']) {
+    assert.ok(modelJs.includes("key: '" + key + "'"), '新增喝水模块 ' + key)
+  }
+  assert.equal(bubble.valueOf('water.progress', { cups: 3 }), '●●●○○○○○', '喝水进度按 8 格绘制')
+  assert.equal(bubble.valueOf('water.interval', { interval: 60 }), '每 60 分钟')
+  assert.equal(bubble.valueOf('water.quiet', { quiet: { from: 23, to: 8 } }), '安静 23 点到 8 点')
+  assert.equal(bubble.valueOf('water.quiet', { quiet: null }), '不设安静时段')
+  assert.equal(bubble.valueOf('water.last', { lastDrinkAt: 0 }), '今天还没喝呢')
+  assert.equal(bubble.valueOf('water.tip', { waterTip: '慢慢喝，别急呀' }), '慢慢喝，别急呀')
+  const waterCard = bubble.defaultLayout().cards.find((c) => c.id === 'water')
+  assert.ok(waterCard.rows.length >= 5, '喝水卡片默认 5 行（标题/进度/下次/间隔/叮嘱）')
+  ok('气泡：固定比例、实测居中、超框收缩、固定预留、喝水卡片内容')
+}
+
 console.log('\n' + pass + ' checks passed')
 fs.rmSync(dir, { recursive: true, force: true })

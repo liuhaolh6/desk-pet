@@ -225,16 +225,14 @@ body.photo-role .pet-flip {
   position: absolute;
   left: 50%;
   bottom: calc(var(--pet-size) + 6px);
-  min-width: 140px;
-  max-width: calc(100% - 12px);
+  /* 0.6.1: the frame is a fixed 1026x700 SVG and the box keeps that same aspect
+     ratio, so the cloud is never stretched. Text lives in the measured safe
+     area and scales with --u, which makes overflow impossible. */
+  width: var(--bubble-w, 288px);
+  aspect-ratio: 1026 / 700;
+  max-width: calc(100% - 8px);
   box-sizing: border-box;
-  padding: 6px 24px 54px;
   background: transparent;
-  color: #536ba9;
-  font-size: var(--text-md);
-  line-height: 1.15;
-  text-align: center;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
   transform: translateX(-50%);
   pointer-events: none;
   z-index: 2;
@@ -272,7 +270,9 @@ body[data-bubble-side="below"] .bubble-shape ellipse {
   height: 100%;
   overflow: visible;
   pointer-events: none;
-  filter: drop-shadow(0 10px 18px rgba(15, 23, 42, 0.16));
+  /* No drop-shadow: on a transparent window it repaints the whole strip and
+     produces coloured fringes around the 18-unit stroke (0.6.1). The thick
+     outline already separates the cloud from the wallpaper. */
   z-index: 0;
 }
 
@@ -303,30 +303,54 @@ body[data-bubble-side="below"] .bubble-shape ellipse {
 .bubble .bubble-b2 { transition-delay: 0.3s; }
 
 .bubble-content {
-  position: relative;
-  z-index: 1;
+  /* The safe area of the classic frame: 66% x 64% centred on the cloud's
+     bbox centre (44.25% / 36%), the same contract dsh-whale-widget uses. */
+  position: absolute;
+  /* Centre follows the cloud's measured bbox (getBBox) and falls back to the
+     classic values before the first measurement. */
+  left: var(--bubble-vx, 44.25%);
+  top: var(--bubble-vy, 36%);
+  width: 66%;
+  height: 64%;
+  box-sizing: border-box;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u, 0.2807px) * 8);
+  color: #536ba9;
+  font-size: calc(var(--u, 0.2807px) * 52 * var(--bubble-fit, 1));
+  line-height: 1.2;
+  text-align: center;
+  /* Long lines wrap inside the safe area first; fitBubbleText() only shrinks
+     when wrapping still cannot fit. */
+  white-space: normal;
+  overflow-wrap: break-word;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
   opacity: 0;
-  transition: opacity 0.16s ease, transform 0.3s ease;
+  transition: opacity 0.16s ease;
+  z-index: 1;
 }
 
 .bubble.show .bubble-content {
   opacity: 1;
-  transition: opacity 0.16s ease 0.36s, transform 0.3s ease;
+  transition: opacity 0.16s ease 0.36s;
 }
 
 /* Bubble content (bubble-model output) */
 .bubble-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px 4px;
+  gap: calc(var(--u, 0.2807px) * 7);
   align-items: baseline;
   justify-content: center;
-  margin: 2px 0;
+  margin: 0;
 }
 
 .bubble-mod {
-  white-space: pre-wrap;
-  word-break: break-word;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .title {

@@ -87,17 +87,6 @@ button:disabled { opacity: .45; cursor: default; }
   background: #fbfcff;
 }
 
-.row.dragover { border-color: var(--accent); background: #eef3ff; }
-
-.row-handle {
-  flex: 0 0 auto;
-  width: 22px;
-  text-align: center;
-  color: var(--muted);
-  cursor: grab;
-  user-select: none;
-}
-
 .chips { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 
 .chip {
@@ -110,12 +99,12 @@ button:disabled { opacity: .45; cursor: default; }
   padding: 2px 6px;
   cursor: pointer;
   max-width: 100%;
+  /* 0.6.1: chips became keyboard-focusable buttons (role=button), so they must
+     clear WCAG 2.2 AA 2.5.8's 24x24 target size. */
+  min-height: 24px;
 }
 
 .chip.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(32, 49, 112, .14); }
-.chip.dragover { border-color: var(--accent); background: #eef3ff; }
-
-.chip .grip { color: var(--muted); cursor: grab; font-size: 12px; }
 .chip .label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
 .chip .kind { color: var(--muted); font-size: 11px; }
 
@@ -208,7 +197,6 @@ details.advanced[open] > summary { margin-bottom: 4px; }
 .bubble-preview .actions { display: flex; gap: 6px; margin-top: 8px; }
 .bubble-preview .actions button { flex: 1; }
 
-.library-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .lib-chip { border: 1px solid var(--line); border-radius: 7px; background: #fbfcff; padding: 3px 8px; cursor: pointer; font-size: 12px; }
 .lib-chip:hover { background: #eef2fa; }
 .lib-empty { color: var(--muted); font-size: 12px; }
