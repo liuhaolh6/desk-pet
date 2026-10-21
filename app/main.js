@@ -71,6 +71,15 @@ let editorWin = null
 let cutoutWin = null
 let tray = null
 let extraBubbleHeight = 0
+// Where the reserved bubble space sits relative to the pet. `above` grows the
+// window upward; `below` grows it downward (used when the pet is too close to
+// the top of the work area). Either way the pet's screen rect never changes.
+let bubbleSide = 'above'
+// The pet's top-left on screen, tracked explicitly. Deriving it from the window
+// bounds is fragile (frameless windows report a slightly different outer height
+// than BrowserWindow.getBounds(), and a stale height after a snap rounds off a
+// few px), and any error there moves the pet when a bubble opens.
+let petPos = null
 let weather = null
 let weatherTimer = null
 let reminderTimer = null
@@ -122,24 +131,43 @@ function ensureOnScreen() {
   const moved = clamped.x !== pet.x || clamped.y !== pet.y
   if (moved) {
     log('relocate pet to display=' + display.id)
-    petWin.setBounds({
-      x: clamped.x - WIN_PAD,
-      y: clamped.y - extra,
-      width: windowWidth(size),
-      height: size + extra,
-    })
+    petPos = { x: clamped.x, y: clamped.y }
+    petWin.setBounds(windowBoundsForPet(clamped.x, clamped.y, size, extra))
     sendMirror()
   }
 }
 
 function petTopLeft() {
   if (!petWin) return { x: 0, y: 0 }
-  const b = petWin.getBounds()
   const s = store.readSettings()
   const size = clamp(Number(s.size) || 220, 80, 480)
-  // The pet always sits at the bottom of the window, so its top can be derived
-  // from the window bottom regardless of how much bubble space is reserved.
-  return { x: b.x, y: b.y + b.height - size }
+  return { x: petScreenRect(size).x, y: petScreenRect(size).top }
+}
+
+/**
+ * Where the pet actually is on screen, derived from the window bounds. In
+ * `above` mode the pet sits at the window's bottom and the reserve is on top;
+ * in `below` mode the pet sits at the window's top and the reserve is below.
+ */
+function petScreenRect(size) {
+  if (petPos) return { x: petPos.x, top: petPos.y, bottom: petPos.y + size }
+  const b = petWin.getBounds()
+  const reserve = Math.max(0, b.height - size)
+  if (bubbleSide === 'below') {
+    return { x: b.x, top: b.y + b.height - reserve - size, bottom: b.y + b.height - reserve }
+  }
+  return { x: b.x, top: b.y + b.height - size, bottom: b.y + b.height }
+}
+
+/** Window bounds that put the pet's top-left at (petX, petY) for the given reserve. */
+function windowBoundsForPet(petX, petY, size, reserve) {
+  const extra = Math.max(0, Math.round(reserve))
+  return {
+    x: petX - WIN_PAD,
+    y: bubbleSide === 'below' ? petY : petY - extra,
+    width: windowWidth(size),
+    height: size + extra,
+  }
 }
 
 /** Which screen edge the pet is hugging, for the renderer's mirror effect. */
@@ -211,6 +239,11 @@ function createPetWindow() {
   const s = store.readSettings()
   const size = clamp(Number(s.size) || 220, 80, 480)
   const pos = resolveWindowPosition(size)
+  // The saved/window x already excludes the window padding; the pet never has a
+  // bubble reserve at startup, so the pet's top equals the window's top.
+  petPos = { x: pos.x + WIN_PAD, y: pos.y }
+  bubbleSide = 'above'
+  extraBubbleHeight = 0
 
   const opaque = process.env.DESKPET_OPAQUE === '1'
   petWin = new BrowserWindow({
@@ -261,36 +294,79 @@ function createPetWindow() {
   })
 }
 
-/** Grow/shrink the window upward so the pet's bottom edge stays put. */
+/**
+ * Reserve bubble/menu space WITHOUT moving the pet on screen.
+ *
+ * The old version computed `y = max(workArea.y, bottom - nextH)`; when the pet
+ * sat near the top of the work area that clamp pushed the window's bottom down,
+ * and since the pet is anchored to the window's bottom it visibly slid down (same
+ * size, wrong place) on the first taps after startup or a drag.
+ *
+ * Now: keep the pet's screen rect fixed. Grow upward when there is room above,
+ * otherwise grow downward (renderer puts the bubble below the pet). If neither
+ * side can host the full height, reserve whatever the larger side has.
+ *
+ * @returns {{reserve:number, side:'above'|'below'}}
+ */
 function applyBubbleHeight(visible, height) {
-  if (!petWin) return
+  if (!petWin) return { reserve: extraBubbleHeight, side: bubbleSide }
   const s = store.readSettings()
   const size = clamp(Number(s.size) || 220, 80, 480)
   const requested = clamp(Math.round(Number(height) || 0), 0, 420)
   // Treat sub-card heights as "no bubble": they are invisible leftovers that
   // otherwise leave a few pixels of reserved space (and shift drag maths).
   const cardHeight = requested < 40 ? 0 : requested
-  // While a bubble/menu chain is visible, only grow. Shrinking between two cards
-  // of different heights resizes the transparent window again, and every
-  // resize can flash on Windows. The shrink happens once, on hide.
-  const normalized = visible ? Math.max(cardHeight, extraBubbleHeight) : 0
-  if (normalized === extraBubbleHeight) return
+  const want = visible ? cardHeight : 0
+
   const b = petWin.getBounds()
-  const bottom = b.y + b.height
-  extraBubbleHeight = normalized
-  const nextH = size + normalized
+  const pet = petScreenRect(size)
   const display = screen.getDisplayNearestPoint({
     x: b.x + Math.floor(b.width / 2),
-    y: bottom - Math.floor(nextH / 2),
+    y: pet.bottom - Math.floor(size / 2),
   })
-  const y = Math.max(display.workArea.y, bottom - nextH)
-  // Re-assert transparency right before the bounds change: the newly exposed
-  // strip can otherwise be composited with the window background for a frame.
-  if (process.env.DESKPET_OPAQUE !== '1') {
-    try { petWin.setBackgroundColor('#00000000') } catch (err) {}
+  const work = display.workArea
+  const roomAbove = Math.max(0, pet.top - work.y)
+  const roomBelow = Math.max(0, work.y + work.height - pet.bottom)
+
+  let side = bubbleSide
+  let reserve = want
+  // While a bubble/menu chain is visible, only grow (per side): shrinking between
+  // two cards of different heights resizes the transparent window again, and every
+  // resize can flash. The shrink happens once, on hide.
+  if (want > 0 && bubbleSide === 'below' && want <= extraBubbleHeight) {
+    reserve = extraBubbleHeight
+  } else if (want > 0 && bubbleSide === 'above' && want <= extraBubbleHeight && want <= roomAbove) {
+    reserve = extraBubbleHeight
+  } else if (want <= roomAbove) {
+    side = 'above'
+    reserve = want
+  } else if (want <= roomBelow) {
+    side = 'below'
+    reserve = want
+  } else if (roomBelow > roomAbove) {
+    side = 'below'
+    reserve = roomBelow
+  } else {
+    side = 'above'
+    reserve = roomAbove
   }
-  petWin.setBounds({ x: b.x, y, width: windowWidth(size), height: nextH }, false)
-  sendMirror()
+  reserve = Math.max(0, Math.min(Math.round(reserve), 420))
+
+  const nextH = size + reserve
+  const y = side === 'below' ? pet.top : pet.bottom - nextH
+  const changed = side !== bubbleSide || reserve !== extraBubbleHeight || b.height !== nextH || b.y !== y
+  bubbleSide = side
+  extraBubbleHeight = reserve
+  if (changed) {
+    // Re-assert transparency right before the bounds change: the newly exposed
+    // strip can otherwise be composited with the window background for a frame.
+    if (process.env.DESKPET_OPAQUE !== '1') {
+      try { petWin.setBackgroundColor('#00000000') } catch (err) {}
+    }
+    petWin.setBounds({ x: b.x, y, width: windowWidth(size), height: nextH }, false)
+    sendMirror()
+  }
+  return { reserve, side }
 }
 
 function applySettingsSideEffects(prev, next) {
@@ -298,8 +374,16 @@ function applySettingsSideEffects(prev, next) {
   const size = clamp(Number(next.size) || 220, 80, 480)
   const g = petWin.getBounds()
   if (windowWidth(size) !== g.width) {
-    const bottom = g.y + g.height
-    petWin.setBounds({ x: g.x, y: bottom - (size + extraBubbleHeight), width: windowWidth(size), height: size + extraBubbleHeight })
+    // Keep the pet anchored the same way it already is: bottom-fixed above the
+    // bubble, top-fixed when the bubble is below.
+    const prevSize = clamp(Number(prev && prev.size) || size, 80, 480)
+    if (petPos && bubbleSide !== 'below' && prevSize !== size) {
+      petPos.y = petPos.y + prevSize - size
+    }
+    const y = bubbleSide === 'below'
+      ? (petPos ? petPos.y : g.y)
+      : (petPos ? petPos.y - extraBubbleHeight : (g.y + g.height) - (size + extraBubbleHeight))
+    petWin.setBounds({ x: g.x, y, width: windowWidth(size), height: size + extraBubbleHeight })
     sendMirror()
   }
   if (!prev || prev.alwaysOnTop !== next.alwaysOnTop) {
@@ -964,14 +1048,10 @@ function registerIpc() {
     if (s.snap && s.snap.enabled) next = placement.snapPet(next, display.workArea, s.snap.gap)
 
     const extra = Math.max(0, b.height - size)
-    // Window top = pet top - reserved bubble space, so dragging with a bubble
-    // open does not make the pet sink by `extra` on every move.
-    petWin.setBounds({
-      x: next.x - WIN_PAD,
-      y: next.y - extra,
-      width: windowWidth(size),
-      height: size + extra,
-    })
+    // Window top = pet top - reserved bubble space (above) or exactly the pet
+    // top (below), so dragging with a bubble open does not make the pet sink.
+    petPos = { x: next.x, y: next.y }
+    petWin.setBounds(windowBoundsForPet(next.x, next.y, size, extra))
     sendMirror()
   })
 
@@ -985,8 +1065,8 @@ function registerIpc() {
     sendMirror()
   })
 
-  ipcMain.on('pet:bubble', (ev, payload) => {
-    applyBubbleHeight(!!(payload && payload.visible), payload && payload.height)
+  ipcMain.handle('pet:bubble', (ev, payload) => {
+    return applyBubbleHeight(!!(payload && payload.visible), payload && payload.height)
   })
 
   ipcMain.on('pet:hide', () => { if (petWin) petWin.hide() })

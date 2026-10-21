@@ -51,7 +51,7 @@ contextBridge.exposeInMainWorld('deskPet', {
   // window behaviour
   drag: (point) => ipcRenderer.send('pet:drag', point),
   dragEnd: () => ipcRenderer.send('pet:drag-end'),
-  setBubble: (visible, height) => ipcRenderer.send('pet:bubble', { visible: !!visible, height: height || 0 }),
+  setBubble: (visible, height) => ipcRenderer.invoke('pet:bubble', { visible: !!visible, height: height || 0 }),
   hidePet: () => ipcRenderer.send('pet:hide'),
   openSettings: () => ipcRenderer.send('pet:open-settings'),
   openEditor: () => ipcRenderer.send('pet:open-editor'),

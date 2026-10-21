@@ -676,7 +676,7 @@ const PAD = 54
   assert.ok(petRule, '#pet 规则存在')
   assert.ok(!/transition[\s\S]{0,80}filter/.test(petRule[0]), '#pet 不应过渡 filter')
   assert.ok(/#pet\s*\{[\s\S]*?transition:\s*transform/.test(petCss), '#pet 只过渡 transform')
-  assert.ok(/visible \? Math\.max\(cardHeight, extraBubbleHeight\) : 0/.test(mainJs), '气泡只增不减，避免反复改窗口尺寸')
+  assert.ok(/want <= extraBubbleHeight/.test(mainJs), '气泡可见期间只增不减，避免反复改窗口尺寸')
   assert.ok(/showTouchUi/.test(petJs), '触摸需要无 hover 的菜单入口')
   assert.ok(/\.pet-wrap\.touch-ui \.menu-btn/.test(petCss), 'touch-ui 下菜单按钮可见可点')
   assert.ok(/lastTouchAt/.test(petJs), '触摸后短时间忽略兼容鼠标事件')
@@ -694,6 +694,23 @@ const PAD = 54
   const storeJs = fs.readFileSync(path.join(__dirname, '..', 'lib', 'store.js'), 'utf8')
   assert.ok(/settingsCache/.test(storeJs), 'settings 读取有缓存（拖动每帧都要读）')
   ok('桌宠窗口：无过冲缩放、阴影不随缩放、拖动按帧合并、settings 有缓存')
+}
+
+{
+  // Bubble reserve must never move the pet (0.5.7): the old top-clamp shifted the
+  // whole pet down by the bubble height when it sat near the top of the screen.
+  const mainJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main.js'), 'utf8')
+  const petJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.js'), 'utf8')
+  const petCss = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.css'), 'utf8')
+  assert.ok(!/Math\.max\(display\.workArea\.y,/.test(mainJs), '气泡加高不得把窗口顶部 clamp 到工作区（会顶动桌宠）')
+  assert.ok(/roomAbove/.test(mainJs) && /roomBelow/.test(mainJs), '气泡空间按上下两侧可用空间分配')
+  assert.ok(/side === 'below' \? pet\.top : pet\.bottom - nextH/.test(mainJs), '加高时保持桌宠屏幕矩形不变')
+  assert.ok(/ipcMain\.handle\('pet:bubble'/.test(mainJs), 'pet:bubble 回传授予的空间与侧别')
+  assert.ok(/applyBubbleRoom/.test(petJs), '渲染层按授予的空间/侧别定位气泡')
+  assert.ok(/body\[data-bubble-side="below"\] \.pet-wrap/.test(petCss), '下方模式下桌宠锚在窗口顶部')
+  const preloadJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')
+  assert.ok(/setBubble: \(visible, height\) => ipcRenderer\.invoke\('pet:bubble'/.test(preloadJs), 'preload 用 invoke 拿回执')
+  ok('桌宠窗口：气泡加高不移动桌宠、上下两侧自适应')
 }
 
 console.log('\n' + pass + ' checks passed')

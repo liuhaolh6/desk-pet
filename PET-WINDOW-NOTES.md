@@ -1,8 +1,9 @@
-# 桌宠窗口渲染问题记录（0.5.5 / 0.5.6）
+# 桌宠窗口渲染问题记录（0.5.5 / 0.5.6 / 0.5.7）
 
-> 日期：2026-10-21 · 版本：`0.5.5`（屏闪）、`0.5.6`（点击/拖动缩放虚影与卡顿）
+> 日期：2026-10-21 · 版本：`0.5.5`（屏闪）、`0.5.6`（缩放虚影/拖动卡顿）、`0.5.7`（气泡加高顶走桌宠）
 > 现象 1：触摸按动桌宠时，窗口偶尔闪一下
 > 现象 2：点击桌宠时出现一两帧放大/缩小的虚影，拖动/交互显得卡顿
+> 现象 3：刚启动或拖动位置后，前两下触摸时桌宠在正常位置的上/下方闪一下，大小一致
 > 影响范围：`app/pet.js`、`app/pet.css`、`app/main.js`、`lib/store.js`、`tools/smoke.js`
 
 ## 1. 0.5.6：点击缩放虚影与拖动卡顿
@@ -137,3 +138,79 @@ CDP 采样（开发版，`transparent: true`）：
 - `pet.css`：把 `filter 0.18s var(--ease-out)` 加回 transition；
 - `main.js`：`normalized` 改回 `visible ? cardHeight : 0`；
 - 三者互相独立，可单独回滚；`smoke.js` 的新断言需要同步删除。
+## 3. 0.5.7：点开气泡把整只桌宠顶走（顶部 clamp）
+
+> 现象：刚启动或拖动位置后，前两下触摸会有「桌宠出现在正常位置上方/下方、大小一致」的一两帧；快速连点无事，放慢速度有规律触发。
+
+### 3.1 原因（实测）
+
+主进程 `applyBubbleHeight()` 原来这样定位窗口：
+
+```js
+const bottom = b.y + b.height            // 意图：桌宠底边不动
+const y = Math.max(display.workArea.y, bottom - nextH)   // ← 顶部被 clamp 到工作区
+```
+
+桌宠在渲染层是 `bottom: 0` 锚定窗口底部的，所以「底边不动」是它不移动的唯一前提。
+当桌宠靠近屏幕顶部、上方放不下气泡时，`bottom - nextH < workArea.y`，`max()` 把窗口顶边
+按在工作区上沿，**窗口底边被顶下去**，整只桌宠就跟着滑走（大小不变）。
+
+逐帧实测（桌宠在屏幕上方，慢速连点 4 次，`screenTop` 是桌宠在屏幕上的顶边）：
+
+| | 窗口 sy | 窗口高 | 窗口底边 | 桌宠 screenTop |
+|---|---|---|---|---|
+| 初始 | 30 | 242 | 272 | **32** |
+| tap#1 | 30 → 0 | 242 → 382 | **272 → 382** | **32 → 142**（滑走 110px，且不回来） |
+| tap#2 | 0 | 382 → 402 | 382 → 402 | 142 → 162（再滑 20px） |
+| tap#3/4 | 0 | 402 | 402 | 162（只剩按压反馈的 24px 瞬态） |
+
+- 慢速点击每次都经历「加高 → 缩回」，所以**有规律**；
+- 快速连点会反复 `clearTimeout(state.shrinkTimer)`，窗口高度不变、不 resize，所以**没事**；
+- 「前两下」是因为第 1、2 次把预留高度加到了上限，之后同一轮里不再改窗口。
+
+### 3.2 修复：气泡加高/缩回时，桌宠的屏幕矩形绝对不变
+
+| 位置 | 改动 |
+|---|---|
+| `app/main.js` | 删掉顶部 clamp。改成先按上下两侧的可用空间分配：`roomAbove = petTop - work.y`、`roomBelow = workArea.bottom - petBottom`；**上方放得下就向上加高**（`y = petBottom - (size+reserve)`），**放不下就向下加高**（`y = petTop`，`side='below'`），两边都不够就取较大的一侧。任何情况下底边/顶边都不动 |
+| `app/main.js` | `applyBubbleHeight()` 现在返回 `{reserve, side}`；`pet:bubble` 由 `ipcMain.on` 改为 `ipcMain.handle` |
+| `app/main.js` | 新增 `petScreenRect(size)` / `windowBoundsForPet()`，`petTopLeft()`、拖动、`ensureOnScreen`、改大小都走同一套「保持桌宠屏幕矩形」的逻辑（下方模式锚顶边，上方模式锚底边） |
+| `app/preload.js` | `setBubble` 用 `ipcRenderer.invoke` 拿回执 |
+| `app/pet.js` | `resizeForBubble()` 变成 async 并把授予值写入 `body[data-bubble-side]` 与 `--bubble-room`；`showBubble`/`openMenu` 先拿到空间与侧别再显示；`boot()` 设初始值 |
+| `app/pet.css` | 下方模式：`body[data-bubble-side="below"] .pet-wrap { bottom: var(--bubble-room) }`（桌宠锚在窗口顶部）、`.bubble { bottom:auto; top: calc(var(--pet-size) + 6px) }`，并隐藏朝下的鲸鱼尾巴 |
+| `tools/smoke.js` | 新增断言：不得再出现 `Math.max(display.workArea.y, …)`、必须有 `roomAbove/roomBelow`、加高公式必须保持 `pet.bottom`/`pet.top`、`pet:bubble` 必须是 `handle`、渲染层必须有 `applyBubbleRoom`、CSS 必须有下方模式 |
+
+### 3.3 验证
+
+桌宠放在屏幕上方（y=30）与下方（y=700）各跑一遍「4 次慢速点击 + 拖动后再点 2 次」：
+
+| 场景 | 稳定位置偏差 | 侧别 | 结果 |
+|---|---|---|---|
+| 上方（修复前） | **110px / 20px** | 只有 above（被 clamp） | 桌宠滑走 |
+| 上方（修复后） | **0～1px** | above → below（`room=142~161px`） | PASS |
+| 下方（修复后） | **0～1px** | above | PASS |
+| 拖动后再点（修复后） | **0～1px** | 按位置自动切换 | PASS |
+
+- 剩下的 24px 是**按压反馈**本身的瞬态（`.pet-wrap.pressing` 的 `scaleY: 0.9` + 底部固定 → 顶边下移 10%，约 110ms），快速点击同样存在，与本次现象无关。
+- 回归：菜单（触摸/鼠标）、触摸不触发 hover、拖动落点与持久化、气泡只增不减全部通过；`npm test` **45 项**。
+- 三端复测（桌宠放屏幕上方 y=30，慢速点击 + 拖动后再点 2 次）：
+
+  | 构建 | 稳定位置偏差 | 侧别 | 结果 |
+  |---|---|---|---|
+  | 开发版 | 0～1px | above ↔ below | PASS |
+  | 解包版（9230） | 0～1px | above ↔ below | PASS |
+  | portable（9231） | 0～1px | above ↔ below | PASS |
+
+  注：portable 在**引入显式 `petPos` 之前**曾出现「拖动后第一次点击稳定位置偏 10px」——主进程当时从窗口几何反推桌宠位置，而透明无边框窗口的外框高度与 `BrowserWindow.getBounds()` 可差几像素。现在主进程用 `petPos` 直接持有桌宠屏幕坐标，位移不再依赖反推。
+- 无障碍审计 `node tools/a11y-audit.js --port 9231 --flow` → **82 项、失败 0**；抠图 worker 流程无回归（无 fallback、无 renderer error）。
+- 产物：`dist/DeskPet-0.5.7-portable.exe`，153,074,439 字节，SHA-256 `4c7243ac8fed656c59ad850eec745012045d48504c921090f8835f425f142631`（未签名）。
+
+### 3.4 未覆盖 / 风险
+
+- CDP 只能证明**逻辑坐标不再偏移**；「一两帧」里如果还有合成器层面的旧表面，CDP 看不到（真机确认）。
+- 下方模式是新的视觉路径：气泡在桌宠下方、鲸鱼尾巴隐藏；只在「上方放不下」时出现（桌宠贴近屏幕顶部）。若两种方向都放不下，预留高度会被截到较大的一侧，气泡可能被压缩/裁切。
+- 下方模式会在桌宠**下方**保留一条透明区域，气泡显示期间它会吃掉那一条上的桌面点击（与原来上方保留下沉区域同理）。
+
+### 3.5 回滚
+
+`app/main.js` 的 `applyBubbleHeight` 恢复 clamp 版本、`pet:bubble` 改回 `ipcMain.on`、`preload` 改回 `send`、`pet.js` 的 `resizeForBubble` 改回同步、删除 `pet.css` 的 `data-bubble-side="below"` 规则即可；`smoke.js` 的新断言需同步删除。

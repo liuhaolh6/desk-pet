@@ -8,7 +8,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 
 - 仓库：<https://github.com/liuhaolh6/desk-pet>（public，main 分支）
 - 本地目录：`D:\project\deskpet`
-- 版本：`0.5.6`（M12 P0 + P1-1~P1-9 可行部分 + 无障碍审计 + 桌宠窗口屏闪/缩放虚影修复；未签名）；本地 21+ 个提交（含 M10/M11/M12 文档，部分未推送）
+- 版本：`0.5.7`（M12 P0 + P1-1~P1-9 可行部分 + 无障碍审计 + 桌宠窗口屏闪/虚影/气泡位移修复；未签名）；本地 21+ 个提交（含 M10/M11/M12 文档，部分未推送）
 - 早期那套「DSH 挂件版」实现已移出仓库，归档在 `D:\project\deskpet-dsh-plugin`（需要参考角色/气泡系统时可以翻）
 
 ## 2. 现在能用的功能（都真机验证过）
@@ -31,6 +31,7 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 | M12.4 无障碍基础 / token IPC / 仓库基线 | ✅ 0.5.4，见 `M12.4-NOTES.md` |
 | M12.5 完整无障碍审计（可自动化部分） | ✅ 0.5.5，82 项 0 失败（含键盘-only 流程），见 `A11Y-AUDIT.md`；未做 NVDA/真实高对比度 |
 | M12.6 桌宠点击/拖动流畅性（缩放虚影、settings 缓存） | ✅ 0.5.6，见 `PET-WINDOW-NOTES.md` §1；无过冲帧、拖动按帧合并 |
+| M12.7 气泡加高不得移动桌宠（顶部 clamp / 下方气泡） | ✅ 0.5.7，见 `PET-WINDOW-NOTES.md` §3；桌宠屏幕矩形不变量 + `petPos` |
 | M10 手感与视觉（Q 弹 / 思考气泡 / 悬停菜单 / 设置重构 / 内置字体） | ✅ 见第 12 节、`M10-NOTES.md`、`M10.1-NOTES.md`、`M10.2-NOTES.md` |
 | `npm test`（41 项，存储 / 角色 / 天气码 / 气泡布局 / 音效 / 多显示器 / 抠图 alpha） | ✅ |
 
@@ -180,6 +181,15 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
     - 拖动时 `transition: none` 跟手，IPC 用 `requestAnimationFrame` 按帧合并；
     - **`store.readSettings()` 已有缓存**（拖动每帧都要读，无缓存时 175µs/次），别退回每次读盘；
     - `tools/smoke.js` 有静态断言，改完跑 `npm test`。
+44. **气泡加高/缩回时，桌宠的屏幕矩形绝对不许变**（0.5.7，见 `PET-WINDOW-NOTES.md` §3）：
+    - 旧代码 `y = Math.max(workArea.y, bottom - nextH)` 会把窗口顶边按在工作区上沿，而桌宠是
+      `bottom: 0` 锚定窗口底部的 → 整只桌宠滑走（实测 110px，且不回来）；
+    - 现在按上下两侧可用空间分配：上方够就向上加高，不够就**向下加高并把气泡画在桌宠下方**
+      （`side='below'`，渲染层用 `body[data-bubble-side]` + `--bubble-room` 定位，鲸鱼尾巴隐藏）；
+    - **主进程用 `petPos` 显式保存桌宠屏幕坐标**（`petScreenRect()` / `windowBoundsForPet()`），
+      不要从窗口几何反推（透明无边框窗口的外框高度与 `getBounds()` 差几像素，拖动后首点会偏 10px）；
+    - `pet:bubble` 必须是 `ipcMain.handle` 并回传 `{reserve, side}`，`preload` 用 `invoke`；
+    - 任何调整窗口尺寸的新代码都要保持「桌宠 top/bottom 不动」；`npm test` 有断言。
 
 ## 6. 快速开始
 

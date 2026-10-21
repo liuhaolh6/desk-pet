@@ -242,6 +242,24 @@ body.photo-role .pet-flip {
   pointer-events: auto;
 }
 
+/* Bubble below the pet: the main process only picks this side when there is no
+   room above, and it grows the window downward instead. The pet stays exactly
+   where it was on screen, so it never "jumps" when a bubble opens. */
+body[data-bubble-side="below"] .pet-wrap {
+  bottom: var(--bubble-room, 0px);
+}
+
+body[data-bubble-side="below"] .bubble {
+  bottom: auto;
+  top: calc(var(--pet-size) + 6px);
+}
+
+/* The whale tails point at the pet below the bubble; hide them when the bubble
+   sits under the pet instead. */
+body[data-bubble-side="below"] .bubble-shape ellipse {
+  display: none;
+}
+
 /* Classic whale-widget frame: 1026x700 SVG path + two tail ellipses. The SVG
    stretches to the content box; the content stays in the upper body. */
 .bubble-shape {

@@ -4,7 +4,7 @@ Windows 桌面宠物（Electron），独立于 DSH。目标：默认好看、开
 
 ## 1. 范围
 
-**已做（0.5.6）**
+**已做（0.5.7）**
 
 | 领域 | 内容 |
 |---|---|
@@ -58,7 +58,7 @@ Windows 桌面宠物（Electron），独立于 DSH。目标：默认好看、开
 
 ## 4. 已知限制
 
-- 已提供 portable exe（`dist/DeskPet-0.5.6-portable.exe`，约 153MB），无需安装；**当前仍未签名**，SmartScreen / 部分安全软件会拦截。免费开源签名方案见 `SIGNING.md`，工作流已就绪但需 SignPath 审核与仓库 secrets。
+- 已提供 portable exe（`dist/DeskPet-0.5.7-portable.exe`，约 153MB），无需安装；**当前仍未签名**，SmartScreen / 部分安全软件会拦截。免费开源签名方案见 `SIGNING.md`，工作流已就绪但需 SignPath 审核与仓库 secrets。
 - 照片抠图模型随包（44MB），只保留 Windows x64 原生依赖；**0.5.1 已修复 alpha 合成与回退语义**（背景平均 alpha 23→0、非边缘半透明 8.25%→0）；0.5.2~0.5.4 加入蒙版检查、手动修补、worker 卸载、去色污与 token IPC；10 张 golden set 仍未完成，不宜宣传成“任意照片完美抠图”。
 - M12 已确认并修复：`nativeImage` 预乘/resize 会雾化透明区；`mask²+0.45` 会把背景压成半透明；详见 `M12-NOTES.md`。
 - 本机 Lenovo Anti-Virus（火绒引擎）会拦未签名进程写 `%LOCALAPPDATA%\Temp`，NSIS portable 报 “Error writing temporary file”；需签名 / 加白名单，或把 TEMP 指到可写目录。
@@ -77,7 +77,7 @@ Windows 桌面宠物（Electron），独立于 DSH。目标：默认好看、开
 - [x] 导入图片后出现在角色列表并可切换、删除
 - [x] 断网时天气显示缓存或明确提示
 - [x] `npm test` 全绿
-- [x] `npm run dist` 产出 `dist/DeskPet-0.5.6-portable.exe`（图标 / 版本信息 / 便携数据目录）
+- [x] `npm run dist` 产出 `dist/DeskPet-0.5.7-portable.exe`（图标 / 版本信息 / 便携数据目录）
 - [x] portable exe 以普通用户令牌启动，宠物窗口可见，托盘对象 / 菜单创建成功
 - [x] M10：按压 Q 弹/回弹/悬停/倾斜/镜像、思考气泡、悬停菜单、设置重构、内置字体
 - [x] M10：设置 7 个面板在 506/900 视口无横向溢出；打包版字体加载成功、控制台无 error

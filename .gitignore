@@ -11,6 +11,8 @@ Thumbs.db
 .flash-test/
 .flash-solo/
 .scale-test/
+.grab-*/
+.regr-*/
 .m10-*/
 .m11-*/
 .m12-*/

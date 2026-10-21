@@ -138,9 +138,28 @@
     if (state.timer) { clearTimeout(state.timer); state.timer = 0 }
   }
 
-  function resizeForBubble(height) {
+  /**
+ * Ask the main process for bubble space. It returns how much it granted and on
+ * which side of the pet (`above`, or `below` when the pet is near the top of the
+ * work area) so the CSS can anchor both the pet and the bubble correctly. The
+ * pet's screen position is never changed by this.
+ */
+  async function resizeForBubble(height) {
     const extra = Math.max(0, Math.round(height))
-    api.setBubble(extra > 0, extra)
+    let res = { reserve: extra, side: 'above' }
+    try {
+      const granted = await api.setBubble(extra > 0, extra)
+      if (granted && typeof granted === 'object') res = granted
+    } catch (err) {}
+    applyBubbleRoom(res)
+    return res
+  }
+
+  function applyBubbleRoom(res) {
+    const side = res && res.side === 'below' ? 'below' : 'above'
+    const reserve = Math.max(0, Math.round(Number(res && res.reserve) || 0))
+    document.body.dataset.bubbleSide = side
+    document.body.style.setProperty('--bubble-room', reserve + 'px')
   }
 
   function measureBubble() {
@@ -149,7 +168,7 @@
     return Math.ceil(bubble.offsetHeight) + 8
   }
 
-  function showBubble(node) {
+  async function showBubble(node) {
     clearTimer()
     clearTimeout(state.showTimer)
     clearTimeout(state.shrinkTimer)
@@ -158,10 +177,11 @@
     bubble.classList.remove('show')
     bubbleContent.innerHTML = ''
     bubbleContent.appendChild(node)
-    // Reserve the window height first, then let the whale frame/text fade in
-    // on its own staggered delays. Showing before the OS resize clips the top.
+    // Reserve the window space first (and learn which side the bubble goes on),
+    // then let the whale frame/text fade in on its own staggered delays.
     const height = measureBubble()
-    resizeForBubble(height)
+    await resizeForBubble(height)
+    if (state.bubbleToken !== token) return
     void bubble.offsetHeight
     state.showTimer = setTimeout(() => {
       if (state.bubbleToken !== token) return
@@ -315,9 +335,9 @@
     petMenu.hidden = false
     petWrap.classList.add('hover', 'menu-open')
     void petMenu.offsetHeight
-    // Reserve the window height before the panel becomes visible.
+    // Reserve the window space (and learn the side) before the panel is shown.
     const height = measureMenu()
-    api.setBubble(true, height)
+    resizeForBubble(height)
     clearTimeout(state.menuShowTimer)
     state.menuShowTimer = setTimeout(() => {
       if (!state.menuOpen) return
@@ -337,7 +357,7 @@
       if (state.menuOpen) return
       petMenu.hidden = true
       // Do not shrink the window if a bubble was opened in the meantime.
-      if (!bubble.classList.contains('show')) api.setBubble(false, 0)
+      if (!bubble.classList.contains('show')) resizeForBubble(0)
     }
     if (immediate) finish()
     else setTimeout(finish, 180)
@@ -514,6 +534,8 @@
   async function boot() {
     wireMenu()
     wirePet()
+    // Default bubble geometry until the main process grants something else.
+    applyBubbleRoom({ side: 'above', reserve: 0 })
     api.onMirror((side) => {
       petFlip.style.setProperty('--pet-flip', side === 'none' ? 1 : -1)
     })
