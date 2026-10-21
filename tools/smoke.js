@@ -186,6 +186,21 @@ const store = createStore(dir)
   assert.match(rows[0][0].css, /font-weight:600/, '样式转成 css')
   assert.match(rows[0][0].css, /font-size:18px/)
   ok('卡片渲染与空行剪枝')
+
+  // Loading state: one friendly line, no em-dash wall, no glue-only rows.
+  {
+    const card = bubble.defaultLayout().cards.find((c) => c.id === 'weather')
+    const rows = bubble.pruneRows(bubble.resolveCard(card, { weather: null }))
+    const flat = rows.map((r) => r.map((m) => m.text).join('')).join(' / ')
+    assert.ok(!/—/.test(flat), '天气还没到时不要出现一排破折号: ' + flat)
+    assert.match(flat, /正在取天气…/, '天气还没到时给一句等待提示')
+    assert.ok(rows.length <= 2, '天气还没到时卡片保持精简: ' + JSON.stringify(rows))
+    const noCity = bubble.pruneRows(bubble.resolveCard(card, { weather: { ok: false, error: 'NO_LOCATION', message: '还没告诉我你在哪座城市呢' } }))
+    const noCityText = noCity.map((r) => r.map((m) => m.text).join('')).join(' / ')
+    assert.match(noCityText, /还没告诉我你在哪座城市呢/, '没设置城市时直接说清楚: ' + noCityText)
+    assert.ok(!/正在取天气/.test(noCityText), '没设置城市时不要假装在加载: ' + noCityText)
+  }
+  ok('天气未加载时的占位')
 }
 
 // ------------------------------------------------------------------- sound
@@ -762,7 +777,10 @@ const PAD = 54
   assert.ok(/measureBubbleCentre/.test(petJs), '云朵中心由渲染矩形实测')
   assert.ok(/--bubble-fit/.test(petCss) && /fitBubbleText/.test(petJs), '文字超框时按比例收缩而不是溢出')
   assert.ok(/white-space: normal/.test(petCss), '长文本先换行')
-  assert.ok(/bubbleReserve/.test(petJs) && !/shrinkTimer,\s*540/.test(petJs), '气泡空间固定预留，内容切换不 resize')
+  assert.ok(/bubbleReserve\(\)/.test(petJs), '同一串气泡内用固定空间，卡片切换不 resize')
+  assert.ok(/resizeForBubble\(0\)/.test(petJs), '气泡收起后窗口缩回桌宠大小（不常驻透明矩形）')
+  assert.ok(/wireBubbleClick/.test(petJs) && /bubble\.addEventListener\('click'/.test(petJs), '点击气泡收起')
+  assert.ok(/bubble-bshape/.test(petJs) && /shrink/.test(petJs), '气泡命中区跟随绘制出的云朵，而不是矩形框')
   assert.ok(/setIgnoreMouseEvents\(true, \{ forward: true \}\)/.test(mainJs), '固定预留区默认鼠标穿透')
   assert.ok(/sendRects/.test(petJs) && /pet:rects/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')) && /updatePetInteractive/.test(mainJs), '渲染层上报命中区、主进程轮询光标决定可交互')
 

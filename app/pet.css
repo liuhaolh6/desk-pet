@@ -240,6 +240,7 @@ body.photo-role .pet-flip {
 
 .bubble.show {
   pointer-events: auto;
+  cursor: pointer;
 }
 
 /* Bubble below the pet: the main process only picks this side when there is no
