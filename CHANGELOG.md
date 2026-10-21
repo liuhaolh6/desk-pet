@@ -12,6 +12,8 @@
 
 仓库与发布工程化版本，应用行为与 0.5.7 一致（无障碍修复来自 0.5.5）。
 
+已发布：[`v0.5.8`](https://github.com/liuhaolh6/desk-pet/releases/tag/v0.5.8) 由 CI 构建，产物 `DeskPet-0.5.8-portable.exe`（153,074,476 字节，SHA-256 `cadd1b0bde5ddcca6eea6c539eedfbecc0908f248727015395cb6d85025edec3`）与 `SHA256SUMS.txt`。
+
 ### 新增
 - GitHub Release 自动化：[`.github/workflows/release.yml`](.github/workflows/release.yml) 在推送 `v*` tag 时跑检查、构建 portable 产物、生成 `SHA256SUMS.txt` 并创建 Release。
 - 协作文档与模板：[`CONTRIBUTING.md`](CONTRIBUTING.md)、[`SECURITY.md`](SECURITY.md)、[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)、[`CHANGELOG.md`](CHANGELOG.md)、Issue 表单、PR 模板、[`.github/CODEOWNERS`](.github/CODEOWNERS)、[`.editorconfig`](.editorconfig)、Dependabot 配置。

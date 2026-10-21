@@ -88,9 +88,9 @@ Internal compiler error #12345: error creating mmap the size of 116831394.
 4. 在 `nsisconf.nsh` 末尾追加 `Target x86-unicode`；
 5. 导出 `ELECTRON_BUILDER_NSIS_DIR` 指向该目录；`nsis-bundle`（插件）由 electron-builder 自己下载。
 
-首次运行会把安装包的 SHA-256 打进日志，稳定后可改成固定校验值。
+首次运行会把安装包的 SHA-256 打进 workflow 日志（日志需要登录才能看）；bundle（`nsis-bundle-3.12.tar.gz`）已按官方发布的校验值在 CI 里强制核对。稳定后可把安装包也改成固定校验值。
 
-CI 排查提示：Actions 的 **step 级别**结果不需要登录即可通过 API 读取（`/actions/runs/{id}/jobs`），但**日志需要登录**。所以 release 工作流在失败时会用 `GITHUB_TOKEN` 自动开一个带构建日志尾部的 Issue（标题 `[CI] Release build failed for <tag>`），这样失败原因对维护者和你都是公开可见的。
+CI 排查提示：Actions 的 **step 级别**结果不需要登录即可通过 API 读取（`/actions/runs/{id}/jobs`），但**日志需要登录**。所以 release 工作流在失败时会用 `GITHUB_TOKEN` 自动开一个带构建日志尾部的 Issue（标题 `[CI] Release build failed for <tag>`），发布成功后自动关闭；这样失败原因对维护者和你都是公开可见的。
 
 ## 4. 验证结果
 

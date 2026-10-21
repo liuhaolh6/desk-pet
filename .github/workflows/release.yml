@@ -67,12 +67,16 @@ jobs:
             & $sevenZip x $setup "-o$nsis" -y | Out-Null
             $bundle = Join-Path $work 'nsis-bundle.tar.gz'
             Invoke-WebRequest $env:NSIS_BUNDLE_URL -OutFile $bundle
+            # 官方发布的校验值（来自 app-builder-lib 的 nsisChecksums）。
+            $expected = '56997fdefe25e7928a1a68b4583d08b240b66cf660234053b20131a74cc082f4'
+            $actual = (Get-FileHash $bundle -Algorithm SHA256).Hash.ToLower()
+            if ($actual -ne $expected) { throw "nsis bundle checksum mismatch: $actual" }
             tar -xzf $bundle -C $work nsis-bundle/elevate.exe
             Copy-Item (Join-Path $work 'nsis-bundle\elevate.exe') (Join-Path $nsis 'elevate.exe') -Force
             # electron-builder 的插件是 x86-unicode，显式指定目标架构。
             Add-Content (Join-Path $nsis 'nsisconf.nsh') "`nTarget x86-unicode"
-            $hash = (Get-FileHash $setup -Algorithm SHA256).Hash
-            Write-Host "NSIS installer sha256: $hash"
+            # 安装包本身只按版本固定；首次运行的日志里会打印它的 SHA-256，便于之后改成固定值。
+            Write-Host "NSIS installer sha256: $((Get-FileHash $setup -Algorithm SHA256).Hash.ToLower())"
           } else {
             Write-Host 'using cached 64-bit NSIS'
           }

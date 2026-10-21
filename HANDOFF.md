@@ -8,7 +8,8 @@ Windows **桌面宠物**应用（Electron），悬浮在桌面上。不是 DSH �
 
 - 仓库：<https://github.com/liuhaolh6/desk-pet>（public，main 分支）
 - 本地目录：`D:\project\deskpet`
-- 版本：`0.5.7`（M12 P0 + P1-1~P1-9 可行部分 + 无障碍审计 + 桌宠窗口屏闪/虚影/气泡位移修复；未签名）；本地 21+ 个提交（含 M10/M11/M12 文档，部分未推送）
+- 版本：`0.5.8`（M12 P0 + P1-1~P1-9 可行部分 + 无障碍审计 + 桌宠窗口屏闪/虚影/气泡位移修复 + 仓库工程化；未签名）
+- 远端状态：`main` 与 15 个 tag 已推到 GitHub；CI（push/PR）绿；`v0.5.8` Release 由 CI 构建并附 `DeskPet-0.5.8-portable.exe` + `SHA256SUMS.txt`
 - 早期那套「DSH 挂件版」实现已移出仓库，归档在 `D:\project\deskpet-dsh-plugin`（需要参考角色/气泡系统时可以翻）
 
 ## 2. 现在能用的功能（都真机验证过）
@@ -258,7 +259,9 @@ npm run dist
 | `tools/check-a11y.js` | 静态无障碍回归（结构断言，非 WCAG 审计；CI 会跑） |
 | `tools/a11y-audit.js` | CDP 无障碍审计（82 项：AX 名称/对比度/目标尺寸/焦点/键盘流程/回流/forced-colors/reduced-motion） |
 | `A11Y-AUDIT.md` | 0.5.5 无障碍审计报告（结论、方法、修复、未验证项） |
-| `.github/workflows/ci.yml` | `npm ci` + 语法 + a11y 静态检查 + `npm test` + 合成图/真实模型断言（未推送） |
+| `.github/workflows/ci.yml` | `npm ci` + 语法 + a11y 静态检查 + `npm test` + 合成图/真实模型断言（GitHub Actions 已实跑通过） |
+| `.github/workflows/release.yml` | tag 触发：64 位 NSIS → 检查 → 构建 portable → 校验和 → 创建 Release；失败自动开 Issue，成功自动关闭 |
+| `CHANGELOG.md` / `CONTRIBUTING.md` / `SECURITY.md` | 版本记录、贡献指南（含发布流程与 3-tag 限制）、安全策略 |
 | `app/cutout.html/css/js` | 照片选择、预览、拖动缩放、保存/回退窗口 |
 | `assets/models/u2net_human_seg.onnx` | 量化后 44MB 离线人像分割模型 |
 | `SIGNING.md` | SignPath Foundation 免费 OSS 签名申请 / CI / 验签 |
