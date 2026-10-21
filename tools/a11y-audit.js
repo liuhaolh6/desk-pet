@@ -29,6 +29,7 @@ function parseArgs(argv) {
     else if (argv[i] === '--out') out.out = argv[++i]
     else if (argv[i] === '--json') out.json = true
     else if (argv[i] === '--flow') out.flow = true
+    else if (argv[i] === '--flow-only') out.flowOnly = true
     else if (argv[i] === '--help') out.help = true
   }
   return out
@@ -378,85 +379,20 @@ async function auditPage(conn, label, report, options) {
   }
 }
 
-async function pressKey(conn, key, code, vk, text) {
-  await conn.send('Input.dispatchKeyEvent', {
-    type: 'keyDown', key, code, windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk,
-    text: text === undefined ? '' : text, unmodifiedText: text === undefined ? '' : text,
-  })
-  await conn.send('Input.dispatchKeyEvent', {
-    type: 'keyUp', key, code, windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk,
-  })
-  await sleep(250)
-}
 
-async function waitForEval(conn, expr, test, timeout = 25000) {
-  const start = Date.now()
-  let last
-  while (Date.now() - start < timeout) {
-    last = await conn.evaluate(expr)
-    if (test(last)) return last
-    await sleep(200)
-  }
-  return last
-}
 
 /**
  * Keyboard-only operation of the cutout window (WCAG 2.1.1). The photo is
  * loaded through the same IPC the drag/drop path uses, because the native file
  * dialog cannot be driven from CDP; everything after that is keyboard only.
  */
-async function keyboardFlow(conn, report) {
-  section('cutout.html 键盘-only 流程')
-  const b64 = fs.readFileSync(path.join(__dirname, '..', 'tools', 'fixtures', 'synthetic-portrait.png')).toString('base64')
-  await conn.evaluate(`(async () => {
-    const b = atob(${JSON.stringify(b64)});
-    const a = new Uint8Array(b.length);
-    for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
-    const f = new File([a], 'synthetic-portrait.png', { type: 'image/png' });
-    const dt = new DataTransfer(); dt.items.add(f);
-    document.getElementById('stage').dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
-    return 'ok';
-  })()`)
-  await waitForEval(conn, 'document.getElementById("runBtn").disabled', (v) => v === false)
-
-  const steps = []
-  steps.push(['选择照片后状态可读', await conn.evaluate('document.getElementById("status").textContent.includes("载入")')])
-
-  const focusRun = await conn.evaluate('(() => { const b = document.getElementById("runBtn"); b.focus(); return document.activeElement === b ? "runBtn" : (document.activeElement && document.activeElement.id) })()')
-  await pressKey(conn, 'Enter', 'Enter', 13, String.fromCharCode(13))
-  const mode = await waitForEval(conn, 'document.getElementById("modeLabel").textContent', (v) => v === '已抠图')
-  steps.push(['Enter 激活“开始抠图”', mode === '已抠图', 'focus=' + focusRun])
-
-  await conn.evaluate('document.querySelector(".seg[data-view=\\"mask\\"]").focus()')
-  await pressKey(conn, 'Enter', 'Enter', 13, String.fromCharCode(13))
-  steps.push(['Enter 切换到蒙版视图', await conn.evaluate('document.querySelector(".seg[data-view=\\"mask\\"]").getAttribute("aria-pressed") === "true"')])
-
-  await conn.evaluate('document.querySelector(".seg[data-view=\\"result\\"]").focus()')
-  await pressKey(conn, 'Enter', 'Enter', 13, String.fromCharCode(13))
-  await conn.evaluate('document.getElementById("eraseBtn").focus()')
-  await pressKey(conn, 'Enter', 'Enter', 13, String.fromCharCode(13))
-  steps.push(['Enter 进入擦除模式', await conn.evaluate('document.getElementById("stage").classList.contains("is-editing")')])
-  await pressKey(conn, 'Escape', 'Escape', 27)
-  steps.push(['Escape 退出擦除并归还焦点', await conn.evaluate('!document.getElementById("stage").classList.contains("is-editing") && document.activeElement.id === "eraseBtn"')])
-
-  await conn.evaluate('document.getElementById("saveBtn").focus()')
-  await pressKey(conn, 'Enter', 'Enter', 13, String.fromCharCode(13))
-  const saved = await waitForEval(conn, 'document.getElementById("status").textContent', (v) => /保存|角色/.test(String(v)), 12000)
-  steps.push(['Enter 保存为角色', /保存|角色/.test(String(saved))])
-
-  for (const [name, ok, extra] of steps) {
-    report.push({ page: 'cutout.html 键盘流程', check: name, ok: !!ok, detail: extra || '' })
-    console.log('  ' + (ok ? 'PASS  ' : 'FAIL  ') + name + (ok || !extra ? '' : '  (' + extra + ')'))
-  }
-  return steps.every(([, ok]) => ok)
-}
 
 async function openWindow(pet, method, urlPart, port, timeout = 8000) {
   await pet.evaluate('window.deskPet.' + method + '()')
   const start = Date.now()
   while (Date.now() - start < timeout) {
     const all = await targets(port)
-    const t = all.find((x) => x.url.includes(urlPart))
+    const t = all.filter((x) => x.url.includes(urlPart)).pop()
     if (t) return t
     await sleep(200)
   }
@@ -468,6 +404,9 @@ async function main() {
   const watchdog = setTimeout(() => { console.error('audit watchdog: giving up after 240s'); process.exit(3) }, 240000)
   watchdog.unref && watchdog.unref()
   if (opts.help) { console.log(fs.readFileSync(__filename, 'utf8').split('*/')[0]); return }
+  if (opts.flow || opts.flowOnly) {
+    console.log('键盘-only 流程已拆成单独的工具，请运行: node tools/a11y-keyboard.js --port ' + opts.port)
+  }
   const list = await targets(opts.port)
   const petTarget = list.find((x) => x.url.includes('pet.html'))
   if (!petTarget) throw new Error('pet window not found on port ' + opts.port + '; start the app with --remote-debugging-port')
@@ -498,15 +437,6 @@ async function main() {
   }
 
   console.log('\n== 汇总 ==')
-  if (opts.flow) {
-    const cut = pages.find(([l]) => l === 'cutout.html')
-    if (cut) {
-      try { await keyboardFlow(cut[1], report) } catch (err) {
-        report.push({ page: 'cutout.html 键盘流程', check: 'keyboard flow', ok: false, detail: err.message })
-        console.error('  FAIL  键盘流程: ' + err.message)
-      }
-    }
-  }
   const failed = report.filter((r) => !r.ok)
   console.log('检查项 ' + report.length + '，失败 ' + failed.length)
   for (const f of failed) console.log('  FAIL  ' + f.page + ' / ' + f.check)

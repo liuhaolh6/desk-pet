@@ -18,7 +18,16 @@
 
 ## 2. 方法与检查项（82 项）
 
-`node tools/a11y-audit.js --port 9229 --flow`（先用 `--remote-debugging-port` 启动应用）。每个窗口都会跑：
+先用 `--remote-debugging-port` 启动应用，然后跑两个工具（0.6.0 起拆开）：
+
+```bash
+node tools/a11y-audit.js --port 9229      # 76 项：结构 / 对比度 / 尺寸 / 焦点 / 回流 / forced-colors / reduced-motion
+node tools/a11y-keyboard.js --port 9229   # 6 项：键盘-only 抠图流程（WCAG 2.1.1）
+```
+
+页面审计会用到视口与媒体模拟，模拟后第一次调用可能偏慢，所以键盘流程单独走一遍。
+
+每个窗口都会跑：
 
 | 检查 | 依据 | 做法 |
 |---|---|---|
@@ -26,7 +35,7 @@
 | 文本对比度 | 1.4.3 | 遍历有直接文本的可见元素，向上找有效背景，按字号/字重判断 4.5:1 或 3:1 |
 | 目标尺寸 ≥24×24 | 2.5.8 | 控件或它的 `label` 任一满足即可（复选框靠 label 达标） |
 | 焦点可见性 / 顺序 | 2.4.7 / 2.4.3 | CDP 发真实 `Tab`，逐个检查 outline/box-shadow |
-| 键盘-only 流程 | 2.1.1 | 照片载入后，全部用 `Enter`/`Escape` 完成：开始抠图 → 蒙版 → 结果 → 擦除 → 退出 → 保存 |
+| 键盘-only 流程 | 2.1.1 | 由 `tools/a11y-keyboard.js` 单独执行：照片载入后全部用 `Enter`/`Escape` 完成：开始抠图 → 蒙版 → 结果 → 擦除 → 退出 → 保存（保存会关窗，关窗即成功） |
 | 320px 回流 | 1.4.10 | `Emulation.setDeviceMetricsOverride(320)` 后不得横向滚动 |
 | forced-colors | 1.4.11 参考 | 模拟 `forced-colors: active`，控件仍需可辨 |
 | reduced-motion | 2.3.3 | 模拟 `prefers-reduced-motion: reduce`，不得有 >50ms 的过渡/动画 |
@@ -41,7 +50,7 @@ cutout.html    10/10 PASS
 settings.html  10/10 PASS + 7 个面板 ×3 项 PASS
 editor.html    10/10 PASS + 标签页 ×3 项 PASS
 键盘-only 流程  6/6 PASS
-合计 82 项，失败 0
+合计 **82 项（76 + 6），失败 0**
 ```
 
 产物：`.tmp-verify/a11y-audit7.json`（开发版；打包版另跑一次，见 §5）。
