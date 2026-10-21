@@ -78,6 +78,20 @@ Internal compiler error #12345: error creating mmap the size of 116831394.
 
 `.tools/`、`.builder-cache/`、`.npm-cache/` 均已 gitignore，是可重建的本地工具缓存。
 
+### 3.2 同样的问题在 CI（已修复）
+
+`.github/workflows/release.yml` 里默认的 electron-builder 会下载 32 位 NSIS，在 GitHub 托管 runner 上会稳定复现同一个 mmap 错误（本地用干净缓存 + 默认工具链也复现过）。现在 release 工作流自己准备 64 位编译器：
+
+1. `actions/cache` 缓存 `%RUNNER_TEMP%\nsis64`（key 带 NSIS 版本，命中就不重复下载）；
+2. 从 `negrutiu/nsis` 的**固定版本** release 下载 amd64 安装包，用 7-Zip 解包（解包后是 `Bin\makensis.exe` 的 legacy 布局）；
+3. 从 `electron-userland/electron-builder-binaries` 的 `nsis@1.2.1` bundle 取 `elevate.exe` 放到同一目录（`getNsisElevatePath()` 会优先从 `ELECTRON_BUILDER_NSIS_DIR` 找它）；
+4. 在 `nsisconf.nsh` 末尾追加 `Target x86-unicode`；
+5. 导出 `ELECTRON_BUILDER_NSIS_DIR` 指向该目录；`nsis-bundle`（插件）由 electron-builder 自己下载。
+
+首次运行会把安装包的 SHA-256 打进日志，稳定后可改成固定校验值。
+
+CI 排查提示：Actions 的 **step 级别**结果不需要登录即可通过 API 读取（`/actions/runs/{id}/jobs`），但**日志需要登录**。所以 release 工作流在失败时会用 `GITHUB_TOKEN` 自动开一个带构建日志尾部的 Issue（标题 `[CI] Release build failed for <tag>`），这样失败原因对维护者和你都是公开可见的。
+
 ## 4. 验证结果
 
 ### 4.1 启动与便携数据目录

@@ -72,4 +72,7 @@ node tools/a11y-audit.js --port 9229 --flow     # 82 项无障碍检查
 1. 更新 `package.json` 版本号与 [`CHANGELOG.md`](CHANGELOG.md)；
 2. 跑完上面的检查，构建 `npm run dist` 并真机验证 portable；
 3. `git tag -a vX.Y.Z -m "..."` 并推送 tag —— tag 会触发 `.github/workflows/release.yml` 自动构建并创建 GitHub Release；
+   - **一次最多推 3 个 tag**：GitHub 在单次 push 超过 3 个 tag 时不会触发任何 workflow。分批推，或逐个 `git push origin vX.Y.Z`。
+   - 需要重跑某个 tag 的发布：删除远端 tag 再单独推一次（或手动触发 `Release` workflow，传入 `tag` 输入）。
+   - 工作流失败时会自动开一个带构建日志的 Issue；CI 的构建走 64 位 NSIS 绕坑，见 [`M6-PACKAGING.md`](M6-PACKAGING.md) §3.2。
 4. 签名流程见 [`SIGNING.md`](SIGNING.md)（SignPath Foundation 审核中，当前产物未签名）。

@@ -19,6 +19,7 @@
 
 ### 变更
 - CI 与 Release 工作流都会先跑 `npm run check`、`npm test`、`node tools/check-a11y.js` 再打包，避免发布未验证产物。
+- Release 工作流改用 64 位 NSIS 编译器构建 portable（默认 32 位 `makensis` 对 ~170MB 载荷会 mmap 失败，见 [`M6-PACKAGING.md`](M6-PACKAGING.md) §3.2），并支持 `workflow_dispatch` 手动重跑；构建失败时自动开 Issue 附日志。
 
 ## [0.5.7] - 2026-10-21
 
