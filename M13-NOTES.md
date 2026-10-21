@@ -54,9 +54,10 @@
 
 ## 3. 产物
 
-- `dist/DeskPet-0.6.0-portable.exe`：153,754,355 字节，SHA-256 `3e78adf200c71d2473ad18899e3283ad5b579f241eb9f51e6924e406f1c90ca8`（未签名，本机构建）。
+- `dist/DeskPet-0.6.0-portable.exe`：153,754,355 字节，SHA-256 `3e78adf200c71d2473ad18899e3283ad5b579f241eb9f51e6924e406f1c90ca8`（未签名，本机构建，已跑 76 项审计 0 失败）。
 - `dist/win-unpacked/DeskPet.exe`：FileVersion `0.6.0`。
-- 发布由 `.github/workflows/release.yml` 在 tag 推送时构建（CI 使用 64 位 NSIS，见 `M6-PACKAGING.md` §3.2）。
+- **已推 tag `v0.6.0`**（2026-10-21），触发 `.github/workflows/release.yml` 构建并创建 Release（CI 使用 64 位 NSIS，见 `M6-PACKAGING.md` §3.2）。
+  仓库已转私有后无法匿名读取 Actions 结果，**这条发布是否成功需要你在网页确认**；若失败，工作流会自动开一个带日志的 Issue（标题 `[CI] Release build failed for v0.6.0`）。
 
 ## 4. 未覆盖 / 风险
 
