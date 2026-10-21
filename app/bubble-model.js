@@ -221,14 +221,16 @@
         const week = '日一二三四五六'[d.getDay()]
         return (d.getMonth() + 1) + '月' + d.getDate() + '日 周' + week
       }
-      case 'weather.icon': return ok ? (w.icon || '🌤️') : '🌤️'
-      case 'weather.city': return ok ? (w.city || '当前') : '天气'
-      case 'weather.temp': return ok ? deg(w.temp) : '—'
-      case 'weather.text': return ok ? w.text : '还没取到天气'
+      case 'weather.icon': return ok ? (w.icon || '🌤️') : ''
+      // While the first fetch is in flight the card collapses to one friendly
+      // line instead of a wall of em-dashes.
+      case 'weather.city': return ok ? (w.city || '当前') : ((w && w.message) || '正在取天气…')
+      case 'weather.temp': return ok ? deg(w.temp) : ''
+      case 'weather.text': return ok ? w.text : ''
       case 'weather.feels': return ok && Number.isFinite(Number(w.feels)) ? '体感 ' + deg(w.feels) : ''
-      case 'weather.range': return ok ? num(w.low) + '~' + num(w.high) + '°' : '—'
-      case 'weather.precip': return ok ? pct(w.precip) : '—'
-      case 'weather.humidity': return ok ? pct(w.humidity) : '—'
+      case 'weather.range': return ok ? num(w.low) + '~' + num(w.high) + '°' : ''
+      case 'weather.precip': return ok ? pct(w.precip) : ''
+      case 'weather.humidity': return ok ? pct(w.humidity) : ''
       case 'weather.wind': return ok && Number.isFinite(Number(w.wind)) ? '风 ' + Math.round(w.wind) + 'km/h' : ''
       case 'weather.sun': {
         if (!ok || !w.sunrise || !w.sunset) return ''
@@ -300,9 +302,23 @@
   }
 
   /** Card rows resolved with the live context (used by the editor preview too). */
+  // A row that only holds glue ("·", " / ") is not worth a line, and a row whose
+  // dynamic modules are all empty (weather still loading, no advice today) is
+  // dropped as a whole instead of showing its labels with nothing after them.
+  const GLUE = /^[\s·|/，,、~\-—]*$/
   function resolveCard(card, ctx) {
-    return (card.rows || []).map((row) => row.map((mod) => resolveModule(mod, ctx)).filter((item) => item.text !== ''))
+    return (card.rows || [])
+      .map((row) => {
+        const dynamic = row.filter((mod) => mod.type !== 'text').map((mod) => resolveModule(mod, ctx).text)
+        const items = row.map((mod) => resolveModule(mod, ctx)).filter((item) => item.text !== '')
+        return { hasDynamic: row.some((mod) => mod.type !== 'text'), dynamic, items }
+      })
+      .filter((row) => row.items.length > 0)
+      .filter((row) => !(row.hasDynamic && row.dynamic.every((text) => text === '')))
+      .filter((row) => row.items.some((item) => !GLUE.test(item.text)))
+      .map((row) => row.items)
   }
+
 
   /** Trim empty rows produced by modules that have no value right now. */
   function pruneRows(rows) {
