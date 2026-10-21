@@ -143,10 +143,50 @@ button:disabled { opacity: .45; cursor: default; }
 .field input[type=color] { width: 34px; height: 24px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
 .field .clear { padding: 1px 6px; font-size: 11px; min-width: 24px; min-height: 24px; }
 
+/* One-click layouts above the rows. */
+.presets {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+.presets-label { color: var(--muted); font-size: 12px; }
+.presets button {
+  min-height: 24px;
+  padding: 3px 10px;
+  border: 1px solid var(--blush);
+  border-radius: var(--radius-pill);
+  background: var(--blush-softer);
+  color: var(--ink);
+  font-size: 12px;
+  cursor: pointer;
+}
+.presets button:hover { background: var(--blush-soft); }
+
+/* Style controls stay folded away until asked for. */
+details.advanced {
+  margin-top: 8px;
+  border-top: 1px dashed var(--line);
+  padding-top: 6px;
+}
+details.advanced > summary {
+  cursor: pointer;
+  color: var(--ink-2);
+  font-size: 12px;
+  padding: 2px 0;
+}
+details.advanced > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+details.advanced[open] > summary { margin-bottom: 4px; }
+
 .preview {
   border-top: 1px solid var(--line);
   padding: 10px 14px 14px;
-  background: linear-gradient(180deg, #eef2fa, #f7f9fd);
+  background: linear-gradient(180deg, var(--surface-3), var(--blush-softer));
 }
 
 .preview-label { color: var(--muted); font-size: 11px; margin-bottom: 6px; }

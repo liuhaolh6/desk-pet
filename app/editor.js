@@ -283,13 +283,41 @@
     }
 
     const typeField = field('这一块是什么', (() => {
+      // Group the flat type list so 23 modules do not read as one wall of text.
+      const GROUPS = [
+        ['写点什么', ['text', 'random', 'name']],
+        ['天气', ['weather']],
+        ['喝水', ['water']],
+        ['时间', ['time', 'date']],
+      ]
       const select = document.createElement('select')
+      const byKey = new Map(model.TYPES.map((t) => [t.key, t]))
+      const used = new Set()
+      for (const [label, prefixes] of GROUPS) {
+        const group = document.createElement('optgroup')
+        group.label = label
+        model.TYPES.forEach((t) => {
+          if (used.has(t.key)) return
+          if (!prefixes.some((p) => t.key === p || t.key.startsWith(p + '.'))) return
+          used.add(t.key)
+          const opt = document.createElement('option')
+          opt.value = t.key
+          opt.textContent = t.label
+          group.appendChild(opt)
+        })
+        if (group.children.length) select.appendChild(group)
+      }
+      const rest = document.createElement('optgroup')
+      rest.label = '其他'
       model.TYPES.forEach((t) => {
+        if (used.has(t.key)) return
         const opt = document.createElement('option')
         opt.value = t.key
         opt.textContent = t.label
-        select.appendChild(opt)
+        rest.appendChild(opt)
       })
+      if (rest.children.length) select.appendChild(rest)
+      void byKey
       select.value = mod.type
       select.onchange = () => {
         mod.type = select.value
@@ -307,8 +335,16 @@
       input.value = mod.text
       input.maxLength = 200
       input.oninput = () => { mod.text = input.value; markDirty(); renderRows(); renderPreview() }
-      box.appendChild(field('文字', input))
+      box.appendChild(field('写什么', input))
     }
+
+    // Everything visual hides behind one disclosure: the common case is just
+    // picking what the module says.
+    const advanced = document.createElement('details')
+    advanced.className = 'advanced'
+    const summary = document.createElement('summary')
+    summary.textContent = '再调调样式'
+    advanced.appendChild(summary)
 
     const size = document.createElement('input')
     size.type = 'number'
@@ -320,9 +356,9 @@
       markDirty()
       renderAll()
     }
-    box.appendChild(field('多大', size))
+    advanced.appendChild(field('多大', size))
 
-    box.appendChild(field('怎么显示', (() => {
+    advanced.appendChild(field('怎么显示', (() => {
       const wrap = document.createElement('div')
       wrap.className = 'chips'
       const bold = document.createElement('label')
@@ -346,13 +382,13 @@
       return wrap
     })()))
 
-    box.appendChild(field('字颜色', colorInput(mod.style.color, (value) => {
+    advanced.appendChild(field('字颜色', colorInput(mod.style.color, (value) => {
       mod.style.color = value
       markDirty()
       renderAll()
     })))
 
-    box.appendChild(field('垫个底色', (() => {
+    advanced.appendChild(field('垫个底色', (() => {
       const wrap = document.createElement('div')
       wrap.className = 'chips'
       wrap.appendChild(colorInput(mod.style.bg || '#ffffff', (value) => {
@@ -367,6 +403,7 @@
       wrap.appendChild(clear)
       return wrap
     })()))
+    box.appendChild(advanced)
 
     const ops = document.createElement('div')
     ops.className = 'chips'
@@ -531,6 +568,44 @@
     status('变回默认啦（别忘了点保存）')
   }
 
+  // ---------------------------------------------------------------- presets
+  // One click replaces the current card with a ready-made layout: most people
+  // just want the bubble to say less, not to assemble modules by hand.
+  function presetRows(cardId, kind) {
+    const base = model.defaultLayout().cards.find((c) => c.id === cardId)
+    const rows = base ? JSON.parse(JSON.stringify(base.rows)) : []
+    const text = (v) => model.newModule('text', v)
+    const mk = (type) => model.newModule(type, '')
+    if (kind === 'simple') {
+      const simple = {
+        weather: [[mk('weather.icon'), mk('weather.temp'), mk('weather.text')], [mk('weather.tip')]],
+        water: [[text('今天第 '), mk('water.cups'), text(' 杯啦')]],
+        random: [[mk('random')]],
+      }
+      return simple[cardId] || rows.slice(0, 1)
+    }
+    if (kind === 'rich') {
+      const extra = {
+        weather: [[mk('weather.feels'), mk('weather.uv')], [mk('weather.sun')], [mk('weather.hourly')], [mk('weather.tomorrow')]],
+        water: [[text('下次大概 '), mk('water.next')]],
+        random: [[mk('name'), text(' · '), mk('time')]],
+      }
+      return rows.concat(extra[cardId] || [])
+    }
+    return rows // standard: exactly what ships by default
+  }
+
+  function applyPreset(kind) {
+    const card = currentCard()
+    if (!card) return
+    card.rows = presetRows(card.id, kind)
+    state.sel = null
+    markDirty()
+    renderAll()
+    const label = { simple: '简洁', standard: '标准', rich: '详细' }[kind] || kind
+    status('换成「' + label + '」啦，看看下面的预览')
+  }
+
   // ------------------------------------------------------------------- boot
   async function boot() {
     try {
@@ -542,6 +617,9 @@
       status('没读到设置，稍后再试')
     }
     $('addRowBtn').onclick = addRow
+    document.querySelectorAll('[data-preset]').forEach((btn) => {
+      btn.onclick = () => applyPreset(btn.dataset.preset)
+    })
     $('saveBtn').onclick = () => save().catch(() => status('没保存成功，再试一次？'))
     $('resetBtn').onclick = reset
     $('closeBtn').onclick = () => {

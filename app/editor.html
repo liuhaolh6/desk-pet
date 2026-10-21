@@ -8,27 +8,33 @@
 </head>
 <body>
   <header>
-    <h1>气泡编辑器</h1>
+    <h1>气泡布置</h1>
     <div id="tabs" class="tabs"></div>
     <span class="spacer"></span>
-    <button id="resetBtn" type="button">还原默认</button>
+    <button id="resetBtn" type="button">变回默认</button>
     <button id="saveBtn" class="primary" type="button">保存</button>
     <button id="closeBtn" type="button">关闭</button>
   </header>
 
   <div class="body">
     <section class="canvas">
-      <p class="tip">拖动模块上的 ⠿ 排序；点模块在右侧改类型与样式；模块之间拖到圆点上插入。</p>
+      <div class="presets" role="group" aria-label="一键排版">
+        <span class="presets-label">先挑一个：</span>
+        <button type="button" data-preset="simple">简洁</button>
+        <button type="button" data-preset="standard">标准</button>
+        <button type="button" data-preset="rich">详细</button>
+      </div>
+      <p class="tip">按住 ⠿ 可以拖着排序；点一块内容，右边就能改它写什么、长什么样。</p>
       <div id="rows" class="rows"></div>
-      <button id="addRowBtn" class="dashed" type="button">+ 添加一行</button>
+      <button id="addRowBtn" class="dashed" type="button">+ 再加一行</button>
     </section>
 
     <aside class="side">
       <div id="inspector" class="panel"></div>
       <div class="panel">
-        <h3>模块库</h3>
+        <h3>我的收藏</h3>
         <div id="library" class="library-list"></div>
-        <button id="saveLibBtn" class="dashed" type="button">把当前模块存入库</button>
+        <button id="saveLibBtn" class="dashed" type="button">把这一块收进收藏</button>
       </div>
     </aside>
   </div>
