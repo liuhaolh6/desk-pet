@@ -258,7 +258,8 @@ npm run dist
 | `lib/cutout-worker.js` | utilityProcess 里的抠图执行体（P1-5） |
 | `PET-WINDOW-NOTES.md` | 0.5.5 透明窗口屏闪：原因、证据、修复与验证 |
 | `tools/check-a11y.js` | 静态无障碍回归（结构断言，非 WCAG 审计；CI 会跑） |
-| `tools/a11y-audit.js` | CDP 无障碍审计（82 项：AX 名称/对比度/目标尺寸/焦点/键盘流程/回流/forced-colors/reduced-motion） |
+| `tools/a11y-audit.js` | CDP 无障碍审计 76 项（AX 名称/对比度/目标尺寸/焦点/回流/forced-colors/reduced-motion） |
+| `tools/a11y-keyboard.js` | 键盘-only 抠图流程 6 项（WCAG 2.1.1；与上面合计 82） |
 | `A11Y-AUDIT.md` | 0.5.5 无障碍审计报告（结论、方法、修复、未验证项） |
 | `.github/workflows/ci.yml` | `npm ci` + 语法 + a11y 静态检查 + `npm test` + 合成图/真实模型断言（GitHub Actions 已实跑通过） |
 | `.github/workflows/release.yml` | tag 触发：64 位 NSIS → 检查 → 构建 portable → 校验和 → 创建 Release；失败自动开 Issue，成功自动关闭 |

@@ -44,7 +44,8 @@ node tools/cutout-diag.js --input tools/fixtures/negative-landscape.png --expect
 
 ```powershell
 & node_modules\electron\dist\electron.exe . --no-sandbox --remote-debugging-port=9229
-node tools/a11y-audit.js --port 9229 --flow     # 82 项无障碍检查
+node tools/a11y-audit.js --port 9229     # 76 项无障碍检查
+node tools/a11y-keyboard.js --port 9229  # 6 项键盘-only 流程
 ```
 
 ## 代码约定
