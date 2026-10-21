@@ -99,6 +99,16 @@ function clamp(n, lo, hi) { return Math.min(hi, Math.max(lo, n)) }
 // Horizontal breathing room so bubbles can be wider than the pet itself.
 const WIN_PAD = 54
 function windowWidth(size) { return size + WIN_PAD * 2 }
+// Mirrors app/pet.js syncBubbleMetrics()/bubbleReserve(): --bubble-w is
+// clamp(220, innerWidth - 12, 340) and the frame keeps a 1026:700 aspect ratio.
+// Creating the window already this tall means the first bubble never resizes
+// the transparent window (a resize is what made it flicker).
+const BUBBLE_MIN_W = 220
+const BUBBLE_MAX_W = 340
+function bubbleReserveFor(width) {
+  const w = Math.max(BUBBLE_MIN_W, Math.min(BUBBLE_MAX_W, Math.round(width) - 12))
+  return Math.ceil((w * 700) / 1026) + 8
+}
 
 // ---------------------------------------------------------- mouse passthrough
 let hitRects = []
@@ -267,18 +277,23 @@ function createPetWindow() {
   const s = store.readSettings()
   const size = clamp(Number(s.size) || 220, 80, 480)
   const pos = resolveWindowPosition(size)
-  // The saved/window x already excludes the window padding; the pet never has a
-  // bubble reserve at startup, so the pet's top equals the window's top.
-  petPos = { x: pos.x + WIN_PAD, y: pos.y }
+  // 0.6.4: the window is born with the bubble strip already reserved. The pet
+  // keeps its saved place (the strip grows upwards), clamped into the work area.
+  const reserve = bubbleReserveFor(windowWidth(size))
+  const nearest = screen.getDisplayNearestPoint({ x: pos.x + WIN_PAD + Math.floor(size / 2), y: pos.y })
+  const work = nearest.workArea
+  const winY = Math.max(work.y, Math.min(pos.y - reserve, work.y + work.height - (size + reserve)))
+  // The saved/window x already excludes the window padding.
+  petPos = { x: pos.x + WIN_PAD, y: winY + reserve }
   bubbleSide = 'above'
-  extraBubbleHeight = 0
+  extraBubbleHeight = reserve
 
   const opaque = process.env.DESKPET_OPAQUE === '1'
   petWin = new BrowserWindow({
     x: pos.x,
-    y: pos.y,
+    y: winY,
     width: windowWidth(size),
-    height: size,
+    height: size + reserve,
     frame: false,
     transparent: !opaque,
     resizable: false,

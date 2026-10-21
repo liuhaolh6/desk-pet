@@ -778,9 +778,9 @@ const PAD = 54
   assert.ok(/--bubble-fit/.test(petCss) && /fitBubbleText/.test(petJs), '文字超框时按比例收缩而不是溢出')
   assert.ok(/white-space: normal/.test(petCss), '长文本先换行')
   assert.ok(/bubbleReserve\(\)/.test(petJs), '同一串气泡内用固定空间，卡片切换不 resize')
-  assert.ok(/resizeForBubble\(0\)/.test(petJs), '气泡收起后窗口缩回桌宠大小（不常驻透明矩形）')
+  assert.ok(!/resizeForBubble\(0\)/.test(petJs), '运行中不再把窗口缩成 0，杜绝透明窗口 resize 频闪')
   assert.ok(/wireBubbleClick/.test(petJs) && /bubble\.addEventListener\('click'/.test(petJs), '点击气泡收起')
-  assert.ok(/bubble-bshape/.test(petJs) && /shrink/.test(petJs), '气泡命中区跟随绘制出的云朵，而不是矩形框')
+  assert.ok(/band\(0\.05/.test(petJs) && /bubble-bshape/.test(petJs), '气泡命中区跟随绘制出的云朵，而不是矩形框')
   assert.ok(/setIgnoreMouseEvents\(true, \{ forward: true \}\)/.test(mainJs), '固定预留区默认鼠标穿透')
   assert.ok(/sendRects/.test(petJs) && /pet:rects/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')) && /updatePetInteractive/.test(mainJs), '渲染层上报命中区、主进程轮询光标决定可交互')
 

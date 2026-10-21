@@ -104,3 +104,29 @@ bubble.addEventListener('click', () => { if (state.menuOpen) return; hideBubble(
 - `dist/win-unpacked/DeskPet.exe` 的 `FileVersion` = `0.6.3`、`ProductVersion` = `0.6.3.0`。
 - 打包版实测：空闲 `innerHeight=220`、气泡展开 `444`、点气泡收起回 `220`，卡片文案与开发版一致。
 - 打包版启动时**不要**带 `ELECTRON_RUN_AS_NODE`（会把 exe 当 node 跑，报 `bad option: --no-sandbox`）。
+
+## 7. 0.6.4 修正：运行中不要再 resize
+
+第 2 节那套"空闲缩回 220、点开长到 444"的做法，用户在用 0.6.3 的包时反馈**点桌宠有频闪**。原因很明确：
+
+- Windows 上给 `transparent: true` 的窗口调 `setBounds`，新暴露出来的那一条会被合成一帧旧背景/黑色，
+  看起来就是闪一下。0.6.1 之所以不闪，正是因为它**只预留一次、之后再也不改大小**。
+- 0.6.3 把缩小加在了 `hideBubble()` 的 520ms 定时器里，于是每点一次桌宠（开→收起→再开）就 resize 两次，
+  闪烁随之回来。
+
+现在的做法（三条一起才成立）：
+
+1. `app/main.js` `createPetWindow()` 里用 `bubbleReserveFor(windowWidth(size))` 算出预留高度，
+   窗口**出生就是 `桌宠 + 预留`**，`winY = pos.y - reserve` 让桌宠留在原来的位置（并夹进工作区）。
+   公式与 `app/pet.js` 的 `syncBubbleMetrics()`/`bubbleReserve()` 一致：
+   `--bubble-w = clamp(220, innerWidth - 12, 340)`，高度 `w * 700 / 1026`，再 `+8`。
+2. `app/pet.js` 里 `resizeForBubble(0)` 的调用全部删除；`syncBubbleSpace()`/`closeMenu()` 一律
+   `resizeForBubble(bubbleReserve())`，`hideBubble()` 不再缩窗。`applyBubbleHeight()` 的 `changed` 判断因此
+   永远为假，`setBounds` 一次都不会被调用。
+3. 为了能证明"真的没 resize"，`resizeForBubble()` 在预留值变化时打 `bubble-resize`（`DESKPET_TRACE_BUBBLE=1`）。
+
+验证脚本：`.tmp-verify/cdp-noresize.js`（连点 5 次 + 点气泡收起，断言 `innerHeight` 恒为 444 且
+`bubble-resize` ≤1 条）、`.tmp-verify/cdp-idle-bounds.js` + `.tmp-verify/hit-test.ps1`（真光标 `WindowFromPoint`
+ 验证穿透）。
+
+**新不变量**：只要气泡还没有显示，就绝不假设窗口可以改大小；要改之前先在 NOTES 里写明为什么不会闪。
