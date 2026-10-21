@@ -1,0 +1,61 @@
+name: Bug report
+description: 报告一个可复现的问题（崩溃、显示异常、行为不符预期）
+title: '[Bug] '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。请尽量把“怎么重现”写清楚；不含复现步骤的报告很难定位。
+        安全相关问题请不要用这个模板，走 [SECURITY.md](https://github.com/liuhaolh6/desk-pet/blob/main/SECURITY.md)。
+  - type: input
+    id: version
+    attributes:
+      label: DeskPet 版本
+      description: 设置 → 其他 里的版本号，或 exe 文件名里的版本
+      placeholder: '0.5.7'
+    validations:
+      required: true
+  - type: dropdown
+    id: build
+    attributes:
+      label: 安装方式
+      options:
+        - portable exe（免安装）
+        - win-unpacked（解包版 / 快捷方式）
+        - 源码 npm start
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: 系统与显示器
+      description: Windows 版本、显示器数量与缩放比例（如果与多屏/贴边相关）
+      placeholder: Windows 11 23H2 · 单屏 1920×1080 @125%
+    validations:
+      required: false
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 从启动开始，按顺序写清楚点了什么
+      placeholder: |
+        1. 双击 DeskPet-0.5.7-portable.exe
+        2. 左键单击桌宠
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望结果 vs 实际结果
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志或截图
+      description: 数据目录里的 app.log（`%APPDATA%\desk-pet\app.log`），以及截图/录屏。**请先去掉路径里的用户名**。
+      render: text
+    validations:
+      required: false

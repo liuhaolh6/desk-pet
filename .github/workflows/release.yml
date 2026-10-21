@@ -1,0 +1,72 @@
+name: Release
+
+# 推送 v* tag 时构建 Windows portable 产物，并创建（或补传）GitHub Release。
+# 这里用的是 Actions 自带的 GITHUB_TOKEN，无需额外 secret；签名流程见 sign-release.yml。
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Syntax check
+        run: npm run check
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Accessibility regression (static)
+        run: node tools/check-a11y.js
+
+      - name: Build portable
+        run: npm run dist
+
+      - name: Checksums
+        shell: bash
+        run: |
+          cd dist
+          sha256sum DeskPet-*-portable.exe > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Verify artifact version
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem dist\DeskPet-*-portable.exe | Select-Object -First 1
+          $expected = (Get-Content package.json | ConvertFrom-Json).version
+          if ($exe.Name -notlike "*$expected*") { throw "artifact $($exe.Name) does not match package version $expected" }
+          Write-Host "artifact: $($exe.Name) $($exe.Length) bytes"
+
+      - name: Create or update release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="$GITHUB_REF_NAME"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/DeskPet-*-portable.exe dist/SHA256SUMS.txt --clobber
+          else
+            gh release create "$tag" dist/DeskPet-*-portable.exe dist/SHA256SUMS.txt \
+              --title "$tag" --generate-notes
+          fi

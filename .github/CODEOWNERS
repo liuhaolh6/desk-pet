@@ -1,0 +1,7 @@
+# 单人项目：所有改动由维护者审核。
+# 签名与发布相关的目录额外标注，方便后续增加第二审核人。
+* @liuhaolh6
+
+/.github/workflows/ @liuhaolh6
+/assets/models/ @liuhaolh6
+/SIGNING.md @liuhaolh6

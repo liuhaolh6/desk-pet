@@ -1,0 +1,47 @@
+name: Feature request
+description: 提一个功能或体验改进
+title: '[Feature] '
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提之前可以先看 [PLAN.md](https://github.com/liuhaolh6/desk-pet/blob/main/PLAN.md) 和
+        [M12-PLAN.md](https://github.com/liuhaolh6/desk-pet/blob/main/M12-PLAN.md)，避免和已有计划重复。
+  - type: textarea
+    id: problem
+    attributes:
+      label: 你想解决什么问题
+      description: 描述场景，而不是直接给方案
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 你希望的方案
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: 涉及区域
+      options:
+        - 角色 / 照片抠图
+        - 气泡与气泡编辑器
+        - 天气 / 喝水提醒
+        - 设置窗口
+        - 桌面行为（拖拽 / 贴边 / 多屏 / 托盘）
+        - 音效
+        - 打包 / 签名 / CI
+        - 其他
+    validations:
+      required: true
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: 约束确认
+      options:
+        - label: 方案可以离线运行（不引入必须联网的功能）
+          required: false
+        - label: 愿意接受“不增加安装包体积”或“需要先评估体积”的前提
+          required: false

@@ -1,8 +1,23 @@
 # desk-pet · 桌面宠物
 
+[![CI](https://github.com/liuhaolh6/desk-pet/actions/workflows/ci.yml/badge.svg)](https://github.com/liuhaolh6/desk-pet/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/liuhaolh6/desk-pet?sort=semver)](https://github.com/liuhaolh6/desk-pet/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%20x64-0078D4)](https://github.com/liuhaolh6/desk-pet/releases)
+
 Windows 桌面上的常驻小宠物：点一下看天气、被提醒喝水，换自己的照片当角色，名字、大小、模式、位置都能改。
 
+> **DeskPet** is a Windows x64 desktop pet: offline photo-cutout roles (U2Net, bundled), weather, water reminders and a modular bubble editor. No account, no upload, local-only data. Documentation is in Chinese.
+
 > 不依赖 DSH：这是一个独立的 Electron 桌面应用。早期版本曾按 DSH 插件形态实现，存档在仓库外的 `deskpet-dsh-plugin/`。
+
+## 下载
+
+从 [Releases](https://github.com/liuhaolh6/desk-pet/releases/latest) 下载 `DeskPet-<version>-portable.exe`（Windows x64，免安装，约 153MB，抠图模型随包，不需要联网下载）。
+
+- 每个 Release 附带 `SHA256SUMS.txt`，可用 `Get-FileHash .\DeskPet-<version>-portable.exe -Algorithm SHA256` 核对。
+- 产物**未签名**（SignPath Foundation 审核中），SmartScreen 首次运行需要「更多信息 → 仍要运行」。
+- 便携版数据写在 exe 同级 `desk-pet-data\`，整个文件夹可以搬走；也可以用 `DESKPET_DATA_DIR` 指定。
 
 ## 特性
 
@@ -63,7 +78,7 @@ npm run dist      # electron-builder portable，输出 dist/DeskPet-<version>-po
 
 - exe 带图标与版本信息（ProductName / FileVersion / Copyright 等）。
 - 未签名 exe 可能被 SmartScreen 提示「已保护你的电脑」：点「更多信息 → 仍要运行」，或对 exe 签名。
-- 当前 `0.5.7` 仍未签名；免费开源签名方案与 CI 工作流见 [`SIGNING.md`](SIGNING.md)。在 SignPath 审核通过前，不要把它当作已签名发布。
+- 当前 `0.5.8` 仍未签名；免费开源签名方案与 CI 工作流见 [`SIGNING.md`](SIGNING.md)。在 SignPath 审核通过前，不要把它当作已签名发布。
 - 本机打包绕坑（32 位 NSIS mmap、火绒拦临时目录）见 [`M6-PACKAGING.md`](M6-PACKAGING.md)。
 
 ## 使用
@@ -170,7 +185,20 @@ Signing setup and verification: [`SIGNING.md`](SIGNING.md).
 ## 后续
 
 见 [PLAN.md](PLAN.md)；跨对话接手请看 [HANDOFF.md](HANDOFF.md)（现状、决策、已知坑、待办与开场白）。
-当前 `0.5.7` 已有：角色、照片抠图（alpha 修复 + 蒙版/擦除/旋转 + worker 卸载 + token IPC）、天气、喝水、气泡模块化编辑器、音效库、多显示器与贴边吸附、触摸动效、whale classic SVG 思考气泡、悬停菜单、设置重构、内置字体、托盘、设置、置顶、自启、便携打包（0.5.5 修复触摸按压桌宠时的窗口屏闪，见 [`PET-WINDOW-NOTES.md`](PET-WINDOW-NOTES.md)）。待做：NVDA 等真实屏幕阅读器与高对比度主题实测、推送/tag/CI 实跑、10 张 golden set（见 [`M12-PLAN.md`](M12-PLAN.md)）、代码签名（SignPath 免费 OSS 路线，见 [`SIGNING.md`](SIGNING.md)）。
+当前 `0.5.8` 已有：角色、照片抠图（alpha 修复 + 蒙版/擦除/旋转 + worker 卸载 + token IPC）、天气、喝水、气泡模块化编辑器、音效库、多显示器与贴边吸附、触摸动效、whale classic SVG 思考气泡、悬停菜单、设置重构、内置字体、托盘、设置、置顶、自启、便携打包（0.5.5 修复触摸按压桌宠时的窗口屏闪，见 [`PET-WINDOW-NOTES.md`](PET-WINDOW-NOTES.md)）。待做：NVDA 等真实屏幕阅读器与高对比度主题实测、10 张 golden set（见 [`M12-PLAN.md`](M12-PLAN.md)）、代码签名（SignPath 免费 OSS 路线，见 [`SIGNING.md`](SIGNING.md)）。
+
+## 参与与文档
+
+| 文档 | 内容 |
+|---|---|
+| [`CHANGELOG.md`](CHANGELOG.md) | 每个版本改了什么 |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | 开发环境、提交前检查、代码约定、发布流程 |
+| [`SECURITY.md`](SECURITY.md) | 漏洞报告渠道与攻击面说明 |
+| [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) | 行为准则 |
+| [`HANDOFF.md`](HANDOFF.md) | 现状、设计决策、已知坑与待办（接手先读） |
+| [`A11Y-AUDIT.md`](A11Y-AUDIT.md) | 无障碍审计报告（82 项可自动化检查） |
+| [`MODEL-ASSETS.md`](MODEL-ASSETS.md) | 模型与二进制资产决策（不用 LFS、量化约束） |
+| [`SIGNING.md`](SIGNING.md) | 代码签名方案与验证 |
 
 ## License
 

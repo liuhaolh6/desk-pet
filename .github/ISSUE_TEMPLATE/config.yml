@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安全漏洞（请勿公开）
+    url: https://github.com/liuhaolh6/desk-pet/security/advisories/new
+    about: 用私密渠道报告安全问题，见 SECURITY.md
+  - name: 使用问题 / 讨论
+    url: https://github.com/liuhaolh6/desk-pet/issues
+    about: 先搜索已有 Issue，再新建
+  - name: 交接与设计文档
+    url: https://github.com/liuhaolh6/desk-pet/blob/main/HANDOFF.md
+    about: 现状、设计决策、已知坑与待办

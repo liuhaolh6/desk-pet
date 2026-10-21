@@ -1,11 +1,23 @@
 {
   "name": "desk-pet",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "description": "Windows 桌面宠物：自定义角色形象、点击看天气/喝水提醒，名称大小模式位置全部可配置",
   "main": "app/main.js",
   "private": true,
   "author": {
-    "name": "liuhaolh6"
+    "name": "liuhaolh6",
+    "url": "https://github.com/liuhaolh6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liuhaolh6/desk-pet.git"
+  },
+  "homepage": "https://github.com/liuhaolh6/desk-pet#readme",
+  "bugs": {
+    "url": "https://github.com/liuhaolh6/desk-pet/issues"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "scripts": {
     "start": "electron .",
@@ -21,7 +33,10 @@
     "desktop-pet",
     "electron",
     "weather",
-    "windows"
+    "windows",
+    "u2net",
+    "photo-cutout",
+    "desktop-widget"
   ],
   "license": "MIT",
   "devDependencies": {
