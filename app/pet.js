@@ -84,9 +84,10 @@
     const role = (state.roles || []).find((r) => r.id === settings.roleId)
     const src = role ? role.url : 'pet-role://default/'
     if (pet.getAttribute('src') !== src) pet.setAttribute('src', src)
-    // Photo-derived roles have soft alpha edges; the normal desktop shadow
-    // amplifies any leftover fringe, so use a lighter one for them.
-    document.body.classList.toggle('photo-role', !!(role && role.mode))
+    // Photo-derived roles (and the built-in portrait, which is `builtin: true`)
+    // have soft alpha edges; the normal desktop shadow turns them into a dark
+    // halo, so use a lighter one for them.
+    document.body.classList.toggle('photo-role', !!(role && (role.mode || role.builtin)))
   }
 
   // ---------------------------------------------------------------- queue

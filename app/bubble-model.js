@@ -21,9 +21,16 @@
     { key: 'weather.city', label: '天气·城市', sample: '北京' },
     { key: 'weather.temp', label: '天气·当前温度', sample: '13°' },
     { key: 'weather.text', label: '天气·描述', sample: '晴' },
+    { key: 'weather.feels', label: '天气·体感温度', sample: '体感 11°' },
     { key: 'weather.range', label: '天气·今日高低温', sample: '7~18°' },
     { key: 'weather.precip', label: '天气·降水概率', sample: '0%' },
     { key: 'weather.humidity', label: '天气·湿度', sample: '79%' },
+    { key: 'weather.wind', label: '天气·风速', sample: '风 12km/h' },
+    { key: 'weather.sun', label: '天气·日出日落', sample: '06:42 日出 · 17:21 日落' },
+    { key: 'weather.uv', label: '天气·紫外线', sample: '紫外线 6' },
+    { key: 'weather.tomorrow', label: '天气·明天', sample: '明天 6~15° 多云' },
+    { key: 'weather.hourly', label: '天气·未来几小时', sample: '15点 14° 多云 → …' },
+    { key: 'weather.tip', label: '天气·贴心提醒', sample: '记得带伞呀' },
     { key: 'weather.updated', label: '天气·更新时间', sample: '更新于 22:12' },
     { key: 'weather.hint', label: '天气·离线提示', sample: '离线缓存' },
     { key: 'water.cups', label: '喝水·今日杯数', sample: '3' },
@@ -109,7 +116,8 @@
         rows: [
           [textModule('🌤️ 天气', { bold: true })],
           [module('weather.icon'), module('weather.city'), module('weather.temp', { bold: true, size: 15 })],
-          [module('weather.text')],
+          [module('weather.text'), module('weather.feels')],
+          [module('weather.tip')],
           [textModule('今日 '), module('weather.range'), textModule(' · 降水 '), module('weather.precip')],
           // #5d6a86 keeps the 11px hint line at ~4.8:1 on white (WCAG AA);
           // #8890a8 only reached 3.18:1.
@@ -121,8 +129,8 @@
         name: '喝水',
         action: true,
         rows: [
-          [textModule('💧 该喝水啦', { bold: true })],
-          [textModule('今天第 '), module('water.cups'), textModule(' 杯，慢慢喝')],
+          [textModule('💧 喝水时间到', { bold: true })],
+          [textModule('今天第 '), module('water.cups'), textModule(' 杯，慢慢喝呀')],
         ],
       },
       {
@@ -142,6 +150,8 @@
       library: [
         { id: uid('lib'), label: '当前时间', module: module('time') },
         { id: uid('lib'), label: '天气一行', module: module('weather.icon') },
+        { id: uid('lib'), label: '贴心提醒', module: module('weather.tip') },
+        { id: uid('lib'), label: '未来几小时', module: module('weather.hourly') },
       ],
     }
   }
@@ -190,6 +200,10 @@
   function valueOf(type, ctx) {
     const w = (ctx && ctx.weather) || null
     const ok = w && w.ok
+    // Weather numbers can be missing (partial API response) — never print "null".
+    const num = (v) => (Number.isFinite(Number(v)) ? Math.round(Number(v)) : '—')
+    const deg = (v) => num(v) + '°'
+    const pct = (v) => (Number.isFinite(Number(v)) ? Math.round(Number(v)) + '%' : '—')
     switch (type) {
       case 'random': return pickRandom(ctx && ctx.phrases)
       case 'name': return (ctx && ctx.name) || '桌宠'
@@ -201,11 +215,30 @@
       }
       case 'weather.icon': return ok ? (w.icon || '🌤️') : '🌤️'
       case 'weather.city': return ok ? (w.city || '当前') : '天气'
-      case 'weather.temp': return ok ? w.temp + '°' : '—'
+      case 'weather.temp': return ok ? deg(w.temp) : '—'
       case 'weather.text': return ok ? w.text : '还没取到天气'
-      case 'weather.range': return ok ? w.low + '~' + w.high + '°' : '—'
-      case 'weather.precip': return ok ? w.precip + '%' : '—'
-      case 'weather.humidity': return ok ? w.humidity + '%' : '—'
+      case 'weather.feels': return ok && Number.isFinite(Number(w.feels)) ? '体感 ' + deg(w.feels) : ''
+      case 'weather.range': return ok ? num(w.low) + '~' + num(w.high) + '°' : '—'
+      case 'weather.precip': return ok ? pct(w.precip) : '—'
+      case 'weather.humidity': return ok ? pct(w.humidity) : '—'
+      case 'weather.wind': return ok && Number.isFinite(Number(w.wind)) ? '风 ' + Math.round(w.wind) + 'km/h' : ''
+      case 'weather.sun': {
+        if (!ok || !w.sunrise || !w.sunset) return ''
+        return w.sunrise + ' 日出 · ' + w.sunset + ' 日落'
+      }
+      case 'weather.uv': return ok && Number.isFinite(Number(w.uv)) ? '紫外线 ' + Math.round(w.uv) : ''
+      case 'weather.tomorrow': {
+        if (!ok || !w.tomorrow || !Number.isFinite(Number(w.tomorrow.high))) return ''
+        return '明天 ' + deg(w.tomorrow.low) + '~' + deg(w.tomorrow.high) +
+          (w.tomorrow.text ? ' ' + w.tomorrow.text : '')
+      }
+      case 'weather.hourly': {
+        if (!ok || !Array.isArray(w.hourly) || !w.hourly.length) return ''
+        return w.hourly.slice(0, 3)
+          .map((h) => h.hour + '点 ' + deg(h.temp) + (h.icon ? ' ' + h.icon : ''))
+          .join(' → ')
+      }
+      case 'weather.tip': return ok ? (w.advice || '') : ''
       case 'weather.updated': return ok ? '更新于 ' + fmtTime(w.updatedAt) : ''
       case 'weather.hint': return ok && w.stale ? '离线缓存' : ''
       case 'water.cups': return String((ctx && ctx.cups) || 0)

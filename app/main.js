@@ -16,7 +16,7 @@ const {
 } = require('electron')
 
 const { createStore } = require('../lib/store')
-const { fetchWeather, geocode } = require('../lib/weather')
+const { fetchWeather, geocode, advice } = require('../lib/weather')
 const placement = require('../lib/placement')
 const cutout = require('../lib/cutout')
 
@@ -491,8 +491,12 @@ async function refreshWeather(reason) {
     store.writeWeatherCache({ key: w.lat + ',' + w.lon, at: Date.now(), value: weather })
   } catch (err) {
     const cache = store.readWeatherCache()
-    if (cache && cache.value) weather = Object.assign({}, cache.value, { stale: true, error: String(err.message || err) })
-    else weather = { ok: false, error: 'FETCH_FAILED', message: String(err.message || err) }
+    if (cache && cache.value) {
+      weather = Object.assign({}, cache.value, { stale: true, error: String(err.message || err) })
+      // Older caches predate the advice line / hourly strip: fill what we can.
+      if (!weather.advice) weather.advice = advice(weather)
+      if (!Array.isArray(weather.hourly)) weather.hourly = []
+    } else weather = { ok: false, error: 'FETCH_FAILED', message: String(err.message || err) }
   }
   sendWeather()
   return weather
