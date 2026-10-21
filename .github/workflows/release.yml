@@ -82,7 +82,24 @@ jobs:
           & (Join-Path $nsis 'Bin\makensis.exe') /VERSION
 
       - name: Install dependencies
-        run: npm ci
+        shell: pwsh
+        run: |
+          npm ci 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\npm-ci.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      # electron 的 postinstall 偶尔会被跳过/失败，导致 electron-builder 报
+      # "The specified electronDist does not exist"。这里显式确认并补装。
+      - name: Verify Electron binary
+        shell: pwsh
+        run: |
+          Write-Host "ELECTRON_SKIP_BINARY_DOWNLOAD=[$env:ELECTRON_SKIP_BINARY_DOWNLOAD]"
+          $electron = 'node_modules\electron\dist\electron.exe'
+          if (-not (Test-Path $electron) -and (Test-Path 'node_modules\electron\install.js')) {
+            Write-Host 'electron binary missing after npm ci; running install.js'
+            node node_modules\electron\install.js
+          }
+          if (-not (Test-Path $electron)) { throw "electron binary missing: $electron" }
+          & $electron --version
 
       - name: Syntax check
         run: npm run check
@@ -127,6 +144,20 @@ jobs:
               --title "$tag" --generate-notes
           fi
 
+      # 发布成功后，关掉之前失败时自动开的 Issue。
+      - name: Close failure issue
+        if: success()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "${{ inputs.tag || github.ref_name }}"
+          $title = "[CI] Release build failed for $tag"
+          $numbers = gh issue list --state open --search "$title in:title" --json number --jq '.[].number'
+          foreach ($n in $numbers) {
+            gh issue close $n --comment "已由 $tag 的发布流程修复并完成：$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+          }
+
       # 失败时把构建日志尾部落到一个 Issue 里：无需登录也能看到失败原因。
       - name: Report failure
         if: failure()
@@ -139,7 +170,11 @@ jobs:
           $existing = gh issue list --state open --search "$title in:title" --json number --jq 'length'
           if ([int]$existing -gt 0) { Write-Host 'failure issue already open'; exit 0 }
           $log = Join-Path $env:RUNNER_TEMP 'build.log'
-          $tail = if (Test-Path $log) { (Get-Content $log -Tail 60) -join [Environment]::NewLine } else { 'build.log not found' }
+          $ciLog = Join-Path $env:RUNNER_TEMP 'npm-ci.log'
+          $tail = @()
+          if (Test-Path $ciLog) { $tail += '--- npm ci (tail) ---'; $tail += (Get-Content $ciLog -Tail 30) }
+          if (Test-Path $log) { $tail += '--- npm run dist (tail) ---'; $tail += (Get-Content $log -Tail 60) }
+          if ($tail.Count -eq 0) { $tail = @('no logs captured') }
           $fence = '```'
           $lines = @(
             "Run: $env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID",
