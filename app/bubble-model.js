@@ -14,27 +14,27 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   // ------------------------------------------------------------ module types
   const TYPES = [
-    { key: 'text', label: '固定文字', field: 'text', sample: '文本' },
-    { key: 'random', label: '随机语句', sample: '记得喝水呀～' },
-    { key: 'name', label: '桌宠名字', sample: '小芳桌宠' },
-    { key: 'weather.icon', label: '天气·图标', sample: '🌤️' },
-    { key: 'weather.city', label: '天气·城市', sample: '北京' },
-    { key: 'weather.temp', label: '天气·当前温度', sample: '13°' },
-    { key: 'weather.text', label: '天气·描述', sample: '晴' },
-    { key: 'weather.feels', label: '天气·体感温度', sample: '体感 11°' },
-    { key: 'weather.range', label: '天气·今日高低温', sample: '7~18°' },
-    { key: 'weather.precip', label: '天气·降水概率', sample: '0%' },
-    { key: 'weather.humidity', label: '天气·湿度', sample: '79%' },
-    { key: 'weather.wind', label: '天气·风速', sample: '风 12km/h' },
-    { key: 'weather.sun', label: '天气·日出日落', sample: '06:42 日出 · 17:21 日落' },
-    { key: 'weather.uv', label: '天气·紫外线', sample: '紫外线 6' },
-    { key: 'weather.tomorrow', label: '天气·明天', sample: '明天 6~15° 多云' },
-    { key: 'weather.hourly', label: '天气·未来几小时', sample: '15点 14° 多云 → …' },
-    { key: 'weather.tip', label: '天气·贴心提醒', sample: '记得带伞呀' },
-    { key: 'weather.updated', label: '天气·更新时间', sample: '更新于 22:12' },
-    { key: 'weather.hint', label: '天气·离线提示', sample: '离线缓存' },
-    { key: 'water.cups', label: '喝水·今日杯数', sample: '3' },
-    { key: 'water.next', label: '喝水·下次提醒', sample: '再过 42 分钟' },
+    { key: 'text', label: '写好的文字', field: 'text', sample: '文本' },
+    { key: 'random', label: '随机挑一句', sample: '记得喝水呀～' },
+    { key: 'name', label: '我的名字', sample: '小芳桌宠' },
+    { key: 'weather.icon', label: '天气：图标', sample: '🌤️' },
+    { key: 'weather.city', label: '天气：城市', sample: '北京' },
+    { key: 'weather.temp', label: '天气：现在几度', sample: '13°' },
+    { key: 'weather.text', label: '天气：晴雨', sample: '晴' },
+    { key: 'weather.feels', label: '天气：体感几度', sample: '体感 11°' },
+    { key: 'weather.range', label: '天气：今天高低温', sample: '7~18°' },
+    { key: 'weather.precip', label: '天气：会不会下雨', sample: '0%' },
+    { key: 'weather.humidity', label: '天气：湿度', sample: '79%' },
+    { key: 'weather.wind', label: '天气：风大不大', sample: '风 12km/h' },
+    { key: 'weather.sun', label: '天气：日出日落', sample: '06:42 日出 · 17:21 日落' },
+    { key: 'weather.uv', label: '天气：紫外线', sample: '紫外线 6' },
+    { key: 'weather.tomorrow', label: '天气：明天', sample: '明天 6~15° 多云' },
+    { key: 'weather.hourly', label: '天气：接下来几小时', sample: '15点 14° 多云 → …' },
+    { key: 'weather.tip', label: '天气：贴心提醒', sample: '记得带伞呀' },
+    { key: 'weather.updated', label: '天气：更新时间', sample: '更新于 22:12' },
+    { key: 'weather.hint', label: '天气：离线提示', sample: '离线缓存' },
+    { key: 'water.cups', label: '喝水：今天几杯', sample: '3' },
+    { key: 'water.next', label: '喝水：还有多久', sample: '再过 42 分钟' },
     { key: 'time', label: '当前时间', sample: '22:12' },
     { key: 'date', label: '今天的日期', sample: '10月19日 周日' },
   ]
@@ -89,7 +89,7 @@
   }
 
   function normalizeCard(raw, fallback) {
-    const card = fallback ? JSON.parse(JSON.stringify(fallback)) : { id: uid('card'), name: '新卡片', rows: [], action: false }
+    const card = fallback ? JSON.parse(JSON.stringify(fallback)) : { id: uid('card'), name: '新的卡片', rows: [], action: false }
     if (!raw || typeof raw !== 'object') return card
     if (typeof raw.id === 'string' && raw.id) card.id = raw.id
     if (typeof raw.name === 'string' && raw.name) card.name = raw.name.slice(0, 20)
@@ -135,7 +135,7 @@
       },
       {
         id: 'random',
-        name: '温馨语句',
+        name: '想说的话',
         action: false,
         rows: [
           [textModule('💬 '), module('name', { bold: true })],

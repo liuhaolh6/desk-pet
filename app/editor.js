@@ -67,12 +67,12 @@
     const up = document.createElement('button')
     up.className = 'tab'
     up.textContent = '↑'
-    up.title = '卡片前移（同时调整点击顺序）'
+    up.title = '往前挪一张（点击顺序也会跟着换）'
     up.onclick = () => moveCard(-1)
     const down = document.createElement('button')
     down.className = 'tab'
     down.textContent = '↓'
-    down.title = '卡片后移（同时调整点击顺序）'
+    down.title = '往后挪一张（点击顺序也会跟着换）'
     down.onclick = () => moveCard(1)
     tabs.appendChild(up)
     tabs.appendChild(down)
@@ -89,12 +89,12 @@
     state.layout.queue = cards.map((c) => c.id)
     markDirty()
     renderTabs()
-    status('卡片顺序已调整，点击角色将按此顺序出卡')
+    status('顺序换好啦，之后点我就按这个顺序出卡')
   }
 
   // ------------------------------------------------------------------- rows
   function moduleLabel(mod) {
-    if (mod.type === 'text') return mod.text || '（空文本）'
+    if (mod.type === 'text') return mod.text || '（这里还空着）'
     return model.TYPE_MAP[mod.type] ? model.TYPE_MAP[mod.type].label : mod.type
   }
 
@@ -118,7 +118,7 @@
       const handle = document.createElement('div')
       handle.className = 'row-handle'
       handle.textContent = '⠿'
-      handle.title = '拖动整行'
+      handle.title = '按住拖动这一行'
       handle.draggable = true
       handle.addEventListener('dragstart', (ev) => {
         state.drag = { kind: 'row', ri, ci: -1 }
@@ -135,7 +135,7 @@
       if (!row.length) {
         const empty = document.createElement('span')
         empty.className = 'lib-empty'
-        empty.textContent = '空行（从右侧添加模块）'
+        empty.textContent = '这一行空着（去右边加点内容）'
         chips.appendChild(empty)
       }
       rowEl.appendChild(chips)
@@ -170,15 +170,15 @@
         b.onclick = fn
         return b
       }
-      actions.appendChild(mk('↑', '整行上移', () => moveRow(ri, ri - 1)))
-      actions.appendChild(mk('↓', '整行下移', () => moveRow(ri, ri + 1)))
-      actions.appendChild(mk('＋', '在本行末尾添加模块', () => {
-        card.rows[ri].push(model.newModule('text', '新文字'))
+      actions.appendChild(mk('↑', '整行往上', () => moveRow(ri, ri - 1)))
+      actions.appendChild(mk('↓', '整行往下', () => moveRow(ri, ri + 1)))
+      actions.appendChild(mk('＋', '在这一行后面加点内容', () => {
+        card.rows[ri].push(model.newModule('text', '写点什么'))
         state.sel = { ri, ci: card.rows[ri].length - 1 }
         markDirty()
         renderAll()
       }))
-      actions.appendChild(mk('×', '删除本行', () => {
+      actions.appendChild(mk('×', '删掉这一行', () => {
         card.rows.splice(ri, 1)
         state.sel = null
         markDirty()
@@ -271,18 +271,18 @@
     const mod = card && sel ? (card.rows[sel.ri] || [])[sel.ci] : null
 
     const h = document.createElement('h3')
-    h.textContent = '模块'
+    h.textContent = '这一块'
     box.appendChild(h)
 
     if (!mod) {
       const empty = document.createElement('div')
       empty.className = 'lib-empty'
-      empty.textContent = '先点一个模块，或从下方模块库插入'
+      empty.textContent = '先点一块内容，或者从下面的「我的收藏」里放进来'
       box.appendChild(empty)
       return
     }
 
-    const typeField = field('类型', (() => {
+    const typeField = field('这一块是什么', (() => {
       const select = document.createElement('select')
       model.TYPES.forEach((t) => {
         const opt = document.createElement('option')
@@ -320,9 +320,9 @@
       markDirty()
       renderAll()
     }
-    box.appendChild(field('字号', size))
+    box.appendChild(field('多大', size))
 
-    box.appendChild(field('字形', (() => {
+    box.appendChild(field('怎么显示', (() => {
       const wrap = document.createElement('div')
       wrap.className = 'chips'
       const bold = document.createElement('label')
@@ -346,13 +346,13 @@
       return wrap
     })()))
 
-    box.appendChild(field('文字色', colorInput(mod.style.color, (value) => {
+    box.appendChild(field('字颜色', colorInput(mod.style.color, (value) => {
       mod.style.color = value
       markDirty()
       renderAll()
     })))
 
-    box.appendChild(field('底色', (() => {
+    box.appendChild(field('垫个底色', (() => {
       const wrap = document.createElement('div')
       wrap.className = 'chips'
       wrap.appendChild(colorInput(mod.style.bg || '#ffffff', (value) => {
@@ -362,7 +362,7 @@
       }))
       const clear = document.createElement('button')
       clear.className = 'clear'
-      clear.textContent = '清除'
+      clear.textContent = '不要了'
       clear.onclick = () => { mod.style.bg = ''; markDirty(); renderAll() }
       wrap.appendChild(clear)
       return wrap
@@ -376,15 +376,15 @@
       b.onclick = fn
       ops.appendChild(b)
     }
-    op('← 左移', () => moveModule(sel.ri, sel.ci, sel.ri, sel.ci - 1))
-    op('右移 →', () => moveModule(sel.ri, sel.ci, sel.ri, sel.ci + 1))
+    op('往前', () => moveModule(sel.ri, sel.ci, sel.ri, sel.ci - 1))
+    op('往后', () => moveModule(sel.ri, sel.ci, sel.ri, sel.ci + 1))
     op('删除', () => {
       card.rows[sel.ri].splice(sel.ci, 1)
       state.sel = null
       markDirty()
       renderAll()
     })
-    op('存入库', () => saveToLibrary(mod))
+    op('收进收藏', () => saveToLibrary(mod))
     box.appendChild(ops)
   }
 
@@ -413,7 +413,7 @@
     if (!state.layout.library.length) {
       const empty = document.createElement('span')
       empty.className = 'lib-empty'
-      empty.textContent = '还没有条目：选中模块后点下方按钮保存'
+      empty.textContent = '收藏还空着：选中一块内容，再点「收进收藏」，它就会出现在这里'
       box.appendChild(empty)
       return
     }
@@ -421,7 +421,7 @@
       const chip = document.createElement('span')
       chip.className = 'lib-chip'
       chip.textContent = entry.label
-      chip.title = '点击插入到当前行末尾'
+      chip.title = '点一下就放进这一行'
       chip.onclick = () => insertFromLibrary(entry)
       box.appendChild(chip)
     })
@@ -439,7 +439,7 @@
     state.sel = { ri, ci: row.length - 1 }
     markDirty()
     renderAll()
-    status('已插入「' + entry.label + '」')
+    status('放好啦：「' + entry.label + '」')
   }
 
   function saveToLibrary(mod) {
@@ -449,7 +449,7 @@
     state.layout.library.push({ id: model.uid('lib'), label: String(label).slice(0, 20), module: copy })
     markDirty()
     renderAll()
-    status('已存入模块库')
+    status('收进收藏啦')
   }
 
   // --------------------------------------------------------------- preview
@@ -463,7 +463,7 @@
     if (!rows.length) {
       const hint = document.createElement('div')
       hint.className = 'lib-empty'
-      hint.textContent = '这张卡现在是空的'
+      hint.textContent = '这张卡还空着'
       box.appendChild(hint)
       return
     }
@@ -504,7 +504,7 @@
   function addRow() {
     const card = currentCard()
     if (!card) return
-    if (card.rows.length >= 6) { status('最多 6 行'); return }
+    if (card.rows.length >= 6) { status('最多 6 行啦'); return }
     card.rows.push([])
     state.sel = { ri: card.rows.length - 1, ci: -1 }
     markDirty()
@@ -518,17 +518,17 @@
     state.settings = next
     state.dirty = false
     $('saveBtn').disabled = true
-    status('已保存，点一下桌宠即可看到效果')
+    status('记住啦，点一下桌宠就能看到效果')
   }
 
   function reset() {
-    if (!confirm('恢复成默认气泡？当前未保存的修改会丢失。')) return
+    if (!confirm('要变回默认的气泡吗？还没保存的改动会丢掉哦。')) return
     state.layout = model.defaultLayout()
     state.cardId = state.layout.cards[0].id
     state.sel = null
     markDirty()
     renderAll()
-    status('已恢复默认（记得点保存）')
+    status('变回默认啦（别忘了点保存）')
   }
 
   // ------------------------------------------------------------------- boot
@@ -539,13 +539,13 @@
       state.layout = model.normalizeLayout(initial.settings.bubble && initial.settings.bubble.layout)
       state.cardId = state.layout.cards[0] ? state.layout.cards[0].id : 'weather'
     } catch (err) {
-      status('读取设置失败')
+      status('没读到设置，稍后再试')
     }
     $('addRowBtn').onclick = addRow
-    $('saveBtn').onclick = () => save().catch(() => status('保存失败'))
+    $('saveBtn').onclick = () => save().catch(() => status('没保存成功，再试一次？'))
     $('resetBtn').onclick = reset
     $('closeBtn').onclick = () => {
-      if (state.dirty && !confirm('有未保存的修改，仍要关闭吗？')) return
+      if (state.dirty && !confirm('还有改动没保存，真的要关掉吗？')) return
       window.close()
     }
     window.addEventListener('beforeunload', (ev) => {

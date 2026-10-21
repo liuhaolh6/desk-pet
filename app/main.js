@@ -427,7 +427,7 @@ function openEditor() {
     height: 700,
     minWidth: 780,
     minHeight: 540,
-    title: '气泡编辑器',
+    title: '气泡布置',
     backgroundColor: '#f7f9fd',
     autoHideMenuBar: true,
     webPreferences: {
@@ -447,7 +447,7 @@ function openCutout() {
     height: 760,
     minWidth: 680,
     minHeight: 600,
-    title: '从照片生成角色',
+    title: '用照片做个我',
     backgroundColor: '#f7f9fd',
     autoHideMenuBar: true,
     webPreferences: {
@@ -482,7 +482,7 @@ async function refreshWeather(reason) {
   const s = store.readSettings()
   const w = s.weather || {}
   if (w.lat == null || w.lon == null) {
-    weather = { ok: false, error: 'NO_LOCATION', message: '还没设置城市' }
+    weather = { ok: false, error: 'NO_LOCATION', message: '还没告诉我你在哪座城市呢' }
     sendWeather()
     return weather
   }
@@ -540,7 +540,7 @@ function startReminders() {
       petWin.webContents.send('remind:water')
     } else {
       try {
-        new Notification({ title: s.name || '桌宠', body: '该喝水啦～' }).show()
+        new Notification({ title: s.name || '桌宠', body: '该喝水啦，慢慢喝～' }).show()
       } catch (err) {}
     }
   }, 60000)
@@ -558,10 +558,10 @@ function createTray() {
   const menu = Menu.buildFromTemplate([
     { label: '显示 / 隐藏', click: () => { if (!petWin) createPetWindow(); else if (petWin.isVisible()) petWin.hide(); else petWin.show() } },
     { label: '设置…', click: openSettings },
-    { label: '编辑气泡…', click: openEditor },
-    { label: '刷新天气', click: () => refreshWeather('tray') },
+    { label: '布置气泡…', click: openEditor },
+    { label: '看看天气', click: () => refreshWeather('tray') },
     { type: 'separator' },
-    { label: '退出', click: () => { quitting = true; app.quit() } },
+    { label: '先退出啦', click: () => { quitting = true; app.quit() } },
   ])
   tray.setContextMenu(menu)
   tray.on('click', () => { if (!petWin) createPetWindow(); else if (petWin.isVisible()) petWin.hide(); else petWin.show() })
@@ -580,12 +580,12 @@ function createTray() {
 const MAX_IMAGE_BYTES = 25 * 1024 * 1024
 
 function decodeImageDataUrl(dataUrl) {
-  if (typeof dataUrl !== 'string') throw new Error('缺少图片数据')
+  if (typeof dataUrl !== 'string') throw new Error('没收到图片数据')
   const match = dataUrl.match(/^data:(image\/(?:png|jpeg|jpg|webp));base64,([A-Za-z0-9+/=\s]+)$/i)
-  if (!match) throw new Error('图片格式不支持')
+  if (!match) throw new Error('这个格式还看不了呢')
   const buffer = Buffer.from(match[2].replace(/\s/g, ''), 'base64')
-  if (!buffer.length) throw new Error('图片为空')
-  if (buffer.length > MAX_IMAGE_BYTES) throw new Error('图片超过 25MB，请先压缩')
+  if (!buffer.length) throw new Error('这张图是空的')
+  if (buffer.length > MAX_IMAGE_BYTES) throw new Error('图片超过 25MB 啦，先压缩一下好吗')
   return { buffer, mime: match[1].toLowerCase() }
 }
 
@@ -601,11 +601,11 @@ function cutoutTrace(entry) {
 }
 
 function cutoutErrorMessage(code) {
-  if (code === 'NO_PERSON') return '没有检测到清晰人像'
-  if (code === 'OVER_SEGMENTED') return '主体覆盖画面过多，可能把背景当成了人像'
-  if (code === 'MODEL_MISSING' || code === 'MODEL_LOAD_FAILED') return '离线抠图模型未就绪'
-  if (code === 'BAD_OUTPUT_SHAPE' || code === 'NO_OUTPUT') return '模型输出异常'
-  return '抠图失败'
+  if (code === 'NO_PERSON') return '没找到清晰的人像'
+  if (code === 'OVER_SEGMENTED') return '画面里人像占得太多了，可能把背景也当成你了'
+  if (code === 'MODEL_MISSING' || code === 'MODEL_LOAD_FAILED') return '抠图模型还没准备好'
+  if (code === 'BAD_OUTPUT_SHAPE' || code === 'NO_OUTPUT') return '模型这次没给出结果'
+  return '这次没抠成'
 }
 
 // ------------------------------------------------------------------- worker
@@ -814,14 +814,14 @@ function registerIpc() {
 
   ipcMain.handle('roles:import', async () => {
     const result = await dialog.showOpenDialog(settingsWin || petWin, {
-      title: '选择角色图片',
+      title: '挑一张图片当角色',
       properties: ['openFile'],
       filters: [{ name: '图片', extensions: ['png', 'jpg', 'jpeg', 'webp'] }],
     })
     if (result.canceled || !result.filePaths || !result.filePaths[0]) return { ok: false, canceled: true }
     const file = result.filePaths[0]
     let image = nativeImage.createFromPath(file)
-    if (image.isEmpty()) return { ok: false, error: '读不出图片' }
+    if (image.isEmpty()) return { ok: false, error: '这张图打不开呢' }
     const size = image.getSize()
     const max = 610
     if (size.width > max || size.height > max) {
@@ -851,17 +851,17 @@ function registerIpc() {
 
   ipcMain.handle('cutout:pick', async () => {
     const result = await dialog.showOpenDialog(cutoutWin || settingsWin || petWin, {
-      title: '选择一张人像照片',
+      title: '挑一张人像照片',
       properties: ['openFile'],
       filters: [{ name: '图片', extensions: ['png', 'jpg', 'jpeg', 'webp'] }],
     })
     if (result.canceled || !result.filePaths || !result.filePaths[0]) return { ok: false, canceled: true }
     const file = result.filePaths[0]
     let stat
-    try { stat = fs.statSync(file) } catch (err) { return { ok: false, error: '读不到文件' } }
-    if (stat.size > MAX_IMAGE_BYTES) return { ok: false, error: '图片超过 25MB，请先压缩' }
+    try { stat = fs.statSync(file) } catch (err) { return { ok: false, error: '找不到这个文件' } }
+    if (stat.size > MAX_IMAGE_BYTES) return { ok: false, error: '图片超过 25MB 啦，先压缩一下好吗' }
     const image = nativeImage.createFromBuffer(fs.readFileSync(file))
-    if (image.isEmpty()) return { ok: false, error: '读不出图片' }
+    if (image.isEmpty()) return { ok: false, error: '这张图打不开呢' }
     const name = path.basename(file).replace(/\.[^.]+$/, '').slice(0, 30)
     return Object.assign({ ok: true }, cutoutInputPayload(image, name))
   })
@@ -874,7 +874,7 @@ function registerIpc() {
       return { ok: false, error: err.message }
     }
     const image = nativeImage.createFromBuffer(decoded.buffer)
-    if (image.isEmpty()) return { ok: false, error: '读不出图片' }
+    if (image.isEmpty()) return { ok: false, error: '这张图打不开呢' }
     return Object.assign({ ok: true }, cutoutInputPayload(image, payload && payload.name))
   })
 
@@ -893,12 +893,12 @@ function registerIpc() {
       }
       image = nativeImage.createFromBuffer(decoded.buffer)
     } else {
-      cutoutTrace({ ok: false, mode: 'none', code: 'BAD_IMAGE', ms: Date.now() - startedAt, error: '缺少照片' })
-      return { ok: false, mode: 'none', code: 'BAD_IMAGE', error: '缺少照片，请重新选择' }
+      cutoutTrace({ ok: false, mode: 'none', code: 'BAD_IMAGE', ms: Date.now() - startedAt, error: '还没拿到照片' })
+      return { ok: false, mode: 'none', code: 'BAD_IMAGE', error: '照片没拿到，重新选一张吧' }
     }
     if (!image || image.isEmpty()) {
       cutoutTrace({ ok: false, mode: 'none', code: 'BAD_IMAGE', ms: Date.now() - startedAt })
-      return { ok: false, mode: 'none', code: 'BAD_IMAGE', error: '读不出图片' }
+      return { ok: false, mode: 'none', code: 'BAD_IMAGE', error: '这张图打不开呢' }
     }
     const inputSize = image.getSize()
     try {
@@ -936,7 +936,7 @@ function registerIpc() {
     } catch (err) {
       const code = (err && err.code) || 'CUTOUT_FAILED'
       // Fallback keeps the app usable, but it is explicitly labelled: the
-      // renderer must show "未抠图（整图）" and ask for a second confirmation
+      // renderer must show "整张照片" and ask for a second confirmation
       // before it can be saved as a role.
       const fallback = cutout.scaleOnly(image, 610)
       const fallbackSize = fallback.getSize()
@@ -968,10 +968,10 @@ function registerIpc() {
       return { ok: false, error: err.message }
     }
     const image = nativeImage.createFromBuffer(decoded.buffer)
-    if (image.isEmpty()) return { ok: false, error: '读不出生成的角色图' }
+    if (image.isEmpty()) return { ok: false, error: '生成的角色图打不开呢' }
     const mode = payload && payload.mode === 'fallback' ? 'fallback' : 'cutout'
     if (mode === 'fallback' && (!payload || payload.confirmFallback !== true)) {
-      return { ok: false, code: 'FALLBACK_UNCONFIRMED', error: '整图回退需要二次确认后才能保存' }
+      return { ok: false, code: 'FALLBACK_UNCONFIRMED', error: '要用整张照片当角色的话，得再确认一次' }
     }
     const send = cutout.scaleOnly(image, 610)
     const name = String((payload && payload.name) || '照片角色').trim().slice(0, 30) || '照片角色'
@@ -988,7 +988,7 @@ function registerIpc() {
 
   ipcMain.handle('sounds:import', async () => {
     const result = await dialog.showOpenDialog(settingsWin || petWin, {
-      title: '导入音频片段',
+      title: '添加一段音频',
       properties: ['openFile'],
       filters: [{ name: '音频', extensions: ['wav', 'mp3', 'ogg', 'm4a', 'flac'] }],
     })
@@ -996,7 +996,7 @@ function registerIpc() {
     const file = result.filePaths[0]
     try {
       const bytes = fs.readFileSync(file)
-      if (bytes.length > 8 * 1024 * 1024) return { ok: false, error: '音频超过 8MB' }
+      if (bytes.length > 8 * 1024 * 1024) return { ok: false, error: '音频超过 8MB 啦，换一段短一点的吧' }
       const ext = path.extname(file).replace('.', '').toLowerCase() || 'wav'
       const name = path.basename(file).replace(/\.[^.]+$/, '').slice(0, 30)
       const entry = store.addSound(name, ext, bytes)

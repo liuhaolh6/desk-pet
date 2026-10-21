@@ -25,34 +25,41 @@
 
   --ink: #202a44;
   --ink-2: #46536f;
-  /* Secondary text must still clear WCAG AA 4.5:1 on --surface-3 (#eef2fa):
-     #7d89a5 measured 3.12:1, this value measures ~4.8:1 there and ~5.4:1 on white. */
+  /* Secondary text must still clear WCAG AA 4.5:1 on the blush `surface-3`
+     token below: the old #7d89a5 measured 3.12:1, this value measures ~4.7:1
+     there and ~5.4:1 on white. */
   --muted: #5d6a86;
   --muted-deco: #8d99b4;
-  --line: rgba(32, 49, 112, 0.14);
-  --line-strong: rgba(32, 49, 112, 0.24);
+  --line: rgba(126, 74, 104, 0.14);
+  --line-strong: rgba(126, 74, 104, 0.26);
   --accent: #2a4bd7;
   --accent-deep: #203170;
   --accent-soft: #e9eeff;
   --accent-softer: #f1f5ff;
+  /* Blush / cream from the icon: used for soft surfaces, pills and hover. */
+  --blush: #ff8fbe;
+  --blush-deep: #d9538c;
+  --blush-soft: #ffe6f0;
+  --blush-softer: #fff2f7;
+  --cream: #fff6ef;
   --ok: #2f9e76;
   --warn: #d97706;
   --danger: #c0392b;
 
   --surface: #ffffff;
-  --surface-2: #f7f9fd;
-  --surface-3: #eef2fa;
-  --bg: #f4f7fc;
+  --surface-2: #fdf7fa;
+  --surface-3: #f7ecf2;
+  --bg: #fbf6f8;
 
-  --radius-xs: 6px;
-  --radius-sm: 9px;
-  --radius-md: 13px;
-  --radius-lg: 18px;
+  --radius-xs: 7px;
+  --radius-sm: 11px;
+  --radius-md: 15px;
+  --radius-lg: 21px;
   --radius-pill: 999px;
 
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(32, 49, 112, 0.06);
-  --shadow-md: 0 10px 24px rgba(15, 23, 42, 0.14), 0 2px 6px rgba(15, 23, 42, 0.06);
-  --shadow-pop: 0 18px 44px rgba(15, 23, 42, 0.2), 0 4px 10px rgba(15, 23, 42, 0.08);
+  --shadow-sm: 0 1px 2px rgba(126, 74, 104, 0.05), 0 4px 12px rgba(126, 74, 104, 0.07);
+  --shadow-md: 0 10px 24px rgba(126, 74, 104, 0.13), 0 2px 6px rgba(126, 74, 104, 0.06);
+  --shadow-pop: 0 18px 44px rgba(126, 74, 104, 0.18), 0 4px 10px rgba(126, 74, 104, 0.08);
 
   --text-xs: 11.5px;
   --text-sm: 12.5px;

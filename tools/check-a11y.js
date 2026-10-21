@@ -138,10 +138,11 @@ const cutoutHtml = read('app/cutout.html')
     const m = tokens.match(new RegExp('--' + name + ':\\s*(#[0-9a-fA-F]{6})'))
     return m ? m[1] : null
   }
-  for (const [name, bg] of [['muted', '#ffffff'], ['muted', '#eef2fa'], ['muted', '#f4f7fc'], ['ink-2', '#eef2fa']]) {
+  for (const [name, tokenName] of [['muted', 'surface'], ['muted', 'surface-3'], ['muted', 'bg'], ['ink-2', 'surface-3']]) {
     const color = token(name)
-    const r = color ? ratio(color, bg) : 0
-    check('--' + name + ' 对 ' + bg + ' ≥4.5', r >= 4.5, Math.round(r * 100) / 100)
+    const bg = token(tokenName)
+    const r = color && bg ? ratio(color, bg) : 0
+    check('--' + name + ' 对 --' + tokenName + '(' + bg + ') ≥4.5', r >= 4.5, Math.round(r * 100) / 100)
   }
   const bubble = read('app/bubble-model.js')
   const defaults = Array.from(bubble.matchAll(/color:\s*'(#[0-9a-fA-F]{6})'/g)).map((m) => m[1])

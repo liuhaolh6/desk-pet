@@ -18,20 +18,20 @@
       </div>
 
       <nav class="nav" aria-label="设置分类">
-        <button type="button" class="nav-item active" data-panel="appearance" data-title="外观" data-hint="名字、大小与桌面行为"><span class="nav-icon">◐</span>外观</button>
-        <button type="button" class="nav-item" data-panel="role" data-title="角色" data-hint="导入图片，或从照片生成角色"><span class="nav-icon">◉</span>角色</button>
-        <button type="button" class="nav-item" data-panel="bubble" data-title="气泡" data-hint="自动收起、天气冷却与温馨语句"><span class="nav-icon">◌</span>气泡</button>
-        <button type="button" class="nav-item" data-panel="reminder" data-title="提醒" data-hint="喝水间隔、提醒强度与免打扰"><span class="nav-icon">◔</span>提醒</button>
-        <button type="button" class="nav-item" data-panel="weather" data-title="天气" data-hint="城市、定位与刷新频率"><span class="nav-icon">☁</span>天气</button>
-        <button type="button" class="nav-item" data-panel="sound" data-title="音效" data-hint="总开关、事件音量与片段库"><span class="nav-icon">♪</span>音效</button>
-        <button type="button" class="nav-item" data-panel="other" data-title="其他" data-hint="数据目录与退出"><span class="nav-icon">⚙</span>其他</button>
+        <button type="button" class="nav-item active" data-panel="appearance" data-title="外观" data-hint="它叫什么、多大一只，平时怎么待在桌面上"><span class="nav-icon">◐</span>外观</button>
+        <button type="button" class="nav-item" data-panel="role" data-title="角色" data-hint="换一张喜欢的图，或者用照片做一个它"><span class="nav-icon">◉</span>角色</button>
+        <button type="button" class="nav-item" data-panel="bubble" data-title="气泡" data-hint="气泡留多久、说什么话、长什么样"><span class="nav-icon">◌</span>气泡</button>
+        <button type="button" class="nav-item" data-panel="reminder" data-title="提醒" data-hint="多久提醒你喝水，什么时候别吵你"><span class="nav-icon">◔</span>提醒</button>
+        <button type="button" class="nav-item" data-panel="weather" data-title="天气" data-hint="你在哪座城市，多久看一眼天气"><span class="nav-icon">☁</span>天气</button>
+        <button type="button" class="nav-item" data-panel="sound" data-title="声音" data-hint="要不要出声、什么时候响、用哪段音"><span class="nav-icon">♪</span>声音</button>
+        <button type="button" class="nav-item" data-panel="other" data-title="其他" data-hint="东西都存在哪里，以及怎么让它先休息一下"><span class="nav-icon">⚙</span>其他</button>
       </nav>
 
       <div class="sidebar-foot">
         <span class="save-dot" aria-hidden="true"></span>
         <div class="save-copy">
-          <div class="auto-save">即时保存</div>
-          <div id="status" class="status">改动会自动写入</div>
+          <div class="auto-save">改完就生效</div>
+          <div id="status" class="status">不用点保存就行</div>
         </div>
       </div>
     </aside>
@@ -40,40 +40,40 @@
       <header class="topbar">
         <div>
           <h2 id="panelTitle">外观</h2>
-          <p id="panelHint" class="panel-hint">名字、大小与桌面行为</p>
+          <p id="panelHint" class="panel-hint">它叫什么、多大一只，平时怎么待在桌面上</p>
         </div>
-        <span class="pill">自动保存</span>
+        <span class="pill">改完就生效</span>
       </header>
 
       <div class="panels">
         <section class="panel active" data-panel="appearance">
           <div class="card">
             <div class="field">
-              <label class="field-label" for="name">名字</label>
+              <label class="field-label" for="name">它叫什么</label>
               <div class="field-body">
-                <input id="name" type="text" maxlength="20" placeholder="小芳桌宠">
-                <p class="field-hint">气泡落款、托盘提示与提醒标题</p>
+                <input id="name" type="text" maxlength="20" placeholder="小芳">
+                <p class="field-hint">气泡落款、托盘提示和提醒标题都会用这个名字</p>
               </div>
             </div>
 
             <div class="field">
-              <label class="field-label" for="size">大小</label>
+              <label class="field-label" for="size">多大一只</label>
               <div class="field-body">
                 <div class="control-line">
                   <input id="size" type="range" min="120" max="360" step="10">
                   <b id="sizeVal" class="value-pill">220px</b>
                 </div>
-                <p class="field-hint">拖动滑块即时调整，桌宠底边保持不动</p>
+                <p class="field-hint">拖动就能改，脚底会乖乖留在原处</p>
               </div>
             </div>
 
             <div class="field">
-              <span class="field-label">桌面行为</span>
+              <span class="field-label">平时怎么待着</span>
               <div class="field-body stack">
-                <label class="check-row"><input id="alwaysOnTop" type="checkbox"><span>总在最前</span><em>不会被其他窗口盖住</em></label>
-                <label class="check-row"><input id="autostart" type="checkbox"><span>开机自启</span><em>登录后自动出现</em></label>
-                <label class="check-row"><input id="snapEnabled" type="checkbox"><span>贴边吸附</span><em>靠近屏幕边缘时轻轻吸住</em></label>
-                <label class="inline-row"><span>吸附距离</span><input id="snapGap" type="number" min="0" max="80"><em>px（0 为关闭）</em></label>
+                <label class="check-row"><input id="alwaysOnTop" type="checkbox"><span>一直看得见</span><em>不会被别的窗口盖住</em></label>
+                <label class="check-row"><input id="autostart" type="checkbox"><span>开机就出现</span><em>登录以后自己跑出来</em></label>
+                <label class="check-row"><input id="snapEnabled" type="checkbox"><span>靠边停好</span><em>拖到屏幕边缘会轻轻吸住</em></label>
+                <label class="inline-row"><span>离边多远开始吸</span><input id="snapGap" type="number" min="0" max="80"><em>px（0 就是关掉）</em></label>
               </div>
             </div>
           </div>
@@ -83,15 +83,15 @@
           <div class="card">
             <div class="card-head">
               <div>
-                <h3>角色图库</h3>
-                <p class="field-hint">点选即可切换；删除只影响自定义角色</p>
+                <h3>我的样子</h3>
+                <p class="field-hint">点一下就能换；删除只影响你自己导入的图</p>
               </div>
-              <span class="pill soft">自动缩放至 610px</span>
+              <span class="pill soft">自动缩到 610px</span>
             </div>
             <div id="roles" class="roles"></div>
             <div class="button-row">
-              <button id="importBtn" class="primary" type="button">导入图片做角色</button>
-              <button id="cutoutBtn" type="button">从照片生成角色</button>
+              <button id="importBtn" class="primary" type="button">选张图当样子</button>
+              <button id="cutoutBtn" type="button">用照片做个我</button>
               <button id="resetPosBtn" type="button">回到右下角</button>
             </div>
           </div>
@@ -100,40 +100,40 @@
         <section class="panel" data-panel="bubble" hidden>
           <div class="card">
             <div class="field">
-              <label class="field-label" for="autoHide">自动收起</label>
+              <label class="field-label" for="autoHide">气泡留多久</label>
               <div class="field-body">
                 <div class="control-line">
                   <input id="autoHide" type="number" min="0" max="120">
                   <span class="unit">秒</span>
                 </div>
-                <p class="field-hint">0 表示一直显示，直到再次点击</p>
+                <p class="field-hint">写 0 就一直留着，等你再点一下才收起来</p>
               </div>
             </div>
 
             <div class="field">
-              <label class="field-label" for="cooldown">天气冷却</label>
+              <label class="field-label" for="cooldown">两次天气之间</label>
               <div class="field-body">
                 <div class="control-line">
                   <input id="cooldown" type="number" min="0" max="240">
                   <span class="unit">分钟</span>
                 </div>
-                <p class="field-hint">两次天气卡之间的最短间隔</p>
+                <p class="field-hint">免得你连着点，我一直报天气</p>
               </div>
             </div>
 
             <div class="field">
-              <label class="field-label" for="phrases">温馨语句</label>
+              <label class="field-label" for="phrases">想对我说的话</label>
               <div class="field-body">
-                <textarea id="phrases" rows="4" placeholder="每行一条"></textarea>
-                <p class="field-hint">每行一条，随机展示</p>
+                <textarea id="phrases" rows="4" placeholder="每行一句，已经给你写好 24 句啦"></textarea>
+                <p class="field-hint">每行一句，我会随机挑着说；改成你自己的话也行</p>
               </div>
             </div>
 
             <div class="field">
-              <span class="field-label">排版</span>
+              <span class="field-label">气泡长什么样</span>
               <div class="field-body">
-                <button id="editorBtn" class="primary" type="button">编辑气泡…</button>
-                <p class="field-hint">自定义每张卡的行、模块、字号与颜色</p>
+                <button id="editorBtn" class="primary" type="button">布置一下气泡…</button>
+                <p class="field-hint">想让哪句话出现在哪一行，都可以自己排</p>
               </div>
             </div>
           </div>
@@ -142,19 +142,19 @@
         <section class="panel" data-panel="reminder" hidden>
           <div class="card">
             <div class="field">
-              <label class="field-label" for="mode">提醒强度</label>
+              <label class="field-label" for="mode">唠叨程度</label>
               <div class="field-body">
                 <select id="mode">
-                  <option value="quiet">安静（不提醒）</option>
-                  <option value="normal">正常</option>
-                  <option value="chatty">话痨</option>
+                  <option value="quiet">安静一点（我不吵你）</option>
+                  <option value="normal">正常就好</option>
+                  <option value="chatty">多跟我说说话</option>
                 </select>
-                <p class="field-hint">安静模式会暂停喝水提醒与主动气泡</p>
+                <p class="field-hint">选「安静一点」的话，喝水和主动冒泡都会先停下</p>
               </div>
             </div>
 
             <div class="field">
-              <label class="field-label" for="interval">喝水间隔</label>
+              <label class="field-label" for="interval">多久提醒喝水</label>
               <div class="field-body">
                 <select id="interval">
                   <option value="30">每 30 分钟</option>
@@ -167,15 +167,15 @@
             </div>
 
             <div class="field">
-              <span class="field-label">免打扰</span>
+              <span class="field-label">安静时间</span>
               <div class="field-body">
                 <div class="control-line">
-                  <input id="quietFrom" type="number" min="0" max="23" aria-label="免打扰开始小时">
+                  <input id="quietFrom" type="number" min="0" max="23" aria-label="安静时间开始的小时">
                   <span class="unit">点到</span>
-                  <input id="quietTo" type="number" min="0" max="23" aria-label="免打扰结束小时">
+                  <input id="quietTo" type="number" min="0" max="23" aria-label="安静时间结束的小时">
                   <span class="unit">点</span>
                 </div>
-                <p class="field-hint">支持跨零点，例如 23 点到 8 点</p>
+                <p class="field-hint">跨过零点也可以，比如 23 点到 8 点</p>
               </div>
             </div>
           </div>
@@ -184,19 +184,19 @@
         <section class="panel" data-panel="weather" hidden>
           <div class="card">
             <div class="field">
-              <label class="field-label" for="city">城市</label>
+              <label class="field-label" for="city">你在哪座城市</label>
               <div class="field-body">
                 <div class="control-line">
-                  <input id="city" type="text" placeholder="输入城市名后点搜索">
-                  <button id="searchBtn" type="button">搜索</button>
-                  <button id="locateBtn" type="button">定位</button>
+                  <input id="city" type="text" placeholder="写下城市名，再点「找一找」">
+                  <button id="searchBtn" type="button">找一找</button>
+                  <button id="locateBtn" type="button">用我的位置</button>
                 </div>
                 <div id="results" class="results" hidden></div>
               </div>
             </div>
 
             <div class="field">
-              <label class="field-label" for="refreshMinutes">刷新频率</label>
+              <label class="field-label" for="refreshMinutes">多久看一眼天气</label>
               <div class="field-body">
                 <select id="refreshMinutes">
                   <option value="5">每 5 分钟</option>
@@ -204,7 +204,7 @@
                   <option value="30">每 30 分钟</option>
                   <option value="60">每 60 分钟</option>
                 </select>
-                <p class="field-hint">断网时自动使用最近一次缓存</p>
+                <p class="field-hint">断网的时候，我会拿上次记住的天气先顶着</p>
               </div>
             </div>
           </div>
@@ -213,30 +213,30 @@
         <section class="panel" data-panel="sound" hidden>
           <div class="card">
             <div class="field">
-              <span class="field-label">总开关</span>
+              <span class="field-label">要不要出声</span>
               <div class="field-body stack">
-                <label class="check-row"><input id="sound" type="checkbox"><span>启用音效</span><em>点击、气泡与喝水提醒</em></label>
+                <label class="check-row"><input id="sound" type="checkbox"><span>让我出声</span><em>点我、冒泡和提醒喝水的时候</em></label>
                 <div class="control-line">
-                  <span class="inline-label">总音量</span>
-                  <input id="soundVolume" type="range" min="0" max="100" step="5" aria-label="总音量">
+                  <span class="inline-label">音量</span>
+                  <input id="soundVolume" type="range" min="0" max="100" step="5" aria-label="音量">
                   <b id="soundVolumeVal" class="value-pill">45%</b>
                 </div>
               </div>
             </div>
 
             <div class="field">
-              <span class="field-label">事件音效</span>
+              <span class="field-label">什么时候响</span>
               <div class="field-body">
                 <div id="soundEvents" class="sound-events"></div>
               </div>
             </div>
 
             <div class="field">
-              <span class="field-label">片段库</span>
+              <span class="field-label">我的音效</span>
               <div class="field-body">
                 <div id="soundFiles" class="chips-inline"></div>
-                <button id="soundImportBtn" type="button">导入音频…</button>
-                <p class="field-hint">支持 wav / mp3 / ogg / m4a / flac，单个不超过 8MB</p>
+                <button id="soundImportBtn" type="button">添加一段音频…</button>
+                <p class="field-hint">wav / mp3 / ogg / m4a / flac 都行，单个别超过 8MB</p>
               </div>
             </div>
           </div>
@@ -245,20 +245,20 @@
         <section class="panel" data-panel="other" hidden>
           <div class="card">
             <div class="field">
-              <span class="field-label">数据目录</span>
+              <span class="field-label">东西放哪</span>
               <div class="field-body">
                 <div class="control-line">
                   <code id="dataDir" class="path"></code>
-                  <button id="openDirBtn" type="button">打开</button>
+                  <button id="openDirBtn" type="button">打开文件夹</button>
                 </div>
-                <p class="field-hint">设置、角色、天气缓存与音效片段都在这里</p>
+                <p class="field-hint">设置、角色图、天气缓存和音效都在这里，随时可以备份</p>
               </div>
             </div>
             <div class="field">
-              <span class="field-label">退出</span>
+              <span class="field-label">让它先休息</span>
               <div class="field-body">
-                <button id="quitBtn" type="button" class="danger">退出桌宠</button>
-                <p class="field-hint">关闭窗口不会退出，桌宠会留在托盘</p>
+                <button id="quitBtn" type="button" class="danger">先退出啦</button>
+                <p class="field-hint">只是关掉这个窗口的话，我还是会待在托盘里</p>
               </div>
             </div>
           </div>
