@@ -11,7 +11,7 @@ const os = require('node:os')
 const path = require('node:path')
 
 const { createStore, merge, DEFAULT_SETTINGS, DEFAULT_ROLES } = require('../lib/store')
-const { describe, WMO } = require('../lib/weather')
+const { describe, WMO, advice } = require('../lib/weather')
 const bubble = require('../app/bubble-model')
 const soundModel = require('../app/sound-model')
 const placement = require('../lib/placement')
@@ -80,6 +80,33 @@ const store = createStore(dir)
   assert.equal(describe(999).text, '未知天气')
   assert.ok(Object.keys(WMO).length > 20)
   ok('WMO 天气码映射')
+}
+
+{
+  // 贴心提醒（0.6.0）：按体感/降水/紫外线/风给一句温柔建议，缺数据时也不报错。
+  assert.match(advice({ temp: 22, feels: 22, precip: 0 }), /舒服|刚刚好/)
+  assert.match(advice({ temp: 8, feels: 8, precip: 0 }), /外套|凉/)
+  assert.match(advice({ temp: 1, feels: -3, precip: 0 }), /冷|围巾/)
+  assert.match(advice({ temp: 30, feels: 34, precip: 0 }), /热|喝水/)
+  assert.match(advice({ temp: 25, feels: 25, precip: 80 }), /伞/)
+  assert.match(advice({ temp: 25, feels: 25, code: 95 }), /伞/)
+  assert.match(advice({ temp: -2, feels: -6, code: 73 }), /雪/)
+  assert.match(advice({ temp: 26, feels: 27, uv: 10 }), /防晒/)
+  assert.match(advice({ temp: 26, feels: 27, wind: 45 }), /风/)
+  assert.equal(advice({ temp: null }), '')
+  assert.equal(advice(null), '')
+  ok('天气贴心提醒推导')
+}
+
+{
+  // 24 条内置温馨提示 + 温柔口吻（不要命令式、不要冷冰冰的技术词）。
+  const phrases = DEFAULT_SETTINGS.bubble.phrases
+  assert.equal(phrases.length, 24, '内置 24 条温馨提示')
+  assert.equal(new Set(phrases).size, 24, '24 条互不重复')
+  assert.ok(phrases.every((p) => p.length >= 6 && p.length <= 30), '每条 6–30 字')
+  assert.ok(phrases.every((p) => !/必须|立刻|马上|不准|禁止/.test(p)), '不用命令式措辞')
+  assert.ok(phrases.filter((p) => /呀|啦|吧|哦|嘛|～|呢|？/.test(p)).length >= 22, '几乎每条都带语气词')
+  ok('24 条温馨提示')
 }
 
 {

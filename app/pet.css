@@ -40,7 +40,7 @@ body {
   /* The drop-shadow lives on this wrapper, NOT on the transformed sprite:
      scaling a `filter`ed layer makes Windows reuse the old raster and smear it
      (the "放大/缩小虚影" seen on click). */
-  filter: drop-shadow(0 10px 16px rgba(15, 23, 42, 0.2));
+  filter: drop-shadow(0 7px 13px rgba(15, 23, 42, 0.15));
 }
 
 #pet {
@@ -68,9 +68,11 @@ body {
   --pet-scale-y: 1.03;
 }
 
-/* Photo roles: softer shadow so edge fringe is not amplified. */
+/* Photo roles (and the built-in portrait): no drop-shadow at all. A soft alpha
+   edge lets the shadow bleed through the feather and turns into a dark halo, so
+   the portrait relies on its own shading instead. */
 body.photo-role .pet-flip {
-  filter: drop-shadow(0 5px 9px rgba(15, 23, 42, 0.14));
+  filter: none;
 }
 
 .pet-wrap.pressing #pet {
