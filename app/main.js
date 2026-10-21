@@ -100,6 +100,34 @@ function clamp(n, lo, hi) { return Math.min(hi, Math.max(lo, n)) }
 const WIN_PAD = 54
 function windowWidth(size) { return size + WIN_PAD * 2 }
 
+// ---------------------------------------------------------- mouse passthrough
+let hitRects = []
+let petDragging = false
+let petInteractive = false
+let petHitTimer = 0
+
+/** Flip click-through based on where the OS cursor is right now. */
+function updatePetInteractive() {
+  if (!petWin || petWin.isDestroyed()) return
+  let inside = petDragging
+  if (!inside) {
+    let p
+    try { p = screen.getCursorScreenPoint() } catch (err) { return }
+    const b = petWin.getBounds()
+    for (const r of hitRects) {
+      if (!r) continue
+      if (p.x >= b.x + r.x && p.x <= b.x + r.x + r.w && p.y >= b.y + r.y && p.y <= b.y + r.y + r.h) {
+        inside = true
+        break
+      }
+    }
+  }
+  if (inside === petInteractive) return
+  petInteractive = inside
+  if (process.env.DESKPET_TRACE_HIT === '1') log('hit-interactive', inside ? 'on' : 'off', 'rects=' + hitRects.length)
+  try { petWin.setIgnoreMouseEvents(!inside, { forward: true }) } catch (err) {}
+}
+
 function getDisplays() {
   const primaryId = String(screen.getPrimaryDisplay().id)
   return screen.getAllDisplays().map((d) => ({
@@ -275,6 +303,7 @@ function createPetWindow() {
   // is transparent. Click-through by default (forwarded so the renderer still
   // sees moves); the renderer flips it back on while over the pet/bubble/menu.
   try { petWin.setIgnoreMouseEvents(true, { forward: true }) } catch (err) {}
+  if (!petHitTimer) petHitTimer = setInterval(updatePetInteractive, 50)
   petWin.loadFile(path.join(__dirname, 'pet.html'))
   petWin.on('closed', () => { petWin = null })
   petWin.webContents.on('console-message', (event, level, message, line, source) => {
@@ -319,8 +348,7 @@ function applyBubbleHeight(visible, height) {
   const requested = clamp(Math.round(Number(height) || 0), 0, 420)
   // Treat sub-card heights as "no bubble": they are invisible leftovers that
   // otherwise leave a few pixels of reserved space (and shift drag maths).
-  const cardHeight = requested < 40 ? 0 : requested
-  const want = visible ? cardHeight : 0
+  const want = visible && requested >= 40 ? requested : 0
 
   const b = petWin.getBounds()
   const pet = petScreenRect(size)
@@ -329,46 +357,32 @@ function applyBubbleHeight(visible, height) {
     y: pet.bottom - Math.floor(size / 2),
   })
   const work = display.workArea
-  const roomAbove = Math.max(0, pet.top - work.y)
-  const roomBelow = Math.max(0, work.y + work.height - pet.bottom)
 
-  let side = bubbleSide
-  let reserve = want
-  // While a bubble/menu chain is visible, only grow (per side): shrinking between
-  // two cards of different heights resizes the transparent window again, and every
-  // resize can flash. The shrink happens once, on hide.
-  if (want > 0 && bubbleSide === 'below' && want <= extraBubbleHeight) {
-    reserve = extraBubbleHeight
-  } else if (want > 0 && bubbleSide === 'above' && want <= extraBubbleHeight && want <= roomAbove) {
-    reserve = extraBubbleHeight
-  } else if (want <= roomAbove) {
-    side = 'above'
-    reserve = want
-  } else if (want <= roomBelow) {
-    side = 'below'
-    reserve = want
-  } else if (roomBelow > roomAbove) {
-    side = 'below'
-    reserve = roomBelow
-  } else {
-    side = 'above'
-    reserve = roomAbove
-  }
-  reserve = Math.max(0, Math.min(Math.round(reserve), 420))
-
+  // 0.6.2 (user decision): the bubble always sits ABOVE the pet. When the pet is
+  // too close to the top edge, move it down so a bubble-sized gap stays between
+  // the pet and the boundary - never flip the bubble below the pet.
+  const side = 'above'
+  const reserve = Math.max(0, Math.min(want, 420))
+  const minTop = work.y + reserve
+  const maxTop = work.y + Math.max(0, work.height - size)
+  let petTop = Math.min(Math.max(pet.top, minTop), maxTop)
   const nextH = size + reserve
-  const y = side === 'below' ? pet.top : pet.bottom - nextH
-  const changed = side !== bubbleSide || reserve !== extraBubbleHeight || b.height !== nextH || b.y !== y
+  const bounds = windowBoundsForPet(pet.x, petTop, size, reserve)
+  const changed = side !== bubbleSide || reserve !== extraBubbleHeight ||
+    b.height !== nextH || b.y !== bounds.y || b.x !== bounds.x
   bubbleSide = side
   extraBubbleHeight = reserve
+  if (petTop !== pet.top) {
+    petPos = { x: pet.x, y: petTop }
+    sendMirror()
+  }
   if (changed) {
     // Re-assert transparency right before the bounds change: the newly exposed
     // strip can otherwise be composited with the window background for a frame.
     if (process.env.DESKPET_OPAQUE !== '1') {
       try { petWin.setBackgroundColor('#00000000') } catch (err) {}
     }
-    petWin.setBounds({ x: b.x, y, width: windowWidth(size), height: nextH }, false)
-    sendMirror()
+    petWin.setBounds(bounds, false)
   }
   return { reserve, side }
 }
@@ -1054,6 +1068,10 @@ function registerIpc() {
     if (!display) return
     let next = placement.clampPet(pet, display.workArea)
     if (s.snap && s.snap.enabled) next = placement.snapPet(next, display.workArea, s.snap.gap)
+    // 0.6.2: never drag the pet closer to the top than the reserved bubble strip.
+    const maxTop = display.workArea.y + Math.max(0, display.workArea.height - size)
+    const floorTop = Math.min(maxTop, display.workArea.y + extraBubbleHeight)
+    if (next.y < floorTop) next = { ...next, y: floorTop }
 
     const extra = Math.max(0, b.height - size)
     // Window top = pet top - reserved bubble space (above) or exactly the pet
@@ -1073,10 +1091,19 @@ function registerIpc() {
     sendMirror()
   })
 
-  ipcMain.on('pet:interactive', (ev, on) => {
-    const win = BrowserWindow.fromWebContents(ev.sender)
-    if (!win || win.isDestroyed()) return
-    try { win.setIgnoreMouseEvents(!on, { forward: true }) } catch (err) {}
+  // 0.6.2: interactivity is decided in the main process from the cursor
+  // position and the rects the renderer reports. Renderer `mousemove` is not
+  // reliable enough: the very first move after switching to click-through can
+  // be swallowed, which made the pet unclickable until the pointer left and
+  // came back.
+  ipcMain.on('pet:rects', (ev, rects) => {
+    hitRects = Array.isArray(rects) ? rects.slice(0, 12) : []
+    if (process.env.DESKPET_TRACE_HIT === '1') log('hit-rects', JSON.stringify(hitRects))
+    updatePetInteractive()
+  })
+  ipcMain.on('pet:dragging', (ev, on) => {
+    petDragging = !!on
+    updatePetInteractive()
   })
 
   ipcMain.handle('pet:bubble', (ev, payload) => {

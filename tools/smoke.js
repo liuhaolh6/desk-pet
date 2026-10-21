@@ -703,7 +703,15 @@ const PAD = 54
   assert.ok(petRule, '#pet 规则存在')
   assert.ok(!/transition[\s\S]{0,80}filter/.test(petRule[0]), '#pet 不应过渡 filter')
   assert.ok(/#pet\s*\{[\s\S]*?transition:\s*transform/.test(petCss), '#pet 只过渡 transform')
-  assert.ok(/want <= extraBubbleHeight/.test(mainJs), '气泡可见期间只增不减，避免反复改窗口尺寸')
+  // 0.6.2: the bubble always sits above the pet; when the pet is too close to
+  // the top it is pushed down so the bubble keeps its full size. The window is
+  // only re-bounded when something actually changed.
+  assert.ok(/const side = 'above'/.test(mainJs), '气泡固定出现在桌宠上方（不再翻到下面）')
+  assert.ok(/const minTop = work\.y \+ reserve/.test(mainJs), '上方空间不够时把桌宠下移，保留气泡大小')
+  assert.ok(/const changed = side !== bubbleSide/.test(mainJs) && /if \(changed\) \{/.test(mainJs), '尺寸未变时不调用 setBounds')
+  assert.ok(/const floorTop = Math\.min\(maxTop, display\.workArea\.y \+ extraBubbleHeight\)/.test(mainJs), '拖拽也不能把桌宠拖进气泡预留区')
+  assert.ok(/updatePetInteractive/.test(mainJs) && /pet:rects/.test(mainJs), '命中判定放在主进程轮询（渲染层 mousemove 会漏首个事件）')
+  assert.ok(/petWin\.setIgnoreMouseEvents\(!inside/.test(mainJs), '命中时恢复可交互')
   assert.ok(/showTouchUi/.test(petJs), '触摸需要无 hover 的菜单入口')
   assert.ok(/\.pet-wrap\.touch-ui \.menu-btn/.test(petCss), 'touch-ui 下菜单按钮可见可点')
   assert.ok(/lastTouchAt/.test(petJs), '触摸后短时间忽略兼容鼠标事件')
@@ -730,14 +738,14 @@ const PAD = 54
   const petJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.js'), 'utf8')
   const petCss = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.css'), 'utf8')
   assert.ok(!/Math\.max\(display\.workArea\.y,/.test(mainJs), '气泡加高不得把窗口顶部 clamp 到工作区（会顶动桌宠）')
-  assert.ok(/roomAbove/.test(mainJs) && /roomBelow/.test(mainJs), '气泡空间按上下两侧可用空间分配')
-  assert.ok(/side === 'below' \? pet\.top : pet\.bottom - nextH/.test(mainJs), '加高时保持桌宠屏幕矩形不变')
+  assert.ok(/windowBoundsForPet\(pet\.x, petTop, size, reserve\)/.test(mainJs), '有空间时桌宠屏幕矩形不变，只改窗口高度')
+  assert.ok(/const minTop = work\.y \+ reserve/.test(mainJs), '空间不够时桌宠下移，气泡始终在上方')
   assert.ok(/ipcMain\.handle\('pet:bubble'/.test(mainJs), 'pet:bubble 回传授予的空间与侧别')
   assert.ok(/applyBubbleRoom/.test(petJs), '渲染层按授予的空间/侧别定位气泡')
-  assert.ok(/body\[data-bubble-side="below"\] \.pet-wrap/.test(petCss), '下方模式下桌宠锚在窗口顶部')
+  assert.ok(/aspect-ratio:\s*1026/.test(petCss), '气泡框保持固定比例')
   const preloadJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')
   assert.ok(/setBubble: \(visible, height\) => ipcRenderer\.invoke\('pet:bubble'/.test(preloadJs), 'preload 用 invoke 拿回执')
-  ok('桌宠窗口：气泡加高不移动桌宠、上下两侧自适应')
+  ok('桌宠窗口：气泡固定在上方，有空间不动桌宠、空间不够则下移')
 }
 
 {
@@ -756,7 +764,7 @@ const PAD = 54
   assert.ok(/white-space: normal/.test(petCss), '长文本先换行')
   assert.ok(/bubbleReserve/.test(petJs) && !/shrinkTimer,\s*540/.test(petJs), '气泡空间固定预留，内容切换不 resize')
   assert.ok(/setIgnoreMouseEvents\(true, \{ forward: true \}\)/.test(mainJs), '固定预留区默认鼠标穿透')
-  assert.ok(/pet:interactive/.test(mainJs) && /setInteractive/.test(petJs), '悬停桌宠/气泡时恢复可交互')
+  assert.ok(/sendRects/.test(petJs) && /pet:rects/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')) && /updatePetInteractive/.test(mainJs), '渲染层上报命中区、主进程轮询光标决定可交互')
 
   for (const key of ['water.progress', 'water.interval', 'water.quiet', 'water.last', 'water.tip']) {
     assert.ok(modelJs.includes("key: '" + key + "'"), '新增喝水模块 ' + key)

@@ -11,12 +11,23 @@
 
   const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n))
 
-  function setStatus(text) {
+  function setStatus(text, hold) {
     const node = $('status')
     if (!node) return
     node.textContent = text
     clearTimeout(setStatus.timer)
-    setStatus.timer = setTimeout(() => { node.textContent = '不用点保存就行' }, 2200)
+    if (hold === 0) return // keep it until something else happens
+    setStatus.timer = setTimeout(() => { node.textContent = '不用点保存就行' }, hold || 2200)
+  }
+
+  /** Persistent reminder of which place the weather is actually using. */
+  function renderCityNow(settings) {
+    const node = $('cityNow')
+    if (!node) return
+    const w = (settings && settings.weather) || {}
+    if (!w.city) { node.textContent = '现在还没告诉我你在哪座城市'; return }
+    node.textContent = '现在用的是：' + w.city + (w.label ? ' · ' + w.label : '') +
+      (Number.isFinite(Number(w.lat)) ? '（' + Number(w.lat).toFixed(2) + ', ' + Number(w.lon).toFixed(2) + '）' : '')
   }
 
   // --------------------------------------------------------------- panel nav
@@ -53,13 +64,13 @@
     })
   }
 
-  function save(patch, immediate) {
+  function save(patch, immediate, message) {
     state.settings = Object.assign({}, state.settings, patch)
     if (state.saveTimer) clearTimeout(state.saveTimer)
     const fire = () => {
       api.setSettings(patch).then((next) => {
         state.settings = next
-        setStatus('记住啦')
+        setStatus(message || '记住啦')
       }).catch(() => setStatus('刚才没记下来，再试一次好吗'))
     }
     if (immediate) fire()
@@ -86,6 +97,7 @@
     }
     $('mode').value = settings.mode || 'normal'
     setIfIdle('city', settings.weather && settings.weather.city ? settings.weather.city : '')
+    renderCityNow(settings)
     $('refreshMinutes').value = String((settings.weather && settings.weather.refreshMinutes) || 15)
     $('interval').value = String((settings.water && settings.water.intervalMinutes) || 60)
     setIfIdle('quietFrom', settings.water ? settings.water.quietFrom : 23)
@@ -383,25 +395,29 @@
 
   function search(query) {
     const q = String(query || '').trim()
-    if (!q) { setStatus('先写下城市名呀'); return }
-    setStatus('我找找看…')
+    if (!q) { setStatus('先写下城市名呀', 4000); $('city').focus(); return }
+    setStatus('我找找看…', 0)
     api.geocode(q).then((data) => {
       const box = $('results')
       box.innerHTML = ''
       if (!data || !data.list || !data.list.length) {
         box.hidden = true
-        setStatus(data && data.error ? '没找到：' + data.error : '没找到这座城市')
+        setStatus(data && data.error
+          ? '没找到（' + data.error + '），也可以直接写拼音试试'
+          : '没找到这座城市，换个写法试试（比如「衡阳」）', 6000)
         return
       }
       box.hidden = false
+      setStatus('找到 ' + data.list.length + ' 个地方，点下面那一行就用它', 6000)
       data.list.forEach((item) => {
         const row = document.createElement('div')
         row.textContent = item.name + (item.admin ? ' · ' + item.admin : '') + (item.country ? ' · ' + item.country : '')
         row.onclick = () => {
-          save({ weather: { lat: item.lat, lon: item.lon, city: item.name, label: item.admin || item.country } }, true)
+          save({ weather: { lat: item.lat, lon: item.lon, city: item.name, label: item.admin || item.country } }, true,
+            '记住啦：' + item.name + (item.admin ? ' · ' + item.admin : '') + '，正在换天气…')
           $('city').value = item.name
           box.hidden = true
-          setStatus('记住啦：' + item.name)
+          renderCityNow({ weather: { lat: item.lat, lon: item.lon, city: item.name, label: item.admin || item.country } })
           api.refreshWeather()
         }
         box.appendChild(row)

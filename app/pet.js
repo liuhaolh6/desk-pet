@@ -139,40 +139,32 @@
     if (state.timer) { clearTimeout(state.timer); state.timer = 0 }
   }
 
-  // ------------------------------------------- mouse passthrough (0.6.1)
+  // ------------------------------------------- mouse passthrough (0.6.2)
   // The window keeps a fixed bubble strip reserved, so most of its area is
-  // transparent. Without this, that empty strip would swallow desktop clicks.
-  // Default is click-through with `forward: true`, which still delivers moves,
-  // so a hit test can flip interactivity on when the pointer is over the pet,
-  // the bubble or the menu.
-  let interactive = null
-  function setInteractive(next) {
-    const want = !!next
-    if (want === interactive) return
-    interactive = want
-    try { api.setInteractive(want) } catch (err) {}
+  // transparent. The main process decides click-through from the OS cursor and
+  // the rects reported here (renderer mousemove is not reliable enough for the
+  // first move after switching modes).
+  let rectsDirty = false
+  function reportHitRects() {
+    rectsDirty = false
+    const rects = []
+    const push = (el) => {
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      if (r.width > 0 && r.height > 0) rects.push({ x: r.left, y: r.top, w: r.width, h: r.height })
+    }
+    push(petWrap)
+    if (bubble.classList.contains('show')) push(bubble)
+    if (state.menuOpen) { push(petMenu); push(menuBtn) }
+    try { api.sendRects(rects) } catch (err) {}
   }
 
-  const lastPointer = { x: -1, y: -1 }
-  function refreshInteractive() {
-    setInteractive(lastPointer.x >= 0 ? overInteractive(lastPointer.x, lastPointer.y) : false)
+  function scheduleRectReport() {
+    if (rectsDirty) return
+    rectsDirty = true
+    requestAnimationFrame(reportHitRects)
   }
 
-  function overInteractive(x, y) {
-    if (petWrap.classList.contains('dragging')) return true
-    const node = document.elementFromPoint(x, y)
-    if (!node || !node.closest) return false
-    if (node.closest('#petWrap') || node.closest('#menuBtn') || node.closest('#petMenu')) return true
-    const b = node.closest('#bubble')
-    return !!(b && b.classList.contains('show'))
-  }
-
-  /**
- * Ask the main process for bubble space. It returns how much it granted and on
- * which side of the pet (`above`, or `below` when the pet is near the top of the
- * work area) so the CSS can anchor both the pet and the bubble correctly. The
- * pet's screen position is never changed by this.
- */
   async function resizeForBubble(height) {
     const extra = Math.max(0, Math.round(height))
     let res = { reserve: extra, side: 'above' }
@@ -284,7 +276,7 @@
     state.showTimer = setTimeout(() => {
       if (state.bubbleToken !== token) return
       bubble.classList.add('show')
-      refreshInteractive()
+      scheduleRectReport()
     }, 50)
     const sec = Number(state.settings.bubble && state.settings.bubble.autoHideSeconds) || 0
     if (sec > 0) state.timer = setTimeout(hideBubble, sec * 1000)
@@ -299,7 +291,7 @@
     bubble.classList.remove('show')
     // 0.6.1: the reserved bubble strip stays (fixed reserve), so hiding never
     // resizes the transparent window - the last remaining flash source.
-    refreshInteractive()
+    scheduleRectReport()
   }
 
   function advance() {
@@ -457,11 +449,12 @@
     clearTimeout(state.showTimer)
     state.menuOpen = true
     petMenu.hidden = false
+    scheduleRectReport()
     petWrap.classList.add('hover', 'menu-open')
     void petMenu.offsetHeight
-    // Reserve the window space (and learn the side) before the panel is shown.
-    const height = measureMenu()
-    resizeForBubble(height)
+    // 0.6.2: reserve max(bubble strip, menu) so opening/closing the menu never
+    // shrinks the transparent window (one less flash source).
+    resizeForBubble(Math.max(bubbleReserve(), measureMenu()))
     clearTimeout(state.menuShowTimer)
     state.menuShowTimer = setTimeout(() => {
       if (!state.menuOpen) return
@@ -474,14 +467,15 @@
   function closeMenu(immediate) {
     if (!state.menuOpen) return
     state.menuOpen = false
+    scheduleRectReport()
     clearTimeout(state.menuShowTimer)
     petMenu.classList.remove('open')
     petWrap.classList.remove('menu-open')
     const finish = () => {
       if (state.menuOpen) return
       petMenu.hidden = true
-      // Do not shrink the window if a bubble was opened in the meantime.
-      if (!bubble.classList.contains('show')) resizeForBubble(0)
+      // Go back to the fixed bubble strip instead of shrinking to nothing.
+      if (!bubble.classList.contains('show')) resizeForBubble(bubbleReserve())
     }
     if (immediate) finish()
     else setTimeout(finish, 180)
@@ -604,6 +598,7 @@
         if (bubble.classList.contains('show')) hideBubble()
         petWrap.classList.remove('pressing')
         petWrap.classList.add('dragging')
+        try { api.setDragging(true) } catch (err) {}
       }
       d.totalX += dx
       const tilt = clamp(d.totalX * 0.15, -3, 3)
@@ -617,6 +612,7 @@
       const d = state.drag
       state.drag = null
       petWrap.classList.remove('dragging')
+      try { api.setDragging(false) } catch (err) {}
       petWrap.style.setProperty('--drag-tilt', '0deg')
       try { pet.releasePointerCapture(ev.pointerId) } catch (err) {}
       if (dragRaf) { cancelAnimationFrame(dragRaf); dragRaf = 0 }
@@ -665,12 +661,8 @@
     fitBubbleText()
     resizeForBubble(bubbleReserve()).catch(() => {})
     window.addEventListener('resize', () => { syncBubbleSpace().catch(() => {}) })
-    document.addEventListener('mousemove', (ev) => {
-      lastPointer.x = ev.clientX
-      lastPointer.y = ev.clientY
-      setInteractive(overInteractive(ev.clientX, ev.clientY))
-    }, { passive: true })
-    document.addEventListener('mouseleave', () => setInteractive(false))
+    reportHitRects()
+    window.addEventListener('resize', scheduleRectReport)
     api.onMirror((side) => {
       petFlip.style.setProperty('--pet-flip', side === 'none' ? 1 : -1)
     })
