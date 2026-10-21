@@ -16,7 +16,7 @@
     if (!node) return
     node.textContent = text
     clearTimeout(setStatus.timer)
-    setStatus.timer = setTimeout(() => { node.textContent = '改动会自动写入' }, 2200)
+    setStatus.timer = setTimeout(() => { node.textContent = '不用点保存就行' }, 2200)
   }
 
   // --------------------------------------------------------------- panel nav
@@ -59,8 +59,8 @@
     const fire = () => {
       api.setSettings(patch).then((next) => {
         state.settings = next
-        setStatus('已保存')
-      }).catch(() => setStatus('保存失败'))
+        setStatus('记住啦')
+      }).catch(() => setStatus('刚才没记下来，再试一次好吗'))
     }
     if (immediate) fire()
     else state.saveTimer = setTimeout(fire, 350)
@@ -118,8 +118,8 @@
       if (role.cutout === false) {
         const badge = document.createElement('em')
         badge.className = 'role-badge'
-        badge.textContent = '未抠图'
-        badge.title = '这张角色图是“仅缩放导入”的整张照片，没有经过抠图'
+        badge.textContent = '整张照片'
+        badge.title = '这张是用「不用抠，直接用整张」保存的照片，背景还在'
         card.appendChild(badge)
       }
       const label = document.createElement('span')
@@ -132,12 +132,12 @@
       if (!role.builtin) {
         const del = document.createElement('button')
         del.className = 'remove'
-        del.textContent = '删除'
+        del.textContent = '删掉'
         del.onclick = (ev) => {
           ev.stopPropagation()
           api.deleteRole(role.id).then((result) => {
             state.roles = result.roles || []
-            setStatus(result.ok ? '已删除' : '删除失败')
+            setStatus(result.ok ? '删掉啦' : '删不掉呢，再试一次？')
             renderRoles()
           })
         }
@@ -149,7 +149,7 @@
 
   function wire() {
     $('name').addEventListener('input', (ev) => {
-      const value = ev.target.value.trim() || '小芳桌宠'
+      const value = ev.target.value.trim() || '小芳'
       save({ name: value })
     })
 
@@ -197,15 +197,15 @@
       save({ sound: { volume: value / 100 } })
     })
     $('soundImportBtn').addEventListener('click', () => {
-      setStatus('选择音频文件…')
+      setStatus('挑一段音频…')
       api.importSound().then((result) => {
-        if (!result || result.canceled) { setStatus('已取消'); return }
-        if (!result.ok) { setStatus(result.error || '导入失败'); return }
+        if (!result || result.canceled) { setStatus('好，那先不选'); return }
+        if (!result.ok) { setStatus(result.error || '没收进来，再试一次？'); return }
         state.sounds = result.files || []
         renderSoundEvents()
         renderSoundFiles()
-        setStatus('已导入：' + result.file.name)
-      }).catch(() => setStatus('导入失败'))
+        setStatus('收好啦：' + result.file.name)
+      }).catch(() => setStatus('没收进来，再试一次？'))
     })
     $('editorBtn').addEventListener('click', () => api.openEditor())
 
@@ -214,21 +214,21 @@
     $('locateBtn').addEventListener('click', locate)
 
     $('importBtn').addEventListener('click', () => {
-      setStatus('请选择图片…')
+      setStatus('挑一张图片吧…')
       api.importRole().then((result) => {
-        if (!result || result.canceled) { setStatus('已取消'); return }
-        if (!result.ok) { setStatus(result.error || '导入失败'); return }
+        if (!result || result.canceled) { setStatus('好，那先不选'); return }
+        if (!result.ok) { setStatus(result.error || '没收进来，再试一次？'); return }
         state.roles = result.roles || []
-        return api.getState().then((next) => { fill(next.settings); setStatus('已导入：' + result.role.name) })
-      }).catch(() => setStatus('导入失败'))
+        return api.getState().then((next) => { fill(next.settings); setStatus('收好啦：' + result.role.name) })
+      }).catch(() => setStatus('没收进来，再试一次？'))
     })
 
     $('cutoutBtn').addEventListener('click', () => {
-      setStatus('打开抠图窗口…')
+      setStatus('打开「用照片做个我」…')
       api.openCutout()
     })
 
-    $('resetPosBtn').addEventListener('click', () => { save({ position: null }, true); setStatus('已回到右下角') })
+    $('resetPosBtn').addEventListener('click', () => { save({ position: null }, true); setStatus('回到右下角啦') })
     $('openDirBtn').addEventListener('click', () => api.openDataDir())
     $('quitBtn').addEventListener('click', () => api.quit())
   }
@@ -241,8 +241,8 @@
   function fragmentOptions(selected) {
     const select = document.createElement('select')
     const groups = [
-      { label: '内置音色', items: sound.PRESETS.map((p) => ({ value: p.id, label: p.label })) },
-      { label: '导入的片段', items: state.sounds.map((f) => ({ value: 'file:' + f.id, label: f.name })) },
+      { label: '自带的声音', items: sound.PRESETS.map((p) => ({ value: p.id, label: p.label })) },
+      { label: '我收下的音频', items: state.sounds.map((f) => ({ value: 'file:' + f.id, label: f.name })) },
     ]
     groups.forEach((group) => {
       if (!group.items.length) return
@@ -259,7 +259,7 @@
     if (selected && !sound.isKnownFragment(selected, state.sounds)) {
       const opt = document.createElement('option')
       opt.value = selected
-      opt.textContent = '（已失效，请重选）'
+      opt.textContent = '（这段找不到了，重新选一个吧）'
       select.insertBefore(opt, select.firstChild)
     }
     select.value = selected
@@ -293,11 +293,11 @@
 
       const toggle = document.createElement('label')
       toggle.className = 'check'
-      toggle.title = '该事件是否发声'
+      toggle.title = '这件事要不要出声'
       const check = document.createElement('input')
       check.type = 'checkbox'
       check.checked = !!event.enabled
-      check.setAttribute('aria-label', meta.label + '：启用音效')
+      check.setAttribute('aria-label', meta.label + '：要不要出声')
       check.onchange = () => saveSoundEvent(meta.key, { enabled: check.checked })
       toggle.appendChild(check)
       row.appendChild(toggle)
@@ -308,7 +308,7 @@
       row.appendChild(name)
 
       const select = fragmentOptions(event.fragment)
-      select.setAttribute('aria-label', meta.label + '：音效片段')
+      select.setAttribute('aria-label', meta.label + '：用哪段声音')
       select.onchange = () => saveSoundEvent(meta.key, { fragment: select.value })
       row.appendChild(select)
 
@@ -316,7 +316,7 @@
       vol.className = 'vol'
       const range = document.createElement('input')
       range.type = 'range'
-      range.setAttribute('aria-label', meta.label + '：音量')
+      range.setAttribute('aria-label', meta.label + '：多大声')
       range.min = '0'
       range.max = '100'
       range.step = '5'
@@ -324,7 +324,7 @@
       range.value = String(effective)
       const label = document.createElement('b')
       label.textContent = event.volume == null ? '—' : effective + '%'
-      label.title = event.volume == null ? '跟随总音量' : '单独音量'
+      label.title = event.volume == null ? '跟着总音量' : '单独调'
       range.oninput = () => { label.textContent = range.value + '%' }
       range.onchange = () => saveSoundEvent(meta.key, { volume: Number(range.value) / 100 })
       vol.appendChild(range)
@@ -333,14 +333,14 @@
 
       const follow = document.createElement('button')
       follow.type = 'button'
-      follow.textContent = '跟随'
-      follow.title = '音量跟随总音量'
+      follow.textContent = '跟着'
+      follow.title = '音量跟着总音量'
       follow.onclick = () => saveSoundEvent(meta.key, { volume: null })
       row.appendChild(follow)
 
       const preview = document.createElement('button')
       preview.type = 'button'
-      preview.textContent = '试听'
+      preview.textContent = '听一下'
       preview.onclick = () => previewEvent(meta.key)
       row.appendChild(preview)
 
@@ -355,7 +355,7 @@
     if (!state.sounds.length) {
       const empty = document.createElement('span')
       empty.className = 'muted'
-      empty.textContent = '暂无导入片段，内置音色已可用'
+      empty.textContent = '还没添加自己的音频，自带的声音已经能用啦'
       box.appendChild(empty)
       return
     }
@@ -366,15 +366,15 @@
       const del = document.createElement('button')
       del.type = 'button'
       del.textContent = '×'
-      del.title = '删除这个片段（引用它的音效会回退到内置音色）'
+      del.title = '删掉这段音频（用到它的地方会回到自带声音）'
       del.onclick = () => {
         api.deleteSound(file.id).then((result) => {
           state.sounds = result.files || []
           return api.getState().then((next) => {
             fill(next.settings)
-            setStatus('已删除片段')
+            setStatus('删掉啦片段')
           })
-        }).catch(() => setStatus('删除失败'))
+        }).catch(() => setStatus('删不掉呢，再试一次？'))
       }
       chip.appendChild(del)
       box.appendChild(chip)
@@ -383,14 +383,14 @@
 
   function search(query) {
     const q = String(query || '').trim()
-    if (!q) { setStatus('先输入城市名'); return }
-    setStatus('搜索中…')
+    if (!q) { setStatus('先写下城市名呀'); return }
+    setStatus('我找找看…')
     api.geocode(q).then((data) => {
       const box = $('results')
       box.innerHTML = ''
       if (!data || !data.list || !data.list.length) {
         box.hidden = true
-        setStatus(data && data.error ? '搜索失败：' + data.error : '没找到这个城市')
+        setStatus(data && data.error ? '没找到：' + data.error : '没找到这座城市')
         return
       }
       box.hidden = false
@@ -401,7 +401,7 @@
           save({ weather: { lat: item.lat, lon: item.lon, city: item.name, label: item.admin || item.country } }, true)
           $('city').value = item.name
           box.hidden = true
-          setStatus('已设为 ' + item.name)
+          setStatus('记住啦：' + item.name)
           api.refreshWeather()
         }
         box.appendChild(row)
@@ -410,23 +410,23 @@
   }
 
   function locate() {
-    if (!navigator.geolocation) { setStatus('系统不支持定位，请搜索城市'); return }
-    setStatus('定位中…')
+    if (!navigator.geolocation) { setStatus('这台电脑不让定位，手动写下城市名吧'); return }
+    setStatus('看看你在哪…')
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         save({
           weather: {
             lat: pos.coords.latitude,
             lon: pos.coords.longitude,
-            city: '当前位置',
-            label: '定位',
+            city: '我找到的位置',
+            label: '用我的位置',
           },
         }, true)
-        $('city').value = '当前位置'
-        setStatus('已定位')
+        $('city').value = '我找到的位置'
+        setStatus('找到啦')
         api.refreshWeather()
       },
-      () => setStatus('定位失败，请搜索城市'),
+      () => setStatus('没定上位，手动写下城市名吧'),
       { timeout: 8000 },
     )
   }
@@ -443,7 +443,7 @@
       $('dataDir').title = state0.dataDir || ''
       fill(state0.settings)
     } catch (err) {
-      setStatus('读取设置失败')
+      setStatus('没读到设置，稍后再试')
     }
     api.onSettings((settings) => fill(settings))
     api.onRoles((roles) => {

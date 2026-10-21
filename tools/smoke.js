@@ -29,7 +29,7 @@ const store = createStore(dir)
 // ---------------------------------------------------------------- store
 {
   const s = store.readSettings()
-  assert.equal(s.name, '小芳桌宠')
+  assert.equal(s.name, '小芳')
   assert.equal(s.size, 220)
   assert.equal(s.mode, 'normal')
   assert.equal(s.anchor, undefined, 'desktop build has no anchor field')

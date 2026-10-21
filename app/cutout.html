@@ -27,7 +27,7 @@
       </div>
       <p id="previewAlt" class="sr-only" aria-live="polite">尚未选择照片</p>
       <div id="viewRow" class="view-row" hidden>
-        <div class="seg-group" role="group" aria-label="预览视图">
+        <div class="seg-group" role="group" aria-label="看看什么样">
           <button type="button" class="seg is-on" data-view="result" aria-pressed="true">结果</button>
           <button type="button" class="seg" data-view="original" aria-pressed="false">原图</button>
           <button id="maskViewBtn" type="button" class="seg" data-view="mask" aria-pressed="false" hidden>蒙版</button>
@@ -58,10 +58,10 @@
           <input id="zoom" type="range" min="60" max="160" value="100">
         </label>
         <p class="hint">拖动画面调整位置，滚轮可以缩放。</p>
-        <div class="chip-row" role="group" aria-label="旋转与翻转">
-          <button id="rotateLeftBtn" class="ghost compact" type="button" title="左转 90°" aria-keyshortcuts="Q">↺ 左转</button>
-          <button id="rotateRightBtn" class="ghost compact" type="button" title="右转 90°" aria-keyshortcuts="W">↻ 右转</button>
-          <button id="flipBtn" class="ghost compact" type="button" title="水平翻转" aria-pressed="false" aria-keyshortcuts="F">⇋ 翻转</button>
+        <div class="chip-row" role="group" aria-label="转一转">
+          <button id="rotateLeftBtn" class="ghost compact" type="button" title="往左转" aria-keyshortcuts="Q">↺ 左转</button>
+          <button id="rotateRightBtn" class="ghost compact" type="button" title="往右转" aria-keyshortcuts="W">↻ 右转</button>
+          <button id="flipBtn" class="ghost compact" type="button" title="照镜子" aria-pressed="false" aria-keyshortcuts="F">⇋ 翻转</button>
         </div>
         <div class="button-row">
           <button id="fallbackBtn" class="ghost" type="button" disabled>仅缩放导入</button>
@@ -71,7 +71,7 @@
 
       <section class="card" id="editCard" hidden>
         <h2>3. 修补边缘</h2>
-        <div class="chip-row" role="group" aria-label="修补工具">
+        <div class="chip-row" role="group" aria-label="修一修">
           <button id="eraseBtn" class="ghost compact" type="button" aria-pressed="false" aria-keyshortcuts="E">擦除</button>
           <button id="restoreBtn" class="ghost compact" type="button" aria-pressed="false" aria-keyshortcuts="R">恢复</button>
           <button id="undoBtn" class="ghost compact" type="button" disabled aria-keyshortcuts="Control+Z">撤销</button>

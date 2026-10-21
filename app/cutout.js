@@ -60,7 +60,7 @@
     state.confirmFallback = false
     state.confirmAt = 0
     if (state.confirmTimer) { clearTimeout(state.confirmTimer); state.confirmTimer = 0 }
-    $('saveBtn').textContent = '保存为角色'
+    $('saveBtn').textContent = '就它了，保存'
   }
 
   function setBusy(value) {
@@ -75,7 +75,7 @@
     return new Promise((resolve, reject) => {
       const image = new Image()
       image.onload = () => resolve(image)
-      image.onerror = () => reject(new Error('图片加载失败'))
+      image.onerror = () => reject(new Error('这张图打不开呢'))
       image.src = dataUrl
     })
   }
@@ -148,13 +148,13 @@
     })
     stage.setAttribute('aria-label', '角色预览：' + (VIEW_LABEL[state.view] || ''))
     const modeText = state.mode === 'cutout' ? '已抠图'
-      : state.mode === 'fallback' ? '未抠图（整张照片）'
-        : state.mode === 'original' ? '原图，尚未抠图' : '等待照片'
+      : state.mode === 'fallback' ? '整张照片'
+        : state.mode === 'original' ? '还没抠的原图' : '等你的照片'
     const el = $('previewAlt')
     if (el) {
       el.textContent = state.resultImage || state.originalImage
         ? '当前视图：' + (VIEW_LABEL[state.view] || '') + '；' + modeText + '。'
-        : '尚未选择照片。'
+        : '还没有选照片哦。'
     }
   }
 
@@ -211,10 +211,10 @@
       draw()
       stage.focus()
       status(next === 'erase'
-        ? '擦除模式：在画面上拖动去掉残留背景；再点“擦除”或按 Esc 退出。'
-        : '恢复模式：在画面上拖动找回被擦掉的部分；再点“恢复”或按 Esc 退出。', '')
+        ? '擦一擦：在画面上拖动，去掉多余的地方；再点一次「擦一擦」，或者按 Esc 就退出。'
+        : '找回来：在画面上拖动，把不小心擦掉的部分补回来；再点一次，或者按 Esc 就退出。', '')
     } else {
-      status('已退出修补。拖动或缩放调整构图后再保存。', '')
+      status('退出修补啦。挪一挪、放大缩小摆好位置，再保存吧。', '')
       // Keep keyboard focus on the tool that was just turned off.
       const back = was === 'restore' ? $('restoreBtn') : $('eraseBtn')
       if (back && typeof back.focus === 'function') back.focus()
@@ -290,7 +290,7 @@
     state.stroke = null
     draw()
     updateEditButtons()
-    status('已撤销一步修补。', '')
+    status('刚才那一下撤销啦。', '')
   }
 
   function selectView(view) {
@@ -332,7 +332,7 @@
     draw()
     $('runBtn').disabled = false
     $('fallbackBtn').disabled = false
-    status('照片已载入。点“开始抠图”离线分割人像，或直接“仅缩放导入”。', '')
+    status('照片收到啦。点「开始抠图」，我在你电脑里把人像留下来（不上传）；也可以选「不用抠，直接用整张」。', '')
   }
 
   async function setResult(resultUrl, maskUrl, nextMode, label) {
@@ -363,14 +363,14 @@
   async function pick() {
     if (state.busy) return
     $('pickBtn').disabled = true
-    status('正在选择照片…')
+    status('等你挑照片…')
     try {
       const result = await api.pickCutoutPhoto()
-      if (!result || result.canceled) { status('已取消'); return }
-      if (!result.ok) { status(result.error || '读取失败', 'error'); return }
+      if (!result || result.canceled) { status('好，那不选了'); return }
+      if (!result.ok) { status(result.error || '这张照片读不进来呢', 'error'); return }
       await setSource(result.dataUrl, result.name, result.token)
     } catch (err) {
-      status('读取照片失败', 'error')
+      status('这张照片读不进来呢', 'error')
     } finally {
       $('pickBtn').disabled = state.busy
     }
@@ -379,26 +379,26 @@
   async function run() {
     if (state.busy || !state.original) return
     setBusy(true)
-    status('正在离线抠图，第一次会加载模型，请稍候…')
-    mode('处理中')
+    status('在认真抠图啦～第一次会慢一点点，等我一下下')
+    mode('忙一会儿')
     try {
       const result = await api.runCutout(state.token)
       if (result && result.ok) {
         await setResult(result.dataUrl, result.maskDataUrl, 'cutout', '已抠图')
-        status('抠图完成。可切换“蒙版”检查边缘，或进入“修补边缘”擦除残留。', 'ok')
+        status('抠好啦。可以切到「蒙版」看看边缘，或者点「修一修」擦掉多余的地方。', 'ok')
       } else {
         const fallback = result && result.fallbackDataUrl
         if (fallback) {
-          await setResult(fallback, '', 'fallback', '未抠图（整图）')
-          status((result.error || '未检测到人像') + '。当前显示的是整张原图，不是抠图结果；保存前需要二次确认。', 'error')
+          await setResult(fallback, '', 'fallback', '整张照片')
+          status((result.error || '没找到人像呢') + '。现在显示的是整张原图，不是抠好的；保存前我会再问你一次。', 'error')
         } else {
-          status((result && result.error) || '抠图失败', 'error')
-          mode('处理失败')
+          status((result && result.error) || '这次没抠成', 'error')
+          mode('这次没处理成功')
         }
       }
     } catch (err) {
-      status('抠图进程异常，可以改用“仅缩放导入”。', 'error')
-      mode('处理失败')
+      status('抠图的时候出了点小状况，可以改用「不用抠，直接用整张」。', 'error')
+      mode('这次没处理成功')
     } finally {
       setBusy(false)
     }
@@ -406,8 +406,8 @@
 
   async function fallback() {
     if (!state.original) return
-    await setResult(state.original, '', 'fallback', '未抠图（整图）')
-    status('已跳过抠图：当前是整张照片。保存前会要求再次确认，角色库也会标记“未抠图”。', '')
+    await setResult(state.original, '', 'fallback', '整张照片')
+    status('这次跳过抠图，用的就是整张照片。保存前我会再确认一次，角色库里也会标成「整张照片」。', '')
     $('fallbackBtn').disabled = true
   }
 
@@ -429,28 +429,28 @@
     if (state.mode === 'fallback' && !state.confirmFallback) {
       state.confirmFallback = true
       state.confirmAt = Date.now()
-      $('saveBtn').textContent = '确认保存未抠图角色'
-      status('当前是“仅缩放导入”，保存的角色会保留整张照片背景。再点一次“确认保存未抠图角色”才会保存。', 'error')
+      $('saveBtn').textContent = '再确认一次：保存整张照片'
+      status('现在是「不用抠，直接用整张」，保存下来会带着原来的背景。再点一次才会保存哦。', 'error')
       state.confirmTimer = setTimeout(() => resetFallbackConfirm(), 10000)
       return
     }
     // A stray double click must not count as the second confirmation.
     if (state.mode === 'fallback' && Date.now() - state.confirmAt < 600) return
     setBusy(true)
-    status('正在保存角色…')
+    status('在收好这张啦…')
     try {
       const name = ($('name').value || state.name || '照片角色').trim().slice(0, 30) || '照片角色'
       const payload = { dataUrl: captureResult(), name, mode: state.mode === 'fallback' ? 'fallback' : 'cutout' }
       if (payload.mode === 'fallback') payload.confirmFallback = true
       const result = await api.saveCutout(payload)
       if (!result || !result.ok) {
-        status((result && result.error) || '保存失败', 'error')
+        status((result && result.error) || '没保存成功，再试一次？', 'error')
         return
       }
-      status('已保存并切换角色：' + result.role.name, 'ok')
+      status('收好啦，已经换成：' + result.role.name, 'ok')
       setTimeout(() => api.closeCutout(), 700)
     } catch (err) {
-      status('保存失败', 'error')
+      status('没保存成功，再试一次？', 'error')
     } finally {
       setBusy(false)
     }
@@ -516,20 +516,20 @@
   stage.addEventListener('drop', (ev) => {
     ev.preventDefault()
     const file = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]
-    if (!file || !/^image\//.test(file.type)) { status('请拖入图片文件', 'error'); return }
+    if (!file || !/^image\//.test(file.type)) { status('把图片拖进来就可以啦', 'error'); return }
     const name = file.name.replace(/\.[^.]+$/, '')
     const reader = new FileReader()
     reader.onload = async () => {
-      status('正在载入照片…')
+      status('在打开照片啦…')
       try {
         const result = await api.loadCutoutPhoto(String(reader.result), name)
-        if (!result || !result.ok) { status((result && result.error) || '读取拖入的图片失败', 'error'); return }
+        if (!result || !result.ok) { status((result && result.error) || '这张图读不进来呢', 'error'); return }
         await setSource(result.dataUrl, result.name, result.token)
       } catch (err) {
-        status('读取拖入的图片失败', 'error')
+        status('这张图读不进来呢', 'error')
       }
     }
-    reader.onerror = () => status('读取拖入的图片失败', 'error')
+    reader.onerror = () => status('这张图读不进来呢', 'error')
     reader.readAsDataURL(file)
   })
 
@@ -550,20 +550,20 @@
   $('resetEditBtn').addEventListener('click', () => {
     resetEdits()
     draw()
-    status('已重置全部修补。', '')
+    status('修补都清空啦，回到最初的样子。', '')
   })
 
   function rotateBy(delta) {
     state.rotation = (state.rotation + delta + 360) % 360
     draw()
-    status('构图：旋转 ' + state.rotation + '°', '')
+    status('转了一下，现在是 ' + state.rotation + '°', '')
   }
 
   function toggleFlip() {
     state.flipX = !state.flipX
     $('flipBtn').setAttribute('aria-pressed', state.flipX ? 'true' : 'false')
     draw()
-    status(state.flipX ? '构图：已水平翻转' : '构图：已取消水平翻转', '')
+    status(state.flipX ? '照过镜子啦' : '不照镜子了', '')
   }
 
   $('rotateLeftBtn').addEventListener('click', () => rotateBy(270))
