@@ -14,7 +14,7 @@
 | 本地目录 | `D:\project\deskpet` |
 | 仓库 | `ssh://git@ssh.github.com:443/liuhaolh6/desk-pet.git`，分支 `main`，**当前是私有仓库** |
 | 版本 | `0.6.6`，**已出包** `dist\DeskPet-0.6.6-portable.exe`（153.7 MB，未签名）与 `dist\win-unpacked\`；tag 只推到 `v0.6.0`，`0.6.1`–`0.6.6` 仅在 `main` |
-| 最近提交 | `3059f5a` = 0.6.6 重新打包 + 托盘收口 + 真按键验证；`5be8c4d` = 0.6.6 长文案/托盘兜底/手册/诊断导出；再往前 `adbe033` 0.6.5 首次引导、`63ae453 docs(0.6.4)` |
+| 最近提交 | `12176d2` = 0.6.6 重新打包 + 托盘收口 + 真按键验证；`5be8c4d` = 0.6.6 长文案/托盘兜底/手册/诊断导出；再往前 `adbe033` 0.6.5 首次引导、`63ae453 docs(0.6.4)` |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js` |
 | 自动化基线 | smoke **52 项** · check-a11y **57 项** · a11y-audit **86 项** · a11y-keyboard **6 项**，全部通过 |
