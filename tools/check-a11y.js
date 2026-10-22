@@ -118,6 +118,17 @@ const cutoutHtml = read('app/cutout.html')
   check('桌宠菜单可被键盘聚焦并显示', /\.pet-wrap:focus-within\s+\.menu-btn/.test(petCss))
 }
 
+// --------------------------------------------------- settings.html (P0-3 rows)
+{
+  const html = read('app/settings.html')
+  const js = read('app/settings.js')
+  check('托盘/快捷键状态是纯文本说明', /<p id="trayStatus" class="field-hint">/.test(html) && /<p id="shortcutStatus" class="field-hint">/.test(html))
+  check('状态说明不藏在 aria-hidden 里', !/id="trayStatus"[^>]*aria-hidden/.test(html) && !/id="shortcutStatus"[^>]*aria-hidden/.test(html))
+  check('状态更新走 textContent（不会塞 HTML）', /trayEl\.textContent =/.test(js) && /keyEl\.textContent =/.test(js))
+  check('导出诊断是带名称的按钮', /<button id="diagBtn" type="button">[^<]+<\/button>/.test(html))
+  check('导出结果写在 aria-live 之外不打断读屏', !/id="diagStatus"[^>]*aria-live/.test(html))
+}
+
 // ------------------------------------------------------------- onboard.html
 {
   const html = read('app/onboard.html')

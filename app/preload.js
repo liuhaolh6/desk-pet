@@ -25,6 +25,8 @@ function subscribe(channel, callback) {
 contextBridge.exposeInMainWorld('deskPet', {
   // state
   getState: () => ipcRenderer.invoke('state:get'),
+  getAppStatus: () => ipcRenderer.invoke('app:status'),
+  exportDiagnostics: () => ipcRenderer.invoke('app:diagnostics'),
   setSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
 
   // characters

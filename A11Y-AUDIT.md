@@ -8,6 +8,7 @@
 
 - 首次审计（同一工具，`0.5.5` 修复前）**40 项检查中 10 项失败**；补齐面板/标签页遍历后共 **76 项**，再修完目标尺寸与名称问题，最终 **82 项全部通过**（含键盘-only 流程 6 项）。
 - `0.6.5` 把首次欢迎卡（`onboard.html`）纳入审计，每个窗口 10 项，合计 **86 项 + 键盘流程 6 项 = 92 项，失败 0**。
+- `0.6.6` 设置页新增「托盘和快捷键」「遇到问题」两段纯文本 + 一个导出按钮；静态断言加到 **57 项**，页面审计项数不变（settings 仍是 10 项 + 7 面板 ×3）。
 - 修的都是真问题，不是把断言放宽：
   1. **次要文字对比度不足**：`--muted` `#7d89a5` 对 `--surface-3` 只有 **3.12:1**、对白 3.5:1 → 改为 `#5d6a86`（对 `#eef2fa` 4.83:1、对白 5.42:1）；
   2. **气泡默认文字色**：`bubble-model.js` 的天气提示/更新时间默认 `#8890a8` 对白 3.18:1 → 改 `#5d6a86`（同一处也是真实气泡的颜色，不只是编辑器预览）；
@@ -59,13 +60,15 @@ onboard.html   10/10 PASS
 
 ## 4. 静态回归（CI）
 
-`node tools/check-a11y.js` 现在有 30+ 项结构断言，覆盖本次修的东西，避免回退：
+`node tools/check-a11y.js` 现在有 **57 项**结构断言，覆盖本次修的东西，避免回退：
 
 - `--muted`/`--ink-2` 对各浅色底的对比度（脚本内直接算 WCAG 比值）；
 - 气泡默认文字色对白 ≥4.5；
 - 四个 CSS 都有 `prefers-reduced-motion`；
 - 滑杆/图标按钮/音效 label ≥24px；音效控件有 `aria-label`；
 - `.pet-wrap:focus-within .menu-btn`；
+- 首次引导卡（dialog 名称/Esc/按钮名称/焦点/forced-colors）；
+- 托盘与快捷键状态行是纯文本、不 `aria-hidden`、走 `textContent`；导出按钮有名称、结果行不进 `aria-live`；
 - 原有的 `lang`、`#previewAlt` live region、`aria-keyshortcuts`、按钮名称等。
 
 CI（`.github/workflows/ci.yml`）跑 `node tools/check-a11y.js`；`tools/a11y-audit.js` 需要真实 GUI，不进 CI。

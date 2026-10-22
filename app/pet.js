@@ -248,6 +248,70 @@
   }
 
   /** Shrink the text layer until it fits its safe area (never grows past 1). */
+  // Shrinking stops here (P0-2, 0.6.6): below 60% of the base size the text turns
+  // into unreadable mush, so past the floor we drop words instead of pixels and
+  // keep the full string on the span (title + aria-label) for hover and AT.
+  const FIT_FLOOR = 0.6
+
+  // Overflow is measured from the rendered child's rect so it covers spill on
+  // either end (the safe area is centred with `justify-content: center`). The
+  // earlier "long text never truncated" report was NOT this metric: a module is
+  // capped at 200 chars by bubble-model.js, so a single 500-char test module was
+  // silently cut to 200 and fit fine. Long cards need several modules to test.
+  function overflowAmount() {
+    const frame = bubbleContent.firstElementChild
+    if (!frame) return { w: 0, h: 0 }
+    const box = bubbleContent.getBoundingClientRect()
+    const inner = frame.getBoundingClientRect()
+    return {
+      w: Math.max(0, inner.width - box.width),
+      h: Math.max(0, box.top - inner.top, inner.bottom - box.bottom),
+    }
+  }
+
+  /**
+   * Trim the longest module until the card fits the cloud's safe area.
+   *
+   * Runs after the font-size fit. Re-entrant on purpose: every call restores the
+   * original text from `data-full` first, so switching cards (or a settings
+   * broadcast that re-renders) never truncates twice.
+   */
+  function clampBubbleText() {
+    const spans = Array.from(bubbleContent.querySelectorAll('.bubble-mod'))
+    if (!spans.length) return
+    spans.forEach((span) => {
+      if (span.dataset.full == null) span.dataset.full = span.textContent || ''
+      else span.textContent = span.dataset.full
+      const full = span.dataset.full
+      if (full) {
+        span.title = full
+        span.setAttribute('aria-label', full)
+      }
+    })
+    // Proportional trim: the first implementation shaved 10% off the longest
+    // module per pass, which needs ~80 passes for a genuinely long card and ran
+    // into the guard while still 35px too tall (P0-2 CDP check). Estimate the
+    // overshoot from the actual box and shorten every module by that ratio.
+    for (let guard = 0; guard < 40; guard++) {
+      const over = overflowAmount()
+      if (!over.w && !over.h) return
+      const h = bubbleContent.clientHeight || 1
+      const w = bubbleContent.clientWidth || 1
+      const ratio = Math.max(over.h / h, over.w / w, 0.05)
+      const keepRatio = Math.max(0.5, 1 - ratio * 1.1)
+      let changed = false
+      for (const span of spans) {
+        const text = span.textContent || ''
+        if (text.length <= 1) continue
+        const keep = Math.max(1, Math.floor(text.length * keepRatio))
+        if (keep >= text.length) continue
+        span.textContent = text.slice(0, keep).replace(/[\s，、,。.!！?？;；:：]+$/u, '') + '…'
+        changed = true
+      }
+      if (!changed) return
+    }
+  }
+
   function fitBubbleText() {
     let fit = 1
     for (let i = 0; i < 4; i++) {
@@ -257,8 +321,10 @@
       if (!cw || !ch) break
       const need = Math.min(1, cw / Math.max(bubbleContent.scrollWidth, 1), ch / Math.max(bubbleContent.scrollHeight, 1))
       if (need >= 0.995) break
-      fit = Math.max(0.45, fit * need * 0.97)
+      fit = Math.max(FIT_FLOOR, fit * need * 0.97)
     }
+    document.body.style.setProperty('--bubble-fit', fit.toFixed(3))
+    clampBubbleText()
   }
 
   function bubbleReserve() {
