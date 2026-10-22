@@ -184,8 +184,12 @@ Signing setup and verification: [`SIGNING.md`](SIGNING.md).
 
 ## 后续
 
-见 [PLAN.md](PLAN.md)；跨对话接手请看 [HANDOFF.md](HANDOFF.md)（现状、决策、已知坑、待办与开场白）。
-当前 `0.6.0` 已有：角色、照片抠图（alpha 修复 + 蒙版/擦除/旋转 + worker 卸载 + token IPC）、天气、喝水、气泡模块化编辑器、音效库、多显示器与贴边吸附、触摸动效、whale classic SVG 思考气泡、悬停菜单、设置重构、内置字体、托盘、设置、置顶、自启、便携打包（0.5.5 修复触摸按压桌宠时的窗口屏闪，见 [`PET-WINDOW-NOTES.md`](PET-WINDOW-NOTES.md)）。待做：NVDA 等真实屏幕阅读器与高对比度主题实测、10 张 golden set（见 [`M12-PLAN.md`](M12-PLAN.md)）、代码签名（SignPath 免费 OSS 路线，见 [`SIGNING.md`](SIGNING.md)）。
+- **要做什么、还差什么**：[`ROADMAP.md`](ROADMAP.md)——成熟度评分、不足与限制（按影响排序、附证据）、P0–P3 优化方向、未来展望、风险与不做清单。
+- **怎么接手改代码**：[`HANDOFF.md`](HANDOFF.md)——架构、十条不变量、验证矩阵、按主题分组的坑、发布流程与开场白。
+- 历史计划：[PLAN.md](PLAN.md)、[M12-PLAN.md](M12-PLAN.md)。
+当前 `0.6.4` 已有：角色、照片抠图（alpha 修复 + 蒙版/擦除/旋转 + worker 卸载 + token IPC）、天气（体感/明天/逐时/日出日落/UV/风 + 贴心提醒）、喝水、28 种模块的气泡编辑器、音效库、多显示器与贴边吸附、触摸动效、悬停菜单、设置重构、内置字体、托盘、置顶、自启、便携打包。0.6.4 把「运行中改透明窗口尺寸」彻底去掉（点桌宠不再频闪，见 [`M16-NOTES.md`](M16-NOTES.md) §7）。
+
+主要短板（详见 [`ROADMAP.md`](ROADMAP.md) §3）：未签名且只有便携版、无自动更新、无首次使用引导、气泡上方 224px 常驻预留、`app/main.js` 单体 1226 行、NVDA/高对比度仅自动审计未真机手测。
 
 ## 参与与文档
 
@@ -195,7 +199,8 @@ Signing setup and verification: [`SIGNING.md`](SIGNING.md).
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | 开发环境、提交前检查、代码约定、发布流程 |
 | [`SECURITY.md`](SECURITY.md) | 漏洞报告渠道与攻击面说明 |
 | [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) | 行为准则 |
-| [`HANDOFF.md`](HANDOFF.md) | 现状、设计决策、已知坑与待办（接手先读） |
+| [`HANDOFF.md`](HANDOFF.md) | 接手先读：架构、不变量、验证矩阵、坑、发布流程 |
+| [`ROADMAP.md`](ROADMAP.md) | 现状评估、不足与限制、优化方向、未来展望 |
 | [`A11Y-AUDIT.md`](A11Y-AUDIT.md) | 无障碍审计报告（82 项可自动化检查） |
 | [`MODEL-ASSETS.md`](MODEL-ASSETS.md) | 模型与二进制资产决策（不用 LFS、量化约束） |
 | [`SIGNING.md`](SIGNING.md) | 代码签名方案与验证 |
