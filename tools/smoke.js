@@ -798,5 +798,33 @@ const PAD = 54
   ok('气泡：固定比例、实测居中、超框收缩、固定预留、喝水卡片内容')
 }
 
+{
+  // M17 P0-1: first-run welcome card.
+  const root = path.join(__dirname, '..')
+  const html = fs.readFileSync(path.join(root, 'app', 'onboard.html'), 'utf8')
+  const css = fs.readFileSync(path.join(root, 'app', 'onboard.css'), 'utf8')
+  const js = fs.readFileSync(path.join(root, 'app', 'onboard.js'), 'utf8')
+  const mainJs = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
+  const preloadJs = fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')
+  const settingsHtml = fs.readFileSync(path.join(root, 'app', 'settings.html'), 'utf8')
+  const settingsJs = fs.readFileSync(path.join(root, 'app', 'settings.js'), 'utf8')
+
+  assert.equal(DEFAULT_SETTINGS.onboarded, false, '全新安装默认还没看过引导')
+  assert.ok(/ipcMain\.on\('onboard:open'/.test(mainJs) && /ipcMain\.on\('onboard:dismiss'/.test(mainJs), '主进程处理打开/关掉欢迎引导')
+  assert.ok(/writeSettings\(\{ onboarded: true \}\)/.test(mainJs), '关掉时记下已经看过')
+  assert.ok(/store\.readSettings\(\)\.onboarded !== true/.test(mainJs), '只在那之前自动弹一次')
+  assert.ok(/DESKPET_NO_ONBOARD/.test(mainJs), '自动化测试可以关掉自动弹出')
+  assert.ok(/openOnboard: \(\) => ipcRenderer\.send\('onboard:open'\)/.test(preloadJs), 'preload 暴露 openOnboard')
+  assert.ok(/dismissOnboard: \(\) => ipcRenderer\.send\('onboard:dismiss'\)/.test(preloadJs), 'preload 暴露 dismissOnboard')
+  assert.ok(/id="onboardBtn"/.test(settingsHtml), '设置 → 其他 能再看一次')
+  assert.ok(/api\.openOnboard\(\)/.test(settingsJs), '设置里的按钮接到 openOnboard')
+  assert.ok(/role="dialog"/.test(html) && /aria-labelledby="obTitle"/.test(html), '引导卡是带名称的对话框')
+  assert.equal((html.match(/<li class="step">/g) || []).length, 3, '正好三步说明')
+  assert.ok(/autofocus/.test(html) && /Escape/.test(js), '键盘默认落在主按钮，Esc 也能关')
+  assert.ok(/prefers-reduced-motion/.test(css) && /:focus-visible/.test(css), '引导卡尊重减少动效 + 焦点可见')
+  assert.ok(!/min-width:\s*[3-9][0-9][0-9]px/.test(css), '不设死宽度，320px 下也能重排')
+  ok('欢迎引导：首启一次、可重看、键盘可关')
+}
+
 console.log('\n' + pass + ' checks passed')
 fs.rmSync(dir, { recursive: true, force: true })

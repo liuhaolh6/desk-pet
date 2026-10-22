@@ -45,7 +45,7 @@ function stripTags(html) {
 }
 
 // ------------------------------------------------------------------ shared
-for (const file of ['app/cutout.html', 'app/pet.html', 'app/settings.html', 'app/editor.html']) {
+for (const file of ['app/cutout.html', 'app/pet.html', 'app/settings.html', 'app/editor.html', 'app/onboard.html']) {
   const html = read(file)
   check(file + ' 声明 lang', /<html[^>]*\slang="[^"]+"/i.test(html))
 }
@@ -118,6 +118,20 @@ const cutoutHtml = read('app/cutout.html')
   check('桌宠菜单可被键盘聚焦并显示', /\.pet-wrap:focus-within\s+\.menu-btn/.test(petCss))
 }
 
+// ------------------------------------------------------------- onboard.html
+{
+  const html = read('app/onboard.html')
+  const css = read('app/onboard.css')
+  const js = read('app/onboard.js')
+  const card = (html.match(/<main[^>]*class="card"[^>]*>/i) || [''])[0]
+  check('引导卡是有名称的 dialog', attr(card, 'role') === 'dialog' && !!attr(card, 'aria-labelledby') && !!attr(card, 'aria-describedby'))
+  check('#doneBtn 默认获得焦点', /\bid="doneBtn"[^>]*\bautofocus\b/.test(html))
+  check('引导卡可用 Esc 关掉', js.includes("ev.key !== 'Escape'") && js.includes('dismissOnboard'))
+  check('引导卡按钮都有可访问名称', buttons(html).every((b) => !!stripTags(b) || !!attr(b, 'aria-label')))
+  check('onboard.css 有 :focus-visible', /:focus-visible/.test(css))
+  check('onboard.css 有 forced-colors', /@media\s*\(forced-colors:\s*active\)/.test(css))
+}
+
 // ------------------------------------------------------- contrast (1.4.3 AA)
 {
   const hexToRgb = (hex) => {
@@ -151,7 +165,7 @@ const cutoutHtml = read('app/cutout.html')
 }
 
 // ------------------------------------------------- reduced motion + targets
-for (const file of ['app/cutout.css', 'app/pet.css', 'app/settings.css', 'app/editor.css']) {
+for (const file of ['app/cutout.css', 'app/pet.css', 'app/settings.css', 'app/editor.css', 'app/onboard.css']) {
   const css = read(file)
   check(file + ' 支持 prefers-reduced-motion', /@media\s*\(prefers-reduced-motion:\s*reduce\)/.test(css))
 }

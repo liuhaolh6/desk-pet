@@ -220,6 +220,7 @@
       }).catch(() => setStatus('没收进来，再试一次？'))
     })
     $('editorBtn').addEventListener('click', () => api.openEditor())
+    $('onboardBtn').addEventListener('click', () => api.openOnboard())
 
     $('searchBtn').addEventListener('click', () => search($('city').value))
     $('city').addEventListener('keydown', (ev) => { if (ev.key === 'Enter') search($('city').value) })

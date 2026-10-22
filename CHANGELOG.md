@@ -9,6 +9,32 @@
 - 计划中的工作与现有不足的完整清单见 [`ROADMAP.md`](ROADMAP.md)（成熟度评分、P0–P3 方向、未来展望）；
   机制细节与踩坑记录见 [`HANDOFF.md`](HANDOFF.md)。
 
+## [0.6.5] - 2026-10-22
+
+第一次打开不再迷路：新数据目录首次启动时弹一张三步欢迎卡，看完就记住，不再出现。
+
+### 新增
+- **首次欢迎卡**（ROADMAP P0-1 / L14）：新数据目录第一次启动时在屏幕中央弹出一张三步引导卡——① 点我一下出气泡、
+  ② 去设置 → 天气选城市、③ 拖到顺手的位置 / 右上角小按钮。标题里的名字取自 `settings.name`，改过名字就对上了。
+- **只出现一次**：关闭时把 `onboarded: true` 写进 settings（`lib/store.js` 默认值里就有这个字段）；三条关闭路径
+  （「知道啦」、「先去选城市」、Esc）都会落盘，之后启动不再自动弹出。
+- **想再看一遍**：设置 → 其他 → 「再看一次欢迎引导」（`#onboardBtn` → `onboard:open`，`force=true` 无视标记）。
+- **调试入口**：`DESKPET_OPEN_ONBOARD=1` 启动即打开，方便截图与审计。
+
+### 无障碍
+- 卡片是真正的 `role="dialog" aria-modal="true"`：`aria-labelledby` 指标题、`aria-describedby` 指引导语，步骤序号
+  `aria-hidden`，装饰头像 `alt=""`。
+- 打开后焦点自动落在「知道啦」（`autofocus` + `focus({preventScroll:true})` 双保险）；Esc 关闭；
+  「先去选城市」先关卡片再开设置，避免新窗口被卡片盖住。
+- 卡片高度 580 起步（`Math.max(400, Math.min(580, workArea.height - 48))`）：默认字号下**没有滚动条**，
+  320px 宽也不横向溢出。
+
+### 验证
+- `node tools/smoke.js` **50 项**（新增「欢迎引导：首启一次、可重看、键盘可关」）、`node tools/check-a11y.js` **52 项**、
+  `tools/a11y-audit.js` **86/0**（新增 onboard 页 10 项）、`tools/a11y-keyboard.js` **6/6**。
+- CDP 实测 24 项全过：首启自动弹出、DOM/ARIA/焦点/对比度、重载无报错、点「知道啦」关闭并落盘 `onboarded: true`、
+  宠物 API 重开、Esc 关闭、设置「其他」面板按钮重开、重启后不再自动弹。
+
 ## [0.6.4] - 2026-10-22
 
 把 0.6.3 带回来的频闪修掉，同时保留 0.6.3 的手感改进。

@@ -2,11 +2,12 @@
 
 > 日期：2026-10-21 · 版本：`0.5.5`（未签名）
 > 工具：`tools/a11y-audit.js`（CDP）+ `tools/check-a11y.js`（静态回归）
-> 范围：`pet.html` / `cutout.html` / `settings.html`（7 个面板）/ `editor.html`（全部标签页）
+> 范围：`pet.html` / `cutout.html` / `settings.html`（7 个面板）/ `editor.html`（全部标签页）/ `onboard.html`（0.6.5 起）
 
 ## 1. 结论
 
 - 首次审计（同一工具，`0.5.5` 修复前）**40 项检查中 10 项失败**；补齐面板/标签页遍历后共 **76 项**，再修完目标尺寸与名称问题，最终 **82 项全部通过**（含键盘-only 流程 6 项）。
+- `0.6.5` 把首次欢迎卡（`onboard.html`）纳入审计，每个窗口 10 项，合计 **86 项 + 键盘流程 6 项 = 92 项，失败 0**。
 - 修的都是真问题，不是把断言放宽：
   1. **次要文字对比度不足**：`--muted` `#7d89a5` 对 `--surface-3` 只有 **3.12:1**、对白 3.5:1 → 改为 `#5d6a86`（对 `#eef2fa` 4.83:1、对白 5.42:1）；
   2. **气泡默认文字色**：`bubble-model.js` 的天气提示/更新时间默认 `#8890a8` 对白 3.18:1 → 改 `#5d6a86`（同一处也是真实气泡的颜色，不只是编辑器预览）；
@@ -16,12 +17,12 @@
   6. **编辑器 320px 回流（1.4.10）**：两栏网格横向溢出 639px → 窄屏改为单列堆叠；
   7. **桌宠菜单键盘不可达**：`☰` 只有 hover 才显示 → 增加 `.pet-wrap:focus-within .menu-btn`，键盘聚焦即显示（原先靠 `:focus-visible` 也能显示，但审计与视觉一致化）。
 
-## 2. 方法与检查项（82 项）
+## 2. 方法与检查项（92 项）
 
 先用 `--remote-debugging-port` 启动应用，然后跑两个工具（0.6.0 起拆开）：
 
 ```bash
-node tools/a11y-audit.js --port 9229      # 76 项：结构 / 对比度 / 尺寸 / 焦点 / 回流 / forced-colors / reduced-motion
+node tools/a11y-audit.js --port 9229      # 86 项：结构 / 对比度 / 尺寸 / 焦点 / 回流 / forced-colors / reduced-motion
 node tools/a11y-keyboard.js --port 9229   # 6 项：键盘-only 抠图流程（WCAG 2.1.1）
 ```
 
@@ -49,8 +50,9 @@ pet.html       10/10 PASS
 cutout.html    10/10 PASS
 settings.html  10/10 PASS + 7 个面板 ×3 项 PASS
 editor.html    10/10 PASS + 标签页 ×3 项 PASS
+onboard.html   10/10 PASS
 键盘-only 流程  6/6 PASS
-合计 **82 项（76 + 6），失败 0**
+合计 **92 项（86 + 6），失败 0**
 ```
 
 产物：`.tmp-verify/a11y-audit7.json`（开发版；打包版另跑一次，见 §5）。

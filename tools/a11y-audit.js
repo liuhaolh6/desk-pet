@@ -426,6 +426,9 @@ async function main() {
   try {
     pages.push(['editor.html', await connect(await openWindow(pet, 'openEditor', 'editor.html', opts.port)), null])
   } catch (err) { console.error('editor window:', err.message) }
+  try {
+    pages.push(['onboard.html', await connect(await openWindow(pet, 'openOnboard', 'onboard.html', opts.port)), null])
+  } catch (err) { console.error('onboard window:', err.message) }
 
   for (const [label, conn] of pages) {
     try {

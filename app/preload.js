@@ -57,6 +57,9 @@ contextBridge.exposeInMainWorld('deskPet', {
   hidePet: () => ipcRenderer.send('pet:hide'),
   openSettings: () => ipcRenderer.send('pet:open-settings'),
   openEditor: () => ipcRenderer.send('pet:open-editor'),
+  // First-run welcome card: reopen it on purpose, or close it for good.
+  openOnboard: () => ipcRenderer.send('onboard:open'),
+  dismissOnboard: () => ipcRenderer.send('onboard:dismiss'),
   drinkDone: () => ipcRenderer.send('pet:water-done'),
   openDataDir: () => ipcRenderer.invoke('app:open-data-dir'),
   quit: () => ipcRenderer.send('app:quit'),
