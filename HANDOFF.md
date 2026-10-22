@@ -14,7 +14,7 @@
 | 本地目录 | `D:\project\deskpet` |
 | 仓库 | `ssh://git@ssh.github.com:443/liuhaolh6/desk-pet.git`，分支 `main`，**当前是私有仓库** |
 | 版本 | `0.6.4`；tag 只推到 `v0.6.0`，`0.6.1`–`0.6.4` 仅在 `main` |
-| 最近提交 | `dde2e8e fix(0.6.4): 运行中不再改窗口大小，修掉点桌宠的频闪` |
+| 最近提交 | `047e8c0 docs(0.6.4): 重写交接文档，新增路线图与现状评估`（前一版 `dde2e8e` 修频闪） |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js` |
 | 自动化基线 | smoke **49 项** · check-a11y **44 项** · a11y-audit **76 项** · a11y-keyboard **6 项**，全部通过 |
