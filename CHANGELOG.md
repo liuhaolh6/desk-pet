@@ -4,6 +4,11 @@
 
 格式说明：`新增` / `修复` / `文档` / `打包`。每一条都对应仓库里的提交与 `*-NOTES.md` 记录。
 
+## [Unreleased]
+
+- 计划中的工作与现有不足的完整清单见 [`ROADMAP.md`](ROADMAP.md)（成熟度评分、P0–P3 方向、未来展望）；
+  机制细节与踩坑记录见 [`HANDOFF.md`](HANDOFF.md)。
+
 ## [0.6.4] - 2026-10-22
 
 把 0.6.3 带回来的频闪修掉，同时保留 0.6.3 的手感改进。
@@ -45,10 +50,6 @@
 - 真实鼠标点击气泡 → 气泡收起、窗口从 444 缩回 220；CDP 复核 `--bubble-room` 归零。
 - `node tools/smoke.js` **49 项**（新增"天气未加载占位""空行剪枝"断言）、`node tools/check-a11y.js` 通过、
   `tools/a11y-audit.js` **76/0**、`tools/a11y-keyboard.js` **6/6**。
-
-## [Unreleased]
-
-- 计划中的工作见 [`PLAN.md`](PLAN.md) 与 [`M12-PLAN.md`](M12-PLAN.md)：NVDA/真实高对比度实测、10 张 golden set、代码签名。
 
 ## [0.6.2] - 2026-10-22
 
@@ -239,7 +240,8 @@
 - 首个可运行版本：无边框透明置顶窗口、自定义角色、点击看天气、喝水提醒、托盘菜单、设置窗口、即时保存。
 - 本地运行，不上传数据；天气来自 Open-Meteo。
 
-[Unreleased]: https://github.com/liuhaolh6/desk-pet/compare/v0.5.8...HEAD
+<!-- 0.6.1–0.6.4 尚未打 tag，链接统一指向 v0.6.0 之后的比较。 -->
+[Unreleased]: https://github.com/liuhaolh6/desk-pet/compare/v0.6.0...HEAD
 [0.5.8]: https://github.com/liuhaolh6/desk-pet/compare/v0.5.7...v0.5.8
 [0.5.7]: https://github.com/liuhaolh6/desk-pet/compare/v0.5.6...v0.5.7
 [0.5.6]: https://github.com/liuhaolh6/desk-pet/compare/v0.5.5...v0.5.6
