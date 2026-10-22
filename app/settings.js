@@ -475,7 +475,7 @@
       const tray = info.tray || {}
       const key = info.shortcut || {}
       trayEl.textContent = tray.ok
-        ? '托盘没问题：右键有设置和退出，单击能显示或隐藏。'
+        ? '托盘图标已经交给系统了：右键有设置和退出，单击能显示或隐藏。要是右下角没看到它，那是被折叠了，用 Ctrl+Alt+P 或鼠标悬停照样能叫出来。'
         : '托盘这次没显示出来' + (tray.reason ? '（' + tray.reason + '）' : '') + '：把鼠标放到桌宠身上就会浮出菜单，设置和退出都在里面。'
       keyEl.textContent = key.ok
         ? 'Ctrl+Alt+P 可以用：按一下显示桌宠，再按一下收起来。'

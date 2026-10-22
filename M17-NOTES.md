@@ -130,9 +130,48 @@
 4. **`registered` 要复读 OS**：`register()` 的返回值不等于系统当下状态，诊断里用 `globalShortcut.isRegistered()`。
 5. **导出脱敏要拿真坐标验**：默认 `lat/lon` 是 `null`，只测默认值等于没测；临时写 31.2304/121.4737 才验出 `[已脱敏]`。
 
-## 8. 还没做
+## 8. 收尾（同日补做）：托盘点、真按键、重新打包
 
-- `Ctrl+Alt+P` 只验到「已注册 + `isRegistered` 为真」，没有真人按键（CDP 无法合成全局热键）；
-  想彻底验可在真机上按一次，看窗口显隐。
-- 托盘图标在本机通知区仍不显示（L8 根因未定），0.6.6 只做了兜底与状态透明化。
-- 打包：`dist/` 仍是 0.6.4 的 portable，0.6.6 重打包后要跑一遍 `a11y-audit` 并更新产物哈希。
+### 8.1 托盘根因：查到「不是我们能修的」这一步
+- **结论**：本机（Win11 26200.9711）上 **Electron 39.8.5 与 44.9 的 `Tray` 都不进通知区**；同机
+  **WinForms `NotifyIcon`** 与应用自带的 **DSH（Electron 打包版）** 托盘都正常 → 判定为 Electron 托盘实现
+  与该 Windows 版本通知区之间的兼容问题，应用侧无解。
+- **排除过程**（都可复现）：
+  1. dev 实例（44.9）→ `tray.getBounds()` 全 0、UIA 通知区里没有 → 打包版 0.6.4（44.9）同样没有；
+  2. 最小 Electron 探针：`electron@39.8.5` 与 44.9 都是 `bounds={"x":0,"y":0,"width":0,"height":0}`，
+     PNG 与 ICO（直接借 DSH 的 `tray.ico`）都试过；
+  3. 用 WMI `Win32_Process.Create` 让应用**脱离 DSH 进程树**启动（父进程变 WmiPrvSE）→ 仍然没有；
+  4. 重启 `explorer.exe` 重建通知区 → 仍然没有；
+  5. 对照：PowerShell + WinForms `NotifyIcon`（`SystemIcons.Application`、ASCII tooltip）→ **出现**；
+     DSH 自己的托盘 → **在**。
+- **正确检测法**（别用 `getBounds()`，折叠时也是 0）：UIA 找 `Shell_TrayWnd` → 「显示隐藏的图标」按钮 →
+  `InvokePattern` → `EnumWindows` 找类名含 `Overflow` → 遍历子 `Button.Name`（`.tmp/check-overflow.ps1`）。
+- 相关背景：super-productivity#8470 记录过「未签名 + 固定 exe 路径的 GUID → `NIM_ADD` 静默失败」；
+  本项目**没传 GUID**，已排除这类 GUID 缓存问题。
+
+### 8.2 `Ctrl+Alt+P` 真人按键（已验）
+`keybd_event` 发系统级 Ctrl+Alt+P（不是 CDP 页面注入），配合 UIA 读桌宠窗口 `IsWindowVisible`：
+
+| 轮次 | dev 实例（44.9，`:9223`） | 打包版（0.6.6，`:9226`） |
+|---|---|---|
+| 初始 | `桌宠 vis=True` | `桌宠 vis=True` |
+| 按一次 | `vis=False` | `vis=False` |
+| 再按一次 | `vis=True` | `vis=True` |
+
+同时 `getAppStatus().shortcut = {ok:true, registered:true, accelerator:"Ctrl+Alt+P"}`。
+
+### 8.3 重新打包（0.6.6）
+- `npx electron-builder --win portable`（Electron 44.9.0 / x64）→
+  `dist/DeskPet-0.6.6-portable.exe` **153,672,929 B**，`dist/win-unpacked/DeskPet.exe` 文件版本 `0.6.6`。
+- 冷启动 `dist\win-unpacked\DeskPet.exe`（WMI 分离启动）→ CDP `:9226` 可连、`getAppStatus()` 版本 0.6.6、
+  首次引导卡出现（新数据目录 `.tmp/e-pkg-data`）。
+- **portable 包装器**在本机只停在解压阶段、没拉起子进程（与 HANDOFF §6.2 #8「未签名 + `%TEMP%` + 安全软件」
+  一致），因此打包验证走 `win-unpacked`；portable 产物本身生成正常。
+- 设置页托盘成功文案改成如实描述（不再说「托盘没问题」），`npm run check` / `npm test`（52 项）/
+  `node tools/check-a11y.js`（57 项）全绿。
+
+## 9. 还没做
+
+- 真机上的**屏幕阅读器**（NVDA/讲述人）与高对比度主题仍未验证，只有自动化审计（86 项 + 键盘 6 项）。
+- portable 包在本机被安全软件拦住，**没在干净机器上验过**；上架/签名仍未做。
+- 托盘问题只能等 Electron 上游或 Windows 修；应用侧只剩兜底（`Ctrl+Alt+P`、悬浮菜单、设置页状态）。
