@@ -13,8 +13,8 @@
 | 是什么 | Windows x64 桌面宠物（Electron 44 + 离线 ONNX 人像抠图），悬浮在桌面上，点击看天气 / 喝水 / 温馨话 |
 | 本地目录 | `D:\project\deskpet` |
 | 仓库 | `ssh://git@ssh.github.com:443/liuhaolh6/desk-pet.git`，分支 `main`，**当前是私有仓库** |
-| 版本 | `0.6.6`（代码与文档已改好，**尚未重新打包**）；tag 只推到 `v0.6.0`，`0.6.1`–`0.6.6` 仅在 `main` |
-| 最近提交 | `1e1c9b2` = 0.6.6 长文案/托盘兜底/手册/诊断导出；再往前 `adbe033` 0.6.5 首次引导、`63ae453 docs(0.6.4)`、`047e8c0` 重写交接文档 |
+| 版本 | `0.6.6`，**已出包** `dist\DeskPet-0.6.6-portable.exe`（153.7 MB，未签名）与 `dist\win-unpacked\`；tag 只推到 `v0.6.0`，`0.6.1`–`0.6.6` 仅在 `main` |
+| 最近提交 | `3059f5a` = 0.6.6 重新打包 + 托盘收口 + 真按键验证；`5be8c4d` = 0.6.6 长文案/托盘兜底/手册/诊断导出；再往前 `adbe033` 0.6.5 首次引导、`63ae453 docs(0.6.4)` |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js` |
 | 自动化基线 | smoke **52 项** · check-a11y **57 项** · a11y-audit **86 项** · a11y-keyboard **6 项**，全部通过 |
@@ -54,7 +54,7 @@
 | 角色 | 内置照片形象、导入 PNG、多角色切换/删除 | ✅ | 角色图走 `pet-role://` 协议 |
 | 角色 | 照片抠图（离线 U2Net 44MB，蒙版/擦除/旋转/翻转/回退） | ⚠️ | CPU 推理 0.9–1.3s；复杂背景/发丝仍可能残留 |
 | 设置 | 7 个分类面板、即时保存、角色图库、音效库 | ✅ | 无"恢复默认/撤销" |
-| 系统集成 | 托盘菜单、开机自启、单实例 | ⚠️ | 本机 Win11 26200 通知区不显示托盘图标（未定因） |
+| 系统集成 | 托盘菜单、开机自启、单实例 | ⚠️ | 本机 Win11 26200 通知区不显示托盘图标：Electron **39.8.5 与 44.9 都复现**，同机 WinForms `NotifyIcon` 与应用自带的 DSH 托盘正常 → 判定为 Electron 与该系统通知区的兼容问题（§6.1 5.10）；已用 `Ctrl+Alt+P` + 悬浮菜单兜底 |
 | 打包 | portable exe、图标/版本信息、便携数据目录 | ✅ | 未签名；无安装器、无自动更新 |
 | 无障碍 | 4 窗口 + 7 面板 + 编辑器全标签页的自动化审计 | ✅ | 屏幕阅读器与真实高对比度主题**未验证** |
 
@@ -209,6 +209,22 @@ Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
    （`overflowAmount()`），两端都算。
 5.5 **一键截断别按 10% 慢慢剪**：每轮只剪最长的一行，1200 字要 ~80 轮才收敛，循环护栏先耗尽、还差 35px。
    按 `over.h / clientHeight` 估算超出比例、**一次把所有模块按比例缩短**（`keepRatio`），2–3 轮就收敛。
+5.6 **判断托盘图标在不在，别信 `tray.getBounds()`**：图标被折叠时它返回全 0，健康机器上也会这样。
+   可靠做法是读 UI Automation：`Shell_TrayWnd` → 名为"显示隐藏的图标"的按钮 → `InvokePattern` 展开 →
+   `EnumWindows` 找类名含 `Overflow` 的窗口 → 遍历子 `Button` 的 `Name`（见 `.tmp/check-overflow.ps1`）。
+5.7 **全局快捷键要测就测系统级**：CDP 注入的键盘事件走页面、走不到 `globalShortcut`；用 `keybd_event`
+   发 Ctrl+Alt+P，再用 UIA/`IsWindowVisible` 看桌宠窗口 `vis=True→False→True`，才算真验过（0.6.6 已验）。
+5.8 **node 里 `fetch('http://127.0.0.1:…')` 会被代理劫持**：环境里有 `HTTP_PROXY` 时 CDP 脚本一句不打印、
+   直接挂死。跑 CDP 前设 `NO_PROXY=127.0.0.1,localhost`（0.6.6 卡了 40 秒才发现）。
+5.9 **分离启动只有 WMI 这条路在本机可用**：
+   `Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine='cmd.exe /c xxx.cmd'}`
+   返回 `ReturnValue=0` 才算启动；`cmd /c start ""` 和 `Start-Process explorer.exe <cmd>`
+   在本机都是**静默不启动**（进程数 0、日志不增）。
+5.10 **Win11 26200 的托盘问题结案（0.6.6）**：本机 Electron 39.8.5 与 44.9 **都不进通知区**（dev、打包、
+   用 WMI 脱离 DSH 进程树启动都一样；PNG 与 ICO 图标都试过；重启 explorer 无效），而同机
+   WinForms `NotifyIcon` 与应用自带的 DSH（Electron 打包版）托盘都正常 → 判定为 Electron 托盘实现
+   与该 Windows 版本通知区之间的兼容问题，应用侧无解，只能兜底：`Ctrl+Alt+P` + 桌宠悬浮菜单 +
+   设置页如实说明（0.6.6 起文案不再说"托盘没问题"）。
 
 ### 6.2 打包与分发
 6. **32 位 NSIS 打大包会崩**（`Internal compiler error #12345`）：用 64 位 `makensis` +

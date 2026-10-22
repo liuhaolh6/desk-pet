@@ -17,6 +17,9 @@ Thumbs.db
 .m11-*/
 .m12-*/
 .dev-onboard/
+.dev-tray/
+.dev-packaged/
+.dev-pkg/
 signed/
 app.log
 pet-capture.png
