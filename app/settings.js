@@ -243,6 +243,23 @@
 
     $('resetPosBtn').addEventListener('click', () => { save({ position: null }, true); setStatus('回到右下角啦') })
     $('openDirBtn').addEventListener('click', () => api.openDataDir())
+    // P0-5: one click writes a redacted diagnostics txt next to the settings.
+    $('diagBtn').addEventListener('click', async () => {
+      const btn = $('diagBtn')
+      const hint = $('diagStatus')
+      btn.disabled = true
+      hint.textContent = '正在收集…'
+      try {
+        const result = await api.exportDiagnostics()
+        hint.textContent = '写好啦：' + result.path + '（已打开文件夹）'
+        setStatus('诊断信息已导出')
+      } catch (err) {
+        hint.textContent = '导出失败：' + ((err && err.message) || String(err))
+        setStatus('没导出成')
+      } finally {
+        btn.disabled = false
+      }
+    })
     $('quitBtn').addEventListener('click', () => api.quit())
   }
 
@@ -448,6 +465,27 @@
     )
   }
 
+  // P0-3: the tray icon is not guaranteed to be visible in every Windows shell,
+  // so the page states plainly which fallbacks work instead of pretending.
+  async function renderAppStatus() {
+    const trayEl = $('trayStatus')
+    const keyEl = $('shortcutStatus')
+    try {
+      const info = await api.getAppStatus()
+      const tray = info.tray || {}
+      const key = info.shortcut || {}
+      trayEl.textContent = tray.ok
+        ? '托盘没问题：右键有设置和退出，单击能显示或隐藏。'
+        : '托盘这次没显示出来' + (tray.reason ? '（' + tray.reason + '）' : '') + '：把鼠标放到桌宠身上就会浮出菜单，设置和退出都在里面。'
+      keyEl.textContent = key.ok
+        ? 'Ctrl+Alt+P 可以用：按一下显示桌宠，再按一下收起来。'
+        : 'Ctrl+Alt+P 没注册上' + (key.reason ? '（' + key.reason + '）' : '') + '：把鼠标放到桌宠上仍然能叫出菜单。'
+    } catch (err) {
+      trayEl.textContent = '没读到托盘状态，不过把鼠标放到桌宠身上仍然能打开设置和退出。'
+      keyEl.textContent = '没读到快捷键状态。'
+    }
+  }
+
   async function boot() {
     wireNav()
     wire()
@@ -459,6 +497,7 @@
       $('dataDir').textContent = state0.dataDir || ''
       $('dataDir').title = state0.dataDir || ''
       fill(state0.settings)
+      renderAppStatus()
     } catch (err) {
       setStatus('没读到设置，稍后再试')
     }

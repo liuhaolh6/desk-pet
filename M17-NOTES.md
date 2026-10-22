@@ -77,3 +77,62 @@
   `a11y-audit --port <打包版端口>`（历史上窗口多一个，项数为 86 不变）并更新 HANDOFF §0 的产物哈希。
 - 引导卡暂不随语言/主题切换（本项目只有中文一套）。
 - 未在 200% 缩放下手测（已知基线缺口，同 `A11Y-AUDIT.md` §6）。
+---
+
+# M17 第二批 · P0-2〜P0-5（0.6.6，同一天）
+
+> 目标：ROADMAP P0 剩下的四项——长文案下限（L10）、托盘兜底（L8）、用户手册（L6）、诊断导出（L13）。
+> 结论：四项全部完成并实测；M17 的 P0 清单清空。
+
+## 5. 做了什么
+
+| 文件 | 改动 |
+|---|---|
+| `app/pet.js`（819 行） | `FIT_FLOOR = 0.6`；`fitBubbleText()` 循环后统一落地 `--bubble-fit` 再 `clampBubbleText()`；新增 `overflowAmount()`（量渲染矩形）与 `clampBubbleText()`（按 `keepRatio` 整体截断，`data-full` 还原、`title`/`aria-label` 留全文） |
+| `app/pet.css` | 注释写清 60% 下限与手动截断；文字层不加 `overflow:hidden`（截断由脚本做，省略号落在词边界） |
+| `app/main.js`（1451 行） | `globalShortcut` 引入；`togglePet()` 统一托盘/快捷键；`createTray()` try/catch + `trayStatus`；`registerGlobalShortcut()` + `shortcutReport()`；`app:status`；`before-quit` 注销；`sanitizedSettings()` / `tailLines()` / `buildDiagnostics()` / `exportDiagnostics()` + `app:diagnostics` |
+| `app/preload.js` | 只加 `getAppStatus()`、`exportDiagnostics()` |
+| `app/settings.html` / `.js` | 「托盘和快捷键」两行状态（`#trayStatus`/`#shortcutStatus`）+「遇到问题」导出按钮（`#diagBtn`/`#diagStatus`）；`renderAppStatus()`；导出时按钮禁用、结果写回说明行 |
+| `docs/USER-GUIDE.md`（新，123 行） | 三分钟上手 + 9 条 FAQ（托盘找不到 / 天气 / 气泡字太小 / 喝水 / 换照片 / 数据与备份 / 自启穿透大小 / 反馈 / 卸载）+ 键盘无障碍 + 隐私 |
+| `README.md` | 首屏「第一次用？先看用户手册」入口；特性表加「快捷键兜底」「诊断导出」两条 |
+| `tools/smoke.js`（880 行） | +8 条：溢出用矩形实测、`keepRatio` 比例收缩、托盘失败不崩、`app:status`、设置页两行、导出脱敏与日志尾巴（52 项） |
+| `tools/check-a11y.js` | +5 条：托盘/导出行是纯文本、不 `aria-hidden`、走 `textContent`、按钮有名称、结果行不进 `aria-live`（57 项） |
+
+## 6. 验收实测（CDP，`:9222`）
+
+`tools/smoke.js` 52 / `tools/check-a11y.js` 57 / 静态语法 `npm run check` 全绿。
+
+气泡（`.tmp/cdp-bubble-text.js`，12/12）：
+
+| 场景 | 结果 |
+|---|---|
+| 120 字单模块（ROADMAP 验收） | 字号 **16.02px**、`--bubble-fit: 1.000`、溢出 `0×0` |
+| 6 行 × 200 字（压爆） | 字号停在下限 **9.61px（0.600）**，按比例截到 21 字/模块，溢出 `0×0` |
+| 截断语义 | 每个被截模块尾部 `…`，`title` 与 `aria-label` 仍是 200 字全文 |
+| 短句 | 不截断、16.02px |
+| 反复重渲染 | 省略号个数 0 增长（先 `data-full` 还原） |
+
+托盘 / 快捷键 / 诊断（`.tmp/cdp-p0-verify.js`，16/16）：
+
+| 检查 | 结果 |
+|---|---|
+| `getAppStatus()` | `tray{ok:true}`、`shortcut{ok:true, registered:true}`、Electron 44.9.0 |
+| 设置页文案 | 「托盘没问题：右键有设置和退出…」「Ctrl+Alt+P 可以用…」 |
+| 导出 | 点按钮 → `diagnostics-20261022-154935.txt`，15,099 字节 |
+| 脱敏 | 用假坐标重测：`lat/lon/city/label` 全部 `[已脱敏]`，全文不含「上海」、不含数字坐标 |
+| 内容 | 版本段、托盘/快捷键段（含 `registered`）、app.log 末尾 200 行（317 行文件）、设置段不带图片路径 |
+
+## 7. 这次踩到的坑（已写进 HANDOFF §6.1 5.3–5.5）
+
+1. **先查模型上限再测**：`bubble-model.js` 把单模块截到 200 字，我用 500 字单模块测了半小时「为什么不截断」。
+2. **溢出不能只测 `scrollHeight`**：居中安全区两端溢出，改量矩形（`overflowAmount()`）。
+3. **截断不能每轮剪 10%**：1200 字要 ~80 轮，护栏先耗尽、还差 35px；改按 `over.h/clientHeight` 一次性按比例缩。
+4. **`registered` 要复读 OS**：`register()` 的返回值不等于系统当下状态，诊断里用 `globalShortcut.isRegistered()`。
+5. **导出脱敏要拿真坐标验**：默认 `lat/lon` 是 `null`，只测默认值等于没测；临时写 31.2304/121.4737 才验出 `[已脱敏]`。
+
+## 8. 还没做
+
+- `Ctrl+Alt+P` 只验到「已注册 + `isRegistered` 为真」，没有真人按键（CDP 无法合成全局热键）；
+  想彻底验可在真机上按一次，看窗口显隐。
+- 托盘图标在本机通知区仍不显示（L8 根因未定），0.6.6 只做了兜底与状态透明化。
+- 打包：`dist/` 仍是 0.6.4 的 portable，0.6.6 重打包后要跑一遍 `a11y-audit` 并更新产物哈希。

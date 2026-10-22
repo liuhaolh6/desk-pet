@@ -12,7 +12,7 @@ const os = require('node:os')
 const fs = require('node:fs')
 const {
   app, BrowserWindow, Tray, Menu, ipcMain, screen, dialog,
-  nativeImage, Notification, protocol, shell, utilityProcess,
+  nativeImage, Notification, protocol, shell, utilityProcess, globalShortcut,
 } = require('electron')
 
 const { createStore } = require('../lib/store')
@@ -71,6 +71,11 @@ let editorWin = null
 let cutoutWin = null
 let onboardWin = null
 let tray = null
+// P0-3: the tray is known to be invisible on some machines, so the app records
+// what actually happened and the settings page tells the user which doors are
+// still open (pet hover menu + the Ctrl+Alt+P global shortcut).
+let trayStatus = { ok: false, reason: '还没创建' }
+let shortcutStatus = { ok: false, accelerator: 'Ctrl+Alt+P', reason: '还没注册' }
 let extraBubbleHeight = 0
 // Where the reserved bubble space sits relative to the pet. `above` grows the
 // window upward; `below` grows it downward (used when the pet is too close to
@@ -644,16 +649,30 @@ function startReminders() {
 }
 
 // ----------------------------------------------------------------------- tray
+/** Show/hide the pet. Shared by the tray entry, its left click and the shortcut. */
+function togglePet() {
+  if (!petWin) return createPetWindow()
+  if (petWin.isVisible()) petWin.hide()
+  else { petWin.show(); petWin.focus() }
+}
+
 function createTray() {
   let iconPath = path.join(ASSETS, 'tray.png')
   if (!fs.existsSync(iconPath)) iconPath = path.join(ASSETS, 'icon.png')
   let image = nativeImage.createFromPath(iconPath)
   if (image.isEmpty()) image = nativeImage.createEmpty()
-  tray = new Tray(image)
+  try {
+    tray = new Tray(image)
+  } catch (err) {
+    tray = null
+    trayStatus = { ok: false, reason: '托盘没能创建出来：' + ((err && err.message) || String(err)) }
+    log('tray create failed', (err && err.stack) || String(err))
+    return
+  }
   const s = store.readSettings()
   tray.setToolTip(s.name + ' · 桌宠')
   const menu = Menu.buildFromTemplate([
-    { label: '显示 / 隐藏', click: () => { if (!petWin) createPetWindow(); else if (petWin.isVisible()) petWin.hide(); else petWin.show() } },
+    { label: '显示 / 隐藏', click: togglePet },
     { label: '设置…', click: openSettings },
     { label: '布置气泡…', click: openEditor },
     { label: '看看天气', click: () => refreshWeather('tray') },
@@ -661,9 +680,37 @@ function createTray() {
     { label: '先退出啦', click: () => { quitting = true; app.quit() } },
   ])
   tray.setContextMenu(menu)
-  tray.on('click', () => { if (!petWin) createPetWindow(); else if (petWin.isVisible()) petWin.hide(); else petWin.show() })
+  tray.on('click', togglePet)
+  trayStatus = image.isEmpty()
+    ? { ok: false, reason: '托盘图标是空的，系统那边可能看不到它' }
+    : { ok: true, reason: '' }
   log('tray created empty=' + image.isEmpty() + ' icon=' + iconPath + ' menu=' + menu.items.map((i) => i.label || i.type).join('|'))
   try { log('tray bounds=' + JSON.stringify(tray.getBounds())) } catch (err) { log('tray bounds unavailable', String(err)) }
+}
+
+/**
+ * P0-3: Ctrl+Alt+P as the guaranteed way back to the pet when the tray icon is
+ * invisible. Registration can fail when another app owns the chord, so the
+ * outcome is remembered and surfaced in 设置 → 其他.
+ */
+function registerGlobalShortcut() {
+  const accelerator = 'CommandOrControl+Alt+P'
+  try {
+    const ok = globalShortcut.register(accelerator, togglePet)
+    shortcutStatus = ok
+      ? { ok: true, accelerator: 'Ctrl+Alt+P', reason: '' }
+      : { ok: false, accelerator: 'Ctrl+Alt+P', reason: '这个组合被别的程序占用了' }
+  } catch (err) {
+    shortcutStatus = { ok: false, accelerator: 'Ctrl+Alt+P', reason: (err && err.message) || String(err) }
+  }
+  log('shortcut ' + accelerator + ' ok=' + shortcutStatus.ok + (shortcutStatus.reason ? ' reason=' + shortcutStatus.reason : ''))
+}
+
+/** Shortcut state with the OS re-read, shared by 设置页 and 诊断导出. */
+function shortcutReport() {
+  let registered = false
+  try { registered = globalShortcut.isRegistered('CommandOrControl+Alt+P') } catch (err) { registered = false }
+  return Object.assign({}, shortcutStatus, { registered })
 }
 
 // ---------------------------------------------------------------------- menu
@@ -888,6 +935,98 @@ function soundList() {
   }))
 }
 
+// ---------------------------------------------------------------- diagnostics
+// P0-5: one click produces a txt that a human can attach to a bug report. It
+// must never carry the user's photo, the custom phrases or the city coordinates.
+const REDACTED = '[已脱敏]'
+
+function sanitizedSettings() {
+  const s = JSON.parse(JSON.stringify(store.readSettings()))
+  if (s.weather) {
+    if (s.weather.lat != null) s.weather.lat = REDACTED
+    if (s.weather.lon != null) s.weather.lon = REDACTED
+    if (s.weather.city) s.weather.city = REDACTED
+    if (s.weather.label) s.weather.label = REDACTED
+  }
+  if (s.bubble && typeof s.bubble === 'object') {
+    delete s.bubble.phrases
+    const layout = s.bubble.layout
+    delete s.bubble.layout
+    if (layout && Array.isArray(layout.cards)) s.bubble.layoutCards = layout.cards.length
+  }
+  if (s.roleId && s.roleId !== 'default') s.roleId = 'custom'
+  return s
+}
+
+function tailLines(file, maxLines, maxBytes) {
+  if (!file) return '（还没有日志文件）'
+  try {
+    const buf = fs.readFileSync(file)
+    const slice = buf.length > maxBytes ? buf.subarray(buf.length - maxBytes) : buf
+    const lines = slice.toString('utf8').split(/\r?\n/)
+    if (buf.length > maxBytes && lines.length > 1) lines[0] = '…（更早的内容已省略）'
+    return lines.slice(-maxLines).join('\n')
+  } catch (err) {
+    return '（读不到：' + ((err && err.message) || String(err)) + '）'
+  }
+}
+
+function buildDiagnostics() {
+  let displays = []
+  try {
+    const primary = screen.getPrimaryDisplay()
+    displays = screen.getAllDisplays().map((d) => ({
+      primary: d.id === primary.id,
+      scaleFactor: d.scaleFactor,
+      workArea: d.workArea,
+      bounds: d.bounds,
+    }))
+  } catch (err) {}
+  const weatherLine = weather
+    ? JSON.stringify({ ok: weather.ok, temp: weather.temp, code: weather.code, updatedAt: weather.updatedAt })
+    : '（还没取过天气）'
+  return [
+    '# 桌宠诊断信息',
+    '生成时间：' + new Date().toISOString(),
+    '',
+    '## 应用',
+    '版本：' + VERSION,
+    'Electron：' + process.versions.electron + ' / Chromium ' + process.versions.chrome + ' / Node ' + process.versions.node,
+    '系统：' + process.platform + ' ' + process.arch + ' ' + os.release(),
+    '数据目录：' + store.dir,
+    '日志文件：' + (LOG_FILE || '（还没定下来）'),
+    '',
+    '## 托盘与快捷键',
+    JSON.stringify({ tray: trayStatus, shortcut: shortcutReport() }, null, 2),
+    '',
+    '## 屏幕',
+    JSON.stringify(displays, null, 2),
+    '',
+    '## 天气缓存（不含坐标）',
+    weatherLine,
+    '',
+    '## 设置（坐标与自定义短语已脱敏）',
+    JSON.stringify(sanitizedSettings(), null, 2),
+    '',
+    '## app.log 末尾 200 行',
+    tailLines(LOG_FILE, 200, 256 * 1024),
+    '',
+    '## cutout-trace.jsonl 末尾 60 行',
+    tailLines(path.join(store.dir, 'cutout-trace.jsonl'), 60, 128 * 1024),
+    '',
+  ].join('\n')
+}
+
+function exportDiagnostics() {
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..+$/, '').replace('T', '-')
+  const file = path.join(store.dir, 'diagnostics-' + stamp + '.txt')
+  const text = buildDiagnostics()
+  fs.writeFileSync(file, text, 'utf8')
+  try { shell.showItemInFolder(file) } catch (err) {}
+  log('diagnostics exported ' + file + ' chars=' + text.length)
+  return { ok: true, path: file, bytes: Buffer.byteLength(text) }
+}
+
 function registerIpc() {
   ipcMain.handle('state:get', () => ({
     settings: store.readSettings(),
@@ -895,6 +1034,17 @@ function registerIpc() {
     weather,
     version: VERSION,
     dataDir: store.dir,
+  }))
+
+  ipcMain.handle('app:status', () => ({
+    version: VERSION,
+    electron: process.versions.electron,
+    platform: process.platform,
+    dataDir: store.dir,
+    tray: trayStatus,
+    // `isRegistered` re-reads the OS state instead of trusting the register()
+    // return value, which is what a bug report should record.
+    shortcut: shortcutReport(),
   }))
 
   ipcMain.handle('settings:set', (ev, patch) => {
@@ -1204,6 +1354,7 @@ function registerIpc() {
 
   ipcMain.on('app:quit', () => { quitting = true; app.quit() })
   ipcMain.handle('app:open-data-dir', () => shell.openPath(store.dir))
+  ipcMain.handle('app:diagnostics', () => exportDiagnostics())
 }
 
 // ---------------------------------------------------------------------- boot
@@ -1276,7 +1427,8 @@ if (!hasLock) {
     log('store=' + store.dir)
     createPetWindow()
     createTray()
-    log('windows created pet=' + (petWin ? 'yes' : 'no') + ' tray=' + (tray ? 'yes' : 'no'))
+    registerGlobalShortcut()
+    log('windows created pet=' + (petWin ? 'yes' : 'no') + ' tray=' + (tray ? 'yes' : 'no') + ' shortcut=' + shortcutStatus.ok)
     refreshWeather('boot')
     scheduleWeather()
     startReminders()
@@ -1294,6 +1446,6 @@ if (!hasLock) {
     screen.on('display-metrics-changed', ensureOnScreen)
   }).catch((err) => log('whenReady failed', (err && err.stack) || String(err)))
 
-  app.on('before-quit', () => { quitting = true; stopCutoutWorker() })
+  app.on('before-quit', () => { quitting = true; stopCutoutWorker(); try { globalShortcut.unregisterAll() } catch (err) {} })
   app.on('window-all-closed', () => { /* keep running in the tray */ })
 }

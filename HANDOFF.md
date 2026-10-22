@@ -1,6 +1,6 @@
 # 交接文档（HANDOFF）
 
-> 版本 `0.6.4` · 最后更新 2026-10-22 · 给下一个接手的人（或下一个对话的我）。
+> 版本 `0.6.6` · 最后更新 2026-10-22 · 给下一个接手的人（或下一个对话的我）。
 > 目标：读完这一份就能**安全地改代码、跑验证、出包**，不必重新摸索。
 > 想先知道"这东西现在还差在哪、下一步做什么"，看 [`ROADMAP.md`](ROADMAP.md)。
 
@@ -13,11 +13,11 @@
 | 是什么 | Windows x64 桌面宠物（Electron 44 + 离线 ONNX 人像抠图），悬浮在桌面上，点击看天气 / 喝水 / 温馨话 |
 | 本地目录 | `D:\project\deskpet` |
 | 仓库 | `ssh://git@ssh.github.com:443/liuhaolh6/desk-pet.git`，分支 `main`，**当前是私有仓库** |
-| 版本 | `0.6.5`（代码与文档已改好，**尚未重新打包**）；tag 只推到 `v0.6.0`，`0.6.1`–`0.6.5` 仅在 `main` |
-| 最近提交 | `63ae453 docs(0.6.4)` 之后是本轮的 0.6.5 首次引导（`M17-NOTES.md`）；再往前 `047e8c0` 重写交接文档 |
+| 版本 | `0.6.6`（代码与文档已改好，**尚未重新打包**）；tag 只推到 `v0.6.0`，`0.6.1`–`0.6.6` 仅在 `main` |
+| 最近提交 | `1e1c9b2` = 0.6.6 长文案/托盘兜底/手册/诊断导出；再往前 `adbe033` 0.6.5 首次引导、`63ae453 docs(0.6.4)`、`047e8c0` 重写交接文档 |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js` |
-| 自动化基线 | smoke **50 项** · check-a11y **52 项** · a11y-audit **86 项** · a11y-keyboard **6 项**，全部通过 |
+| 自动化基线 | smoke **52 项** · check-a11y **57 项** · a11y-audit **86 项** · a11y-keyboard **6 项**，全部通过 |
 | 最新产物 | `dist/DeskPet-0.6.4-portable.exe`，153,754,785 字节，SHA-256 `22d173d4219b47e1e2df82de9c43f9a6777613668c0ec3e937ea09f9f206e82c`（0.6.5 还没打包，重打后再换这一行） |
 
 **能做什么**：换形象（照片抠图 / 导入 PNG）、点击看天气和喝水进度、按时提醒喝水、24 条内置温柔提示语、
@@ -83,10 +83,10 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 
 | 路径 | 行数 | 作用 |
 |---|---|---|
-| `app/main.js` | 1299 | 窗口/托盘/IPC/天气调度/提醒/命中轮询/日志；**最大的单体文件** |
-| `app/pet.js` | 753 | 桌宠渲染、气泡几何、命中区上报、手势仲裁、菜单 |
+| `app/main.js` | 1451 | 窗口/托盘/IPC/天气调度/提醒/命中轮询/日志/诊断导出；**最大的单体文件**（P1-1 要拆） |
+| `app/pet.js` | 819 | 桌宠渲染、气泡几何与 60% 字号下限 + 截断、命中区上报、手势仲裁、菜单 |
 | `app/pet.css` | 450 | 气泡 1026:700 框、动效、reduced-motion |
-| `app/settings.js` / `.html` / `.css` | 472 / 273 / 831 | 设置窗口，7 个 `data-panel` 分类 |
+| `app/settings.js` / `.html` / `.css` | 512 / 295 / 831 | 设置窗口，7 个 `data-panel` 分类；其他面板带托盘/快捷键状态与诊断导出 |
 | `app/cutout.js` / `.html` / `.css` | 621 / — / 353 | 抠图窗口：三态视图、擦除、旋转、保存 |
 | `app/editor.js` / `.html` / `.css` | 537 / — / 233 | 气泡布置编辑器 |
 | `app/onboard.js` / `.html` / `.css` | 57 / 52 / 183 | 首次欢迎卡（M17 P0-1）：三步说明 + 两个按钮，关闭即写 `onboarded` |
@@ -97,7 +97,8 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `lib/weather.js` | 141 | Open-Meteo 取数、城市搜索、`advice()` 提醒推导 |
 | `lib/placement.js` | 185 | 多显示器归属、吸附、启动还原（纯函数） |
 | `lib/cutout*.js` + `lib/png.js` | 359/320/438/161 | 离线抠图：入口、数学、像素管线、PNG 编解码 |
-| `tools/smoke.js` | 830 | `npm test`：存储/角色/天气/气泡/几何/文案/引导 50 项断言 |
+| `tools/smoke.js` | 880 | `npm test`：存储/角色/天气/气泡/几何/文案/引导/托盘/诊断 52 项断言 |
+| `docs/USER-GUIDE.md` | 123 | 用户手册：三分钟上手 + 9 条 FAQ（0.6.6 / ROADMAP P0-4） |
 
 ### 3.3 气泡几何契约（0.6.1 起，改之前先读 `M14-NOTES.md`）
 
@@ -166,8 +167,8 @@ token 表上限 3，窗口关闭即清空。
 | 工具 | 覆盖 | 命令 | 当前 |
 |---|---|---|---|
 | 语法 | 14 个 JS 文件 | `npm run check` | ✅ |
-| `tools/smoke.js` | 存储/角色/天气码/`advice`/气泡模型/几何不变量/文案/首次引导 | `npm test` | ✅ 50 项 |
-| `tools/check-a11y.js` | 静态无障碍断言（对比度数学、24px、reduced-motion、回流、aria、`lang`、引导卡） | `node tools/check-a11y.js` | ✅ 52 项 |
+| `tools/smoke.js` | 存储/角色/天气码/`advice`/气泡模型/几何不变量/文案/首次引导/托盘兜底/诊断导出 | `npm test` | ✅ 52 项 |
+| `tools/check-a11y.js` | 静态无障碍断言（对比度数学、24px、reduced-motion、回流、aria、`lang`、引导卡、托盘/诊断行） | `node tools/check-a11y.js` | ✅ 57 项 |
 | `tools/a11y-audit.js` | 真实 DOM 审计（AX 名称、对比度、目标尺寸、焦点、320px 回流、forced-colors、reduced-motion） | `--port <调试端口>` | ✅ 86 项 / 0 失败 |
 | `tools/a11y-keyboard.js` | 键盘-only 抠图全流程 | `node tools/a11y-keyboard.js` | ✅ 6 项 |
 | `tools/cutout-diag.js` | 合成图 alpha/背景/主体/边缘指标 | `npm run diag:fixtures` | ✅ |
@@ -200,6 +201,14 @@ Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
    必须在 `danger-full-access` 下启动（见 `M17-NOTES.md` §3）。
 5.2 **别用 `cmd /c start "" electron.exe …` 做“分离启动”**：启动器立即返回、应用日志一行不增，
    容易误判为启动失败；直接把 electron 放进 background job 台前台跑，日志才能跟着来。
+5.3 **测长气泡之前先看 `bubble-model.js` 的归一化上限**：单个模块被 `slice(0, 200)` 截断、每行最多 8 个模块、
+   每卡最多 6 行。0.6.6 排查“长文案为什么不截断”时，用 500 字单模块测了半天——实际只渲染了 200 字，
+   当然放得下。要压爆气泡必须 **6 行 × 200 字**。
+5.4 **溢出不能只测 `scrollHeight`**：安全区是 `justify-content:center`，超出的内容同时从上下两端溢出，
+   底部 scroll 指标有时读不出。0.6.6 改成量 `.bubble-content` 与首个子元素的 `getBoundingClientRect()`
+   （`overflowAmount()`），两端都算。
+5.5 **一键截断别按 10% 慢慢剪**：每轮只剪最长的一行，1200 字要 ~80 轮才收敛，循环护栏先耗尽、还差 35px。
+   按 `over.h / clientHeight` 估算超出比例、**一次把所有模块按比例缩短**（`keepRatio`），2–3 轮就收敛。
 
 ### 6.2 打包与分发
 6. **32 位 NSIS 打大包会崩**（`Internal compiler error #12345`）：用 64 位 `makensis` +
@@ -296,7 +305,7 @@ node node_modules/electron-builder/cli.js --win portable --x64
 ## 10. 新对话开场白（直接粘贴）
 
 > 继续 `D:\project\deskpet` 的 Windows 桌面宠物项目，先读 `HANDOFF.md`（§0 速览、§4 不变量、§6 坑）
-> 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.5`，`main` 已同步，tag 只到 `v0.6.0`。
-> 验证基线：`npm run check` + `npm test`（50 项）+ `node tools/check-a11y.js`（52 项）全部通过；
+> 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.6`，`main` 已同步，tag 只到 `v0.6.0`。
+> 验证基线：`npm run check` + `npm test`（52 项）+ `node tools/check-a11y.js`（57 项）全部通过；
 > 带界面的还要跑 `a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
 > 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。

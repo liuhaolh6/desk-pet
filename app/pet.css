@@ -325,9 +325,11 @@ body[data-bubble-side="below"] .bubble-shape ellipse {
   line-height: 1.2;
   text-align: center;
   /* Long lines wrap inside the safe area first; fitBubbleText() only shrinks
-     when wrapping still cannot fit. */
+     down to 60% of the base size and then truncates with an ellipsis (P0-2). */
   white-space: normal;
   overflow-wrap: break-word;
+  /* Truncation is manual (clampBubbleText) so the ellipsis lands on a word
+     boundary and the full string stays in title/aria-label. */
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
   opacity: 0;
   transition: opacity 0.16s ease;

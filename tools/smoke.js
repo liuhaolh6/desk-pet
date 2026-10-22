@@ -777,6 +777,13 @@ const PAD = 54
   assert.ok(/measureBubbleCentre/.test(petJs), '云朵中心由渲染矩形实测')
   assert.ok(/--bubble-fit/.test(petCss) && /fitBubbleText/.test(petJs), '文字超框时按比例收缩而不是溢出')
   assert.ok(/white-space: normal/.test(petCss), '长文本先换行')
+  assert.ok(/FIT_FLOOR\s*=\s*0\.6/.test(petJs), '长文案字号下限 60%（P0-2，不再缩到 45%）')
+  assert.ok(!/Math\.max\(0\.45,/.test(petJs), '旧的 0.45 下限已移除')
+  assert.ok(/function overflowAmount/.test(petJs) && /firstElementChild/.test(petJs), '溢出用渲染矩形实测（居中安全区两端溢出的内容也要算）')
+  assert.ok(/keepRatio/.test(petJs) && /over\.h \/ h/.test(petJs), '截断按实际超出比例整体收缩，而不是每次只剪 10%')
+  assert.ok(/function clampBubbleText/.test(petJs) && /dataset\.full/.test(petJs), '到下限后逐字截断，并将全文存在 data-full 供重渲染还原')
+  assert.ok(/span\.title = full/.test(petJs) && /setAttribute\('aria-label', full\)/.test(petJs), '截断后的全文仍留在 title / aria-label')
+  assert.ok(/clampBubbleText\(\)[\s\S]{0,40}\}/.test(petJs), '每次排版都先还原再截断（换卡不叠加省略）')
   assert.ok(/bubbleReserve\(\)/.test(petJs), '同一串气泡内用固定空间，卡片切换不 resize')
   assert.ok(!/resizeForBubble\(0\)/.test(petJs), '运行中不再把窗口缩成 0，杜绝透明窗口 resize 频闪')
   assert.ok(/wireBubbleClick/.test(petJs) && /bubble\.addEventListener\('click'/.test(petJs), '点击气泡收起')
@@ -795,7 +802,7 @@ const PAD = 54
   assert.equal(bubble.valueOf('water.tip', { waterTip: '慢慢喝，别急呀' }), '慢慢喝，别急呀')
   const waterCard = bubble.defaultLayout().cards.find((c) => c.id === 'water')
   assert.ok(waterCard.rows.length >= 5, '喝水卡片默认 5 行（标题/进度/下次/间隔/叮嘱）')
-  ok('气泡：固定比例、实测居中、超框收缩、固定预留、喝水卡片内容')
+  ok('气泡：固定比例、实测居中、超框收缩 + 截断、固定预留、喝水卡片内容')
 }
 
 {
@@ -824,6 +831,49 @@ const PAD = 54
   assert.ok(/prefers-reduced-motion/.test(css) && /:focus-visible/.test(css), '引导卡尊重减少动效 + 焦点可见')
   assert.ok(!/min-width:\s*[3-9][0-9][0-9]px/.test(css), '不设死宽度，320px 下也能重排')
   ok('欢迎引导：首启一次、可重看、键盘可关')
+}
+
+{
+  // M17 P0-3: the tray icon is not guaranteed to be visible, so a global
+  // shortcut and a settings row must keep 设置/退出 reachable.
+  const root = path.join(__dirname, '..')
+  const mainJs = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
+  const preloadJs = fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')
+  const settingsHtml = fs.readFileSync(path.join(root, 'app', 'settings.html'), 'utf8')
+  const settingsJs = fs.readFileSync(path.join(root, 'app', 'settings.js'), 'utf8')
+  const petHtml = fs.readFileSync(path.join(root, 'app', 'pet.html'), 'utf8')
+
+  assert.ok(/globalShortcut/.test(mainJs), '主进程引入 globalShortcut')
+  assert.ok(/const accelerator = 'CommandOrControl\+Alt\+P'/.test(mainJs) && /globalShortcut\.register\(accelerator, togglePet\)/.test(mainJs), 'Ctrl+Alt+P 注册为显示/隐藏桌宠')
+  assert.ok(/globalShortcut\.unregisterAll\(\)/.test(mainJs), '退出前注销全局快捷键')
+  assert.ok(/function togglePet/.test(mainJs) && /click: togglePet/.test(mainJs), '托盘菜单和快捷键共用同一个显示/隐藏入口')
+  assert.ok(/try \{\s*tray = new Tray\(image\)/.test(mainJs), '托盘创建失败不能让主进程崩掉')
+  assert.ok(/trayStatus = \{ ok: false/.test(mainJs) && /trayStatus = image\.isEmpty\(\)/.test(mainJs), '托盘失败/图标为空都记下原因')
+  assert.ok(/ipcMain\.handle\('app:status'/.test(mainJs) && /getAppStatus: \(\) => ipcRenderer\.invoke\('app:status'\)/.test(preloadJs), '渲染层能读到托盘与快捷键状态')
+  assert.ok(/id="trayStatus"/.test(settingsHtml) && /id="shortcutStatus"/.test(settingsHtml), '设置 → 其他 有托盘/快捷键两行说明')
+  assert.ok(/renderAppStatus/.test(settingsJs) && /api\.getAppStatus\(\)/.test(settingsJs), '设置页打开时填入真实状态')
+  assert.ok(/托盘这次没显示出来/.test(settingsJs) && /浮出菜单/.test(settingsJs), '托盘失效时说明桌宠的悬浮菜单仍可用')
+  assert.ok(/data-action="settings"/.test(petHtml) && /data-action="quit"/.test(petHtml), '桌宠悬浮菜单确实带设置和退出')
+  ok('托盘兜底：Ctrl+Alt+P 显示/隐藏、托盘失败可恢复、设置页说明状态')
+}
+
+{
+  // M17 P0-5: one-click diagnostics export, redacted.
+  const root = path.join(__dirname, '..')
+  const mainJs = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
+  const preloadJs = fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')
+  const settingsHtml = fs.readFileSync(path.join(root, 'app', 'settings.html'), 'utf8')
+  const settingsJs = fs.readFileSync(path.join(root, 'app', 'settings.js'), 'utf8')
+
+  assert.ok(/function buildDiagnostics/.test(mainJs) && /ipcMain\.handle\('app:diagnostics'/.test(mainJs), '主进程提供诊断导出')
+  assert.ok(/s\.weather\.lat = REDACTED/.test(mainJs) && /s\.weather\.lon = REDACTED/.test(mainJs) && /s\.weather\.city = REDACTED/.test(mainJs), '城市与坐标打码')
+  assert.ok(/delete s\.bubble\.phrases/.test(mainJs) && /delete s\.bubble\.layout/.test(mainJs), '自定义短语和不透明的气泡布局不导出')
+  assert.ok(/tailLines\(LOG_FILE, 200/.test(mainJs) && /cutout-trace\.jsonl/.test(mainJs), '带上 app.log 与 cutout-trace 的尾巴')
+  assert.ok(/shell\.showItemInFolder\(file\)/.test(mainJs), '导出后直接打开所在文件夹')
+  assert.ok(/id="diagBtn"/.test(settingsHtml) && /exportDiagnostics: \(\) => ipcRenderer\.invoke\('app:diagnostics'\)/.test(preloadJs), '设置页按钮接到 preload')
+  assert.ok(/api\.exportDiagnostics\(\)/.test(settingsJs) && /btn\.disabled = true/.test(settingsJs), '导出时按钮禁用、结果写回说明行')
+  assert.ok(!/writeFileSync\([^)]*role|copyFileSync/.test(mainJs.slice(mainJs.indexOf('function exportDiagnostics'))), '导出过程不复制角色照片')
+  ok('诊断导出：一键写 txt、坐标/短语脱敏、带日志尾巴')
 }
 
 console.log('\n' + pass + ' checks passed')
