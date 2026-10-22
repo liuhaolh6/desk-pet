@@ -13,12 +13,12 @@
 | 是什么 | Windows x64 桌面宠物（Electron 44 + 离线 ONNX 人像抠图），悬浮在桌面上，点击看天气 / 喝水 / 温馨话 |
 | 本地目录 | `D:\project\deskpet` |
 | 仓库 | `ssh://git@ssh.github.com:443/liuhaolh6/desk-pet.git`，分支 `main`，**当前是私有仓库** |
-| 版本 | `0.6.4`；tag 只推到 `v0.6.0`，`0.6.1`–`0.6.4` 仅在 `main` |
-| 最近提交 | `047e8c0 docs(0.6.4): 重写交接文档，新增路线图与现状评估`（前一版 `dde2e8e` 修频闪） |
+| 版本 | `0.6.5`（代码与文档已改好，**尚未重新打包**）；tag 只推到 `v0.6.0`，`0.6.1`–`0.6.5` 仅在 `main` |
+| 最近提交 | `63ae453 docs(0.6.4)` 之后是本轮的 0.6.5 首次引导（`M17-NOTES.md`）；再往前 `047e8c0` 重写交接文档 |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js` |
-| 自动化基线 | smoke **49 项** · check-a11y **44 项** · a11y-audit **76 项** · a11y-keyboard **6 项**，全部通过 |
-| 最新产物 | `dist/DeskPet-0.6.4-portable.exe`，153,754,785 字节，SHA-256 `22d173d4219b47e1e2df82de9c43f9a6777613668c0ec3e937ea09f9f206e82c` |
+| 自动化基线 | smoke **50 项** · check-a11y **52 项** · a11y-audit **86 项** · a11y-keyboard **6 项**，全部通过 |
+| 最新产物 | `dist/DeskPet-0.6.4-portable.exe`，153,754,785 字节，SHA-256 `22d173d4219b47e1e2df82de9c43f9a6777613668c0ec3e937ea09f9f206e82c`（0.6.5 还没打包，重打后再换这一行） |
 
 **能做什么**：换形象（照片抠图 / 导入 PNG）、点击看天气和喝水进度、按时提醒喝水、24 条内置温柔提示语、
 气泡内容自己排版（28 种模块）、音效可换、多显示器记忆与贴边吸附、托盘、开机自启、便携运行（数据跟着文件夹走）。
@@ -83,12 +83,13 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 
 | 路径 | 行数 | 作用 |
 |---|---|---|
-| `app/main.js` | 1226 | 窗口/托盘/IPC/天气调度/提醒/命中轮询/日志；**最大的单体文件** |
+| `app/main.js` | 1299 | 窗口/托盘/IPC/天气调度/提醒/命中轮询/日志；**最大的单体文件** |
 | `app/pet.js` | 753 | 桌宠渲染、气泡几何、命中区上报、手势仲裁、菜单 |
 | `app/pet.css` | 450 | 气泡 1026:700 框、动效、reduced-motion |
 | `app/settings.js` / `.html` / `.css` | 472 / 273 / 831 | 设置窗口，7 个 `data-panel` 分类 |
 | `app/cutout.js` / `.html` / `.css` | 621 / — / 353 | 抠图窗口：三态视图、擦除、旋转、保存 |
 | `app/editor.js` / `.html` / `.css` | 537 / — / 233 | 气泡布置编辑器 |
+| `app/onboard.js` / `.html` / `.css` | 57 / 52 / 183 | 首次欢迎卡（M17 P0-1）：三步说明 + 两个按钮，关闭即写 `onboarded` |
 | `app/bubble-model.js` | 346 | 卡片→行→模块的数据模型（纯函数，Node 可测） |
 | `app/sound-model.js` | 208 | 音效事件/片段模型（纯函数） |
 | `app/tokens.css` | — | 设计 token（配色、圆角、阴影、字号） |
@@ -96,7 +97,7 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `lib/weather.js` | 141 | Open-Meteo 取数、城市搜索、`advice()` 提醒推导 |
 | `lib/placement.js` | 185 | 多显示器归属、吸附、启动还原（纯函数） |
 | `lib/cutout*.js` + `lib/png.js` | 359/320/438/161 | 离线抠图：入口、数学、像素管线、PNG 编解码 |
-| `tools/smoke.js` | 802 | `npm test`：存储/角色/天气/气泡/几何/文案 49 项断言 |
+| `tools/smoke.js` | 830 | `npm test`：存储/角色/天气/气泡/几何/文案/引导 50 项断言 |
 
 ### 3.3 气泡几何契约（0.6.1 起，改之前先读 `M14-NOTES.md`）
 
@@ -165,9 +166,9 @@ token 表上限 3，窗口关闭即清空。
 | 工具 | 覆盖 | 命令 | 当前 |
 |---|---|---|---|
 | 语法 | 14 个 JS 文件 | `npm run check` | ✅ |
-| `tools/smoke.js` | 存储/角色/天气码/`advice`/气泡模型/几何不变量/文案 | `npm test` | ✅ 49 项 |
-| `tools/check-a11y.js` | 静态无障碍断言（对比度数学、24px、reduced-motion、回流、aria） | `node tools/check-a11y.js` | ✅ 44 项 |
-| `tools/a11y-audit.js` | 真实 DOM 审计（AX 名称、对比度、目标尺寸、焦点、320px 回流、forced-colors、reduced-motion） | `--port <调试端口>` | ✅ 76 项 / 0 失败 |
+| `tools/smoke.js` | 存储/角色/天气码/`advice`/气泡模型/几何不变量/文案/首次引导 | `npm test` | ✅ 50 项 |
+| `tools/check-a11y.js` | 静态无障碍断言（对比度数学、24px、reduced-motion、回流、aria、`lang`、引导卡） | `node tools/check-a11y.js` | ✅ 52 项 |
+| `tools/a11y-audit.js` | 真实 DOM 审计（AX 名称、对比度、目标尺寸、焦点、320px 回流、forced-colors、reduced-motion） | `--port <调试端口>` | ✅ 86 项 / 0 失败 |
 | `tools/a11y-keyboard.js` | 键盘-only 抠图全流程 | `node tools/a11y-keyboard.js` | ✅ 6 项 |
 | `tools/cutout-diag.js` | 合成图 alpha/背景/主体/边缘指标 | `npm run diag:fixtures` | ✅ |
 | CDP 脚本 | 气泡几何/命中/收起/城市搜索/编辑器/无 resize | `.tmp-verify/cdp-*.js`（不入库） | 按需 |
@@ -192,6 +193,13 @@ Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
 3. **不要用 `app.getPath('userData')` 做探测**：受限环境会**原生崩溃**；用 `process.env.APPDATA` 拼路径。
 4. **写不了 `%APPDATA%`** 时用 `DESKPET_DATA_DIR`；单实例锁失败会直接退出。
 5. **前台启动 GUI 会挂住工具调用**：用 `run_in_background` 或计划任务/Explorer 分离启动。
+5.1 **在 DSH 受限沙箱（workspace-write）里跑不起来**：会看到
+   `FATAL:mojo\public\cpp\platform\platform_channel.cc:108 Check failed: . : 拒绝访问。 (0x5)`，
+   之后 `DevTools listening` 照样打印、`app.log` 能写到 `windows created`，但进程随即 `exit code: 1`。
+   `Start-Process` / WMI `Win32_Process.Create`（直接 `拒绝访问`）/ `schtasks` 三条分离路都绕不过去，
+   必须在 `danger-full-access` 下启动（见 `M17-NOTES.md` §3）。
+5.2 **别用 `cmd /c start "" electron.exe …` 做“分离启动”**：启动器立即返回、应用日志一行不增，
+   容易误判为启动失败；直接把 electron 放进 background job 台前台跑，日志才能跟着来。
 
 ### 6.2 打包与分发
 6. **32 位 NSIS 打大包会崩**（`Internal compiler error #12345`）：用 64 位 `makensis` +
@@ -288,6 +296,7 @@ node node_modules/electron-builder/cli.js --win portable --x64
 ## 10. 新对话开场白（直接粘贴）
 
 > 继续 `D:\project\deskpet` 的 Windows 桌面宠物项目，先读 `HANDOFF.md`（§0 速览、§4 不变量、§6 坑）
-> 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.4`，`main` 已同步，tag 只到 `v0.6.0`。
-> 验证基线：`npm run check` + `npm test`（49 项）+ `node tools/check-a11y.js`（44 项）全部通过。
+> 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.5`，`main` 已同步，tag 只到 `v0.6.0`。
+> 验证基线：`npm run check` + `npm test`（50 项）+ `node tools/check-a11y.js`（52 项）全部通过；
+> 带界面的还要跑 `a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
 > 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。

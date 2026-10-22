@@ -69,6 +69,7 @@ let petWin = null
 let settingsWin = null
 let editorWin = null
 let cutoutWin = null
+let onboardWin = null
 let tray = null
 let extraBubbleHeight = 0
 // Where the reserved bubble space sits relative to the pet. `above` grows the
@@ -491,6 +492,69 @@ function openCutout() {
   })
   cutoutWin.loadFile(path.join(__dirname, 'cutout.html'))
   cutoutWin.on('closed', () => { cutoutWin = null; cutoutInputs.clear() })
+}
+
+/**
+ * First-run welcome card (M17 P0-1).
+ *
+ * Shown once, from the tray/menu or on boot while `onboarded` is still false.
+ * It is a real, focusable window (not a bubble) so keyboard and screen-reader
+ * users can actually read the three steps. `force` is what the settings panel
+ * and the CDP a11y audit use to open it again after it has been dismissed.
+ */
+function openOnboard(force) {
+  if (onboardWin && !onboardWin.isDestroyed()) { onboardWin.show(); onboardWin.focus(); return }
+  const s = store.readSettings()
+  if (!force && s.onboarded === true) return
+
+  const size = clamp(Number(s.size) || 220, 80, 480)
+  const pet = petScreenRect(size)
+  const display = screen.getDisplayNearestPoint({
+    x: pet.x + Math.floor(size / 2),
+    y: pet.top + Math.floor(size / 2),
+  })
+  const work = display.workArea
+  const width = 480
+  // Keep the whole card on screen even on small laptops, but tall enough that
+  // the three steps fit without a scrollbar at the default text size.
+  const height = Math.max(400, Math.min(580, work.height - 48))
+  const x = Math.round(work.x + Math.max(0, (work.width - width) / 2))
+  const y = Math.round(work.y + Math.max(8, (work.height - height) / 2))
+
+  onboardWin = new BrowserWindow({
+    x,
+    y,
+    width,
+    height,
+    useContentSize: true,
+    title: '欢迎使用桌宠',
+    backgroundColor: '#fbf6f8',
+    autoHideMenuBar: true,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  })
+  onboardWin.once('ready-to-show', () => {
+    try { onboardWin.show(); onboardWin.focus() } catch (err) {}
+  })
+  onboardWin.loadFile(path.join(__dirname, 'onboard.html'))
+  onboardWin.webContents.on('console-message', (event, level, message, line, source) => {
+    log('onboard-console', level, message, source + ':' + line)
+  })
+  onboardWin.on('closed', () => { onboardWin = null })
+}
+
+/** 知道啦 / Esc / 去设置 都走这里：记下已经看过，然后关窗。 */
+function dismissOnboard() {
+  try { store.writeSettings({ onboarded: true }) } catch (err) { log('onboard flag failed', String(err)) }
+  if (onboardWin && !onboardWin.isDestroyed()) onboardWin.close()
 }
 
 function broadcastSettings() {
@@ -1128,6 +1192,8 @@ function registerIpc() {
   ipcMain.on('pet:hide', () => { if (petWin) petWin.hide() })
   ipcMain.on('pet:open-settings', openSettings)
   ipcMain.on('pet:open-editor', openEditor)
+  ipcMain.on('onboard:open', () => openOnboard(true))
+  ipcMain.on('onboard:dismiss', dismissOnboard)
   ipcMain.on('pet:water-done', () => {
     const s = store.readSettings()
     const today = new Date()
@@ -1216,6 +1282,13 @@ if (!hasLock) {
     startReminders()
     if (process.env.DESKPET_OPEN_SETTINGS === '1') setTimeout(openSettings, 800)
     if (process.env.DESKPET_OPEN_EDITOR === '1') setTimeout(openEditor, 800)
+    // M17 P0-1: first run gets the three-step card (once). Existing installs
+    // that never dismissed it yet see it once too; after that `onboarded` is
+    // true and the only way back in is 设置 → 其他 → 再看一次欢迎引导.
+    if (process.env.DESKPET_OPEN_ONBOARD === '1') setTimeout(() => openOnboard(true), 800)
+    else if (process.env.DESKPET_NO_ONBOARD !== '1' && store.readSettings().onboarded !== true) {
+      setTimeout(() => openOnboard(false), 1400)
+    }
     screen.on('display-removed', ensureOnScreen)
     screen.on('display-added', ensureOnScreen)
     screen.on('display-metrics-changed', ensureOnScreen)
