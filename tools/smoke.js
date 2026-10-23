@@ -971,6 +971,20 @@ const PAD = 54
     assert.ok(fs.existsSync(path.join(repo, 'docs/PRIVACY.md')), 'docs/PRIVACY.md 存在')
   }
 
+  // P2-7 zip: the exporter writes what the importer reads, so one round trip
+  // covers both halves without a zip dependency.
+  {
+    const zipLib = require(path.join(root, 'lib', 'theme-zip'))
+    const buf = zipLib.writeZip([{ name: 'theme.json', data: '{"id":"pixel"}' }])
+    assert.ok(Buffer.isBuffer(buf) && buf.length > 60)
+    const back = zipLib.readZip(buf)
+    assert.equal(back.length, 1)
+    assert.equal(back[0].data.toString('utf8'), '{"id":"pixel"}')
+    assert.equal(zipLib.crc32(Buffer.from('123456789')), 0xcbf43926)
+    assert.equal(zipLib.idFromFileName('Deep Night.zip'), 'deep-night')
+    assert.throws(() => zipLib.readZip(Buffer.from('nope')))
+  }
+
   // ROADMAP P2-7: theme packs. Validation is what makes import safe later on.
   const themeLib = require(path.join(root, 'lib', 'theme'))
   {

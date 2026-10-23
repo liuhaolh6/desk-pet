@@ -933,6 +933,17 @@ button:disabled {
 
 .ghost-small:hover { border-color: var(--accent); color: var(--accent-deep); }
 
+/* P2-7: theme select + import/export buttons share a row and wrap when narrow. */
+.row-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Buttons never break mid-label; if they do not fit, each takes its own line. */
+.row-inline .ghost-small { flex: 0 1 auto; white-space: nowrap; }
+
 .reset-wrap { position: relative; }
 
 .reset-confirm {

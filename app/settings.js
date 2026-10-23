@@ -231,6 +231,32 @@
       })
     }
 
+    // P2-7: zip import/export. Both talk to the main process (file dialogs live there).
+    const themeImportBtn = $('themeImportBtn')
+    if (themeImportBtn) {
+      themeImportBtn.addEventListener('click', async () => {
+        const res = await api.importTheme()
+        if (!res || res.canceled) return
+        if (!res.ok) {
+          setStatus(t('appearance.themeImportFailed').replace('{why}', t('theme.err.' + (res.error || 'unknown'))))
+          return
+        }
+        await loadThemes()
+        setStatus(t('appearance.themeImported').replace('{what}', res.id))
+      })
+    }
+
+    const themeExportBtn = $('themeExportBtn')
+    if (themeExportBtn) {
+      themeExportBtn.addEventListener('click', async () => {
+        const id = (themeSel && themeSel.value) || ''
+        const res = await api.exportTheme(id)
+        if (!res || res.canceled) return
+        if (res.ok) setStatus(t('appearance.themeExported').replace('{what}', res.id))
+        else setStatus(t('settings.saveFailed'))
+      })
+    }
+
     $('alwaysOnTop').addEventListener('change', (ev) => save({ alwaysOnTop: ev.target.checked }, true))
     $('autostart').addEventListener('change', (ev) => save({ autostart: ev.target.checked }, true))
     $('snapEnabled').addEventListener('change', (ev) => save({ snap: { enabled: ev.target.checked } }, true))

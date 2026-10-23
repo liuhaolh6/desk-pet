@@ -116,6 +116,7 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `app/main/i18n.js`（新，P2-6） | 95 | 主进程：`availableLocales` 读 `locales/`、`createMainI18n({requested,system})`、`registerI18nIpc`（`i18n:boot` 同步 / `i18n:info` / `i18n:dict`） |
 | `app/i18n.js`（新，P2-6） | 104 | 渲染层：`create(dict,locale)` + `applyStatic(document,bridge)`（`data-i18n` / `-html` / `-title` / `-aria-label` / `-placeholder` / `-alt` + `documentElement.lang`），UMD |
 | `locales/zh-CN.json` / `en-US.json`（新） | — | 语言包（嵌套 JSON，点号键 = 层级）；两份键名必须完全一致，检查器强制 |
+| `lib/theme-zip.js`（新，P2-7） | 极简 zip 读写（stored/deflate、CRC32、id 净化），不引依赖 |
 | `lib/theme.js`（新，P2-7） | 主题包校验（36 个白名单 CSS 变量、注入拒收、id 规则）与 `:root{}` 生成，纯函数 | 
 | `app/main/theme.js`（新，P2-7） | 扫描 `themes/` 与数据目录下的用户主题，IPC `theme:list/current/set` |
 | `app/theme-boot.js`（新，P2-7） | 渲染层把当前包的 CSS 写进 `<style id="theme-pack">`，六个页面都引入 |
@@ -425,6 +426,6 @@ node node_modules/electron-builder/cli.js --win nsis --x64   # → dist\DeskPet-
 
 > 继续 `D:\project\deskpet` 的 Windows 桌面宠物项目，先读 `HANDOFF.md`（§0 速览、§4 不变量、§6 坑）
 > 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.6`，`main` 已同步，tag 到 `v0.6.6`。
-> 验证基线：`npm run check`（62 个 JS）+ `npm test`（smoke 67 项 + unit 175 例）+ `node tools/check-a11y.js`（95 项）全部通过；
+> 验证基线：`npm run check`（62 个 JS）+ `npm test`（smoke 67 项 + unit 182 例）+ `node tools/check-a11y.js`（95 项）全部通过；
 > 带界面的还要跑 `npm run test:e2e`（4 用例）、`a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
 > 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。

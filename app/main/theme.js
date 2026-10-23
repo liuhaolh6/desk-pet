@@ -8,6 +8,7 @@
 const fs = require('fs')
 const path = require('path')
 const { validateTheme, tokensToCss } = require('../../lib/theme')
+const { readZip, writeZip, idFromFileName } = require('../../lib/theme-zip')
 
 const DEFAULT_ID = 'default'
 
@@ -82,11 +83,11 @@ function createThemes({ builtinDir, userDir, log }) {
     return tokensToCss(get(id).tokens)
   }
 
-  return { DEFAULT_ID, list, get, css }
+  return { DEFAULT_ID, list, get, css, builtinDir, userDir }
 }
 
 /** IPC. main.js passes `onChange` to re-inject CSS into every open window. */
-function registerThemeIpc({ ipcMain, themes, store, onChange }) {
+function registerThemeIpc({ ipcMain, themes, store, onChange, dialog, userDir, log }) {
   const currentId = () => store.readSettings().theme || themes.DEFAULT_ID
 
   ipcMain.handle('theme:list', () => ({ current: currentId(), packs: themes.list() }))
@@ -105,6 +106,84 @@ function registerThemeIpc({ ipcMain, themes, store, onChange }) {
     store.writeSettings(Object.assign({}, s, { theme: want }))
     if (onChange) onChange(want)
     return { ok: true, id: want }
+  })
+
+  // Import a user pack from a .zip: `<id>/theme.json` or a `theme.json` at the root.
+  ipcMain.handle('theme:import', async (ev, maybePath) => {
+    let file = typeof maybePath === 'string' && maybePath ? maybePath : ''
+    if (!file) {
+      if (!dialog) return { ok: false, error: 'no-dialog' }
+      const picked = await dialog.showOpenDialog({
+        title: 'Import theme pack',
+        properties: ['openFile'],
+        filters: [{ name: 'Theme pack', extensions: ['zip'] }],
+      })
+      if (picked.canceled || !picked.filePaths.length) return { canceled: true }
+      file = picked.filePaths[0]
+    }
+    if (!userDir) return { ok: false, error: 'no-user-dir' }
+    let entries
+    try {
+      entries = readZip(fs.readFileSync(file))
+    } catch (err) {
+      return { ok: false, error: 'bad-zip' }
+    }
+    const entry = entries.find((e) => /(^|\/)theme\.json$/i.test(e.name))
+    if (!entry) return { ok: false, error: 'no-theme-json' }
+    let raw
+    try {
+      raw = JSON.parse(entry.data.toString('utf8'))
+    } catch (err) {
+      return { ok: false, error: 'bad-json' }
+    }
+    const res = validateTheme(raw)
+    if (!res.ok) return { ok: false, error: 'invalid', errors: res.errors }
+    // The file name wins when the pack does not name itself; either way the id
+    // must be safe because it becomes a folder name.
+    const id = idFromFileName(raw && raw.id) || idFromFileName(path.basename(file))
+    if (!id) return { ok: false, error: 'bad-id' }
+    try {
+      const dir = path.join(userDir, id)
+      fs.mkdirSync(dir, { recursive: true })
+      fs.writeFileSync(path.join(dir, 'theme.json'), JSON.stringify(Object.assign({}, raw, { id }), null, 2) + '\n')
+    } catch (err) {
+      return { ok: false, error: 'write-failed' }
+    }
+    log && log('theme-import', id)
+    return { ok: true, id }
+  })
+
+  // Export one pack as a zip with a single theme.json (round-trips with import).
+  ipcMain.handle('theme:export', async (ev, maybeId, maybeFile) => {
+    const id = typeof maybeId === 'string' && maybeId ? maybeId : currentId()
+    let theme = null
+    for (const dir of [userDir, themes.builtinDir].filter(Boolean)) {
+      try {
+        theme = JSON.parse(fs.readFileSync(path.join(dir, id, 'theme.json'), 'utf8'))
+        break
+      } catch (err) { /* try next root */ }
+    }
+    if (!theme) return { ok: false, error: 'unknown-theme' }
+    // Explicit target path: used by the tests, and by anything that wants to
+    // export without a dialog. Otherwise ask the user where to put it.
+    let target = typeof maybeFile === 'string' && maybeFile ? maybeFile : ''
+    if (!target) {
+      if (!dialog) return { ok: false, error: 'no-dialog' }
+      const picked = await dialog.showSaveDialog({
+        title: 'Export theme pack',
+        defaultPath: id + '.zip',
+        filters: [{ name: 'Theme pack', extensions: ['zip'] }],
+      })
+      if (picked.canceled || !picked.filePath) return { canceled: true }
+      target = picked.filePath
+    }
+    try {
+      fs.writeFileSync(target, writeZip([{ name: 'theme.json', data: JSON.stringify(theme, null, 2) + '\n' }]))
+    } catch (err) {
+      return { ok: false, error: 'write-failed' }
+    }
+    log && log('theme-export', id)
+    return { ok: true, id, file: target }
   })
 }
 

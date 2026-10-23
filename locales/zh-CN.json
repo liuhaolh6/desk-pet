@@ -168,10 +168,10 @@
   },
   "panel": {
     "theme": {
-    "default": "默认（浅粉）",
-    "pixel": "像素（暗色）"
-  },
-  "appearance": {
+      "default": "默认（浅粉）",
+      "pixel": "像素（暗色）"
+    },
+    "appearance": {
       "title": "外观",
       "hint": "它叫什么、多大一只，平时怎么待在桌面上"
     },
@@ -216,7 +216,12 @@
     "snap": "靠边停好",
     "snapHint": "拖到屏幕边缘会轻轻吸住",
     "snapGap": "离边多远开始吸",
-    "snapGapUnit": "px（0 就是关掉）"
+    "snapGapUnit": "px（0 就是关掉）",
+    "themeImport": "导入主题包…",
+    "themeExport": "导出当前主题…",
+    "themeImported": "已导入主题包 {what}",
+    "themeExported": "已导出主题包 {what}",
+    "themeImportFailed": "导入失败：{why}"
   },
   "bubble": {
     "type": {
@@ -1298,5 +1303,21 @@
   },
   "meta": {
     "timeStyle": "24h"
+  },
+  "theme": {
+    "err": {
+      "bad-zip": "不是有效的 zip 文件",
+      "no-theme-json": "包里没有 theme.json",
+      "bad-json": "theme.json 不是合法 JSON",
+      "invalid": "主题包内容不合规",
+      "bad-id": "主题包名字无法用作目录名",
+      "write-failed": "写入数据目录失败",
+      "unknown-theme": "找不到这个主题包",
+      "no-dialog": "对话框不可用",
+      "no-user-dir": "数据目录不可用",
+      "unknown": "未知错误"
+    },
+    "default": "默认",
+    "pixel": "像素"
   }
 }

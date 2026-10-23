@@ -168,10 +168,10 @@
   },
   "panel": {
     "theme": {
-    "default": "Default (blush)",
-    "pixel": "Pixel (dark)"
-  },
-  "appearance": {
+      "default": "Default (blush)",
+      "pixel": "Pixel (dark)"
+    },
+    "appearance": {
       "title": "Appearance",
       "hint": "Its name, how big it is, and how it sits on your desktop"
     },
@@ -216,7 +216,12 @@
     "snap": "Snap to edges",
     "snapHint": "Sticks gently when you drag it to a screen edge",
     "snapGap": "Snap distance",
-    "snapGapUnit": "px (0 turns it off)"
+    "snapGapUnit": "px (0 turns it off)",
+    "themeImport": "Import theme pack…",
+    "themeExport": "Export current theme…",
+    "themeImported": "Imported theme pack {what}",
+    "themeExported": "Exported theme pack {what}",
+    "themeImportFailed": "Import failed: {why}"
   },
   "bubble": {
     "type": {
@@ -1298,5 +1303,21 @@
   },
   "meta": {
     "timeStyle": "12h"
+  },
+  "theme": {
+    "err": {
+      "bad-zip": "not a valid zip file",
+      "no-theme-json": "the package has no theme.json",
+      "bad-json": "theme.json is not valid JSON",
+      "invalid": "the theme pack is invalid",
+      "bad-id": "the pack name cannot be used as a folder",
+      "write-failed": "could not write to the data folder",
+      "unknown-theme": "that theme pack was not found",
+      "no-dialog": "the file dialog is unavailable",
+      "no-user-dir": "the data folder is unavailable",
+      "unknown": "unknown error"
+    },
+    "default": "Default",
+    "pixel": "Pixel"
   }
 }

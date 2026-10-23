@@ -184,9 +184,8 @@ app.whenReady().then(() => {
   // preload 在窗口加载时同步取字典，所以通道必须先于 createWindows 注册。
   registerI18nIpc({ ipcMain, i18n })
   registerThemeIpc({
-    ipcMain,
-    get themes() { return themes },
-    store,
+    ipcMain, themes, store, dialog, userDir: path.join(store.dir, 'themes'),
+    log: (kind, detail) => logger.breadcrumb('theme ' + kind + ' ' + String(detail || '')),
     onChange: () => broadcastTheme(),
   })
 
