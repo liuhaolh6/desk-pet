@@ -21,6 +21,11 @@
   窗口 resize 后的"重新量预留"会冒充 `bubble-show`，导致拖动中状态机非法转移、状态卡在 `bubble`；
   现在 `pet:bubble` 只管可见性、`pet:reserve` 只管预留（见 M18-NOTES §5）。
 
+- **主进程拆模块（阶段 3）**（ROADMAP P1-1）：新增 `app/main/ipc.js`（404 行，全部 `ipcMain` 通道）、
+  `weather-pump.js`（81）、`reminder.js`（67）、`cutout-service.js`（232），`app/main.js` 1148 → **564 行**。
+  依赖全部注入（窗口用 thunk），所以天气泵与提醒的规则可以在 smoke 里用假时钟直接断言；
+  行为不变（57+57+86+6 全绿，运行时 `cdp-p11-stage3` 17/17）。见 [`M18-NOTES.md`](M18-NOTES.md) §6。
+
 - **显式窗口状态机**（ROADMAP P1-2 / L7）：新增 `app/window-state.js`（纯 Node，127 行）——
   `idle / bubble / menu / dragging / cutout` 五态 + 转移表 + 非法事件计数（不抛异常，留给诊断用），
   取代原来的 `petDragging` 散子与 `540ms/50ms` 时序约定；`app:status` 多了 `window: { state, illegal, lastIllegal }`。
