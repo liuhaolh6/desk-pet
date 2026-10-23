@@ -312,3 +312,16 @@ WMO 码表、AQI 分级、三天标签、建议句都写成中文字面量，共
 - 验证：全新数据目录 zh 161 个汉字、按「知道啦」；切 en-US 重启后 `Welcome to Desk Pet` / `Got it`、正文汉字 0。
 
 基线 **134 → 122**。
+
+### 阶段三-I：主进程的对话框与错误（已完成）
+
+- `app/main/ipc.js` 19 处 → 0：对话框标题/过滤器名（挑角色图、挑人像、添加音频）、
+  返回给渲染层的 `error`（图片打不开、文件找不到、超 25MB、没拿到照片、音频超 8MB…）、
+  新增角色图时的默认名字「照片角色」。
+- `registerIpc(deps)` 增加 `deps.i18n`，内部 `const tr = (key, vars) => i18n ? i18n.t(key, vars) : key`；
+  缺翻译器时退键名，和 3-G 的 `valueOf` 一致，开发期一眼看得出来。
+- `cutout-service.decodeImageDataUrl` 抛的错误带 `err.code = 'NO_DATA'`，IPC 层用 `decodeError()`
+  映射成 `error.noData` 再返回——错误码不该把中文文案当协议用。
+- 验证：en 数据目录重启后 `loadCutoutPhoto` 返回 `Didn't receive the image data`；zh 目录返回原文。
+
+基线 **122 → 103**。

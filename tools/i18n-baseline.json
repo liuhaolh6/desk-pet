@@ -10,7 +10,7 @@
     "app/main/reminder.js": 0,
     "app/main/weather-pump.js": 0,
     "app/main/nudge-pump.js": 1,
-    "app/main/ipc.js": 19,
+    "app/main/ipc.js": 0,
     "app/main/windows.js": 4,
     "app/main/privacy.js": 10,
     "app/main/cutout-service.js": 9,

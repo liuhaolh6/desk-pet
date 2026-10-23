@@ -15,7 +15,11 @@ const CUTOUT_INPUT_LIMIT = 3
 const REAL_ANSWERS = ['NO_PERSON', 'OVER_SEGMENTED', 'MODEL_MISSING', 'MODEL_LOAD_FAILED', 'NO_OUTPUT', 'BAD_OUTPUT_SHAPE', 'BAD_IMAGE']
 
 function decodeImageDataUrl(dataUrl) {
-  if (typeof dataUrl !== 'string') throw new Error('没收到图片数据')
+  if (typeof dataUrl !== 'string') {
+    const err = new Error('没收到图片数据')
+    err.code = 'NO_DATA'
+    throw err
+  }
   const match = dataUrl.match(/^data:(image\/(?:png|jpeg|jpg|webp));base64,([A-Za-z0-9+/=\s]+)$/i)
   if (!match) throw new Error('这个格式还看不了呢')
   const buffer = Buffer.from(match[2].replace(/\s/g, ''), 'base64')

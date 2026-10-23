@@ -217,7 +217,7 @@ app.whenReady().then(() => {
   })
   registerIpc({
     ipcMain, dialog, shell, app, nativeImage, path, fs,
-    store, version: VERSION, weatherPump, layout, winState, trayHost, diagnostics, updater, privacy,
+    store, i18n, version: VERSION, weatherPump, layout, winState, trayHost, diagnostics, updater, privacy,
     cutoutService, cutout, placement, clamp, winPad: WIN_PAD, log, nudges, overlay,
     windows: {
       pet: () => windows.pet(),

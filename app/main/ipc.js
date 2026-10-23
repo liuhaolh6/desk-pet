@@ -45,10 +45,13 @@ const { registerNudgeIpc } = require('./nudge-pump')
 function registerIpc(deps) {
   const {
     ipcMain, dialog, shell, app, nativeImage, path, fs,
-    store, version, weatherPump, layout, winState, trayHost, diagnostics, cutoutService, cutout, nudges, updater, privacy,
+    store, i18n, version, weatherPump, layout, winState, trayHost, diagnostics, cutoutService, cutout, nudges, updater, privacy,
     placement, clamp, winPad, windows, actions, lists, setQuitting, overlay,
   } = deps
   const { roleList, soundList, roleUrl, broadcastSettings, broadcastRoles, sendMirror, applySettingsSideEffects } = lists
+  // P2-6 阶段三-I：主进程也能说人话（对话框标题、返回给渲染层的错误）。
+  const decodeError = (err) => ((err && err.code === 'NO_DATA') ? tr('error.noData') : (err && err.message))
+  const tr = (key, vars) => (i18n ? i18n.t(key, vars) : key)
   const MAX_IMAGE_BYTES = cutoutService.MAX_IMAGE_BYTES
   const log = deps.log || (() => {})
 
@@ -100,14 +103,14 @@ function registerIpc(deps) {
 
   ipcMain.handle('roles:import', async () => {
     const result = await dialog.showOpenDialog(windows.settings() || windows.pet(), {
-      title: '挑一张图片当角色',
+      title: tr('dialog.pickRole'),
       properties: ['openFile'],
-      filters: [{ name: '图片', extensions: ['png', 'jpg', 'jpeg', 'webp'] }],
+      filters: [{ name: tr('dialog.images'), extensions: ['png', 'jpg', 'jpeg', 'webp'] }],
     })
     if (result.canceled || !result.filePaths || !result.filePaths[0]) return { ok: false, canceled: true }
     const file = result.filePaths[0]
     let image = nativeImage.createFromPath(file)
-    if (image.isEmpty()) return { ok: false, error: '这张图打不开呢' }
+    if (image.isEmpty()) return { ok: false, error: tr('error.badImage') }
     const size = image.getSize()
     const max = 610
     if (size.width > max || size.height > max) {
@@ -137,17 +140,17 @@ function registerIpc(deps) {
 
   ipcMain.handle('cutout:pick', async () => {
     const result = await dialog.showOpenDialog(windows.cutout() || windows.settings() || windows.pet(), {
-      title: '挑一张人像照片',
+      title: tr('dialog.pickPhoto'),
       properties: ['openFile'],
-      filters: [{ name: '图片', extensions: ['png', 'jpg', 'jpeg', 'webp'] }],
+      filters: [{ name: tr('dialog.images'), extensions: ['png', 'jpg', 'jpeg', 'webp'] }],
     })
     if (result.canceled || !result.filePaths || !result.filePaths[0]) return { ok: false, canceled: true }
     const file = result.filePaths[0]
     let stat
-    try { stat = fs.statSync(file) } catch (err) { return { ok: false, error: '找不到这个文件' } }
-    if (stat.size > MAX_IMAGE_BYTES) return { ok: false, error: '图片超过 25MB 啦，先压缩一下好吗' }
+    try { stat = fs.statSync(file) } catch (err) { return { ok: false, error: tr('error.fileMissing') } }
+    if (stat.size > MAX_IMAGE_BYTES) return { ok: false, error: tr('error.imageTooLarge') }
     const image = nativeImage.createFromBuffer(fs.readFileSync(file))
-    if (image.isEmpty()) return { ok: false, error: '这张图打不开呢' }
+    if (image.isEmpty()) return { ok: false, error: tr('error.badImage') }
     const name = path.basename(file).replace(/\.[^.]+$/, '').slice(0, 30)
     return Object.assign({ ok: true }, cutoutService.inputPayload(image, name))
   })
@@ -157,10 +160,10 @@ function registerIpc(deps) {
   ipcMain.handle('cutout:load', (ev, payload) => {
     let decoded
     try { decoded = cutoutService.decodeImageDataUrl(payload && payload.dataUrl) } catch (err) {
-      return { ok: false, error: err.message }
+      return { ok: false, error: decodeError(err) }
     }
     const image = nativeImage.createFromBuffer(decoded.buffer)
-    if (image.isEmpty()) return { ok: false, error: '这张图打不开呢' }
+    if (image.isEmpty()) return { ok: false, error: tr('error.badImage') }
     return Object.assign({ ok: true }, cutoutService.inputPayload(image, payload && payload.name))
   })
 
@@ -179,12 +182,12 @@ function registerIpc(deps) {
       }
       image = nativeImage.createFromBuffer(decoded.buffer)
     } else {
-      cutoutService.trace({ ok: false, mode: 'none', code: 'BAD_IMAGE', ms: Date.now() - startedAt, error: '还没拿到照片' })
-      return { ok: false, mode: 'none', code: 'BAD_IMAGE', error: '照片没拿到，重新选一张吧' }
+      cutoutService.trace({ ok: false, mode: 'none', code: 'BAD_IMAGE', ms: Date.now() - startedAt, error: tr('error.noPhotoShort') })
+      return { ok: false, mode: 'none', code: 'BAD_IMAGE', error: tr('error.noPhoto') }
     }
     if (!image || image.isEmpty()) {
       cutoutService.trace({ ok: false, mode: 'none', code: 'BAD_IMAGE', ms: Date.now() - startedAt })
-      return { ok: false, mode: 'none', code: 'BAD_IMAGE', error: '这张图打不开呢' }
+      return { ok: false, mode: 'none', code: 'BAD_IMAGE', error: tr('error.badImage') }
     }
     const inputSize = image.getSize()
     try {
@@ -251,16 +254,16 @@ function registerIpc(deps) {
   ipcMain.handle('cutout:save', (ev, payload) => {
     let decoded
     try { decoded = cutoutService.decodeImageDataUrl(payload && payload.dataUrl) } catch (err) {
-      return { ok: false, error: err.message }
+      return { ok: false, error: decodeError(err) }
     }
     const image = nativeImage.createFromBuffer(decoded.buffer)
-    if (image.isEmpty()) return { ok: false, error: '生成的角色图打不开呢' }
+    if (image.isEmpty()) return { ok: false, error: tr('error.badOutput') }
     const mode = payload && payload.mode === 'fallback' ? 'fallback' : 'cutout'
     if (mode === 'fallback' && (!payload || payload.confirmFallback !== true)) {
-      return { ok: false, code: 'FALLBACK_UNCONFIRMED', error: '要用整张照片当角色的话，得再确认一次' }
+      return { ok: false, code: 'FALLBACK_UNCONFIRMED', error: tr('cutout.confirmWhole') }
     }
     const send = cutout.scaleOnly(image, 610)
-    const name = String((payload && payload.name) || '照片角色').trim().slice(0, 30) || '照片角色'
+    const name = String((payload && payload.name) || tr('cutout.defaultName')).trim().slice(0, 30) || tr('cutout.defaultName')
     const entry = store.addRole(name, send.toPNG(), { cutout: mode === 'cutout', mode })
     store.writeSettings({ roleId: entry.id })
     broadcastSettings()
@@ -274,15 +277,15 @@ function registerIpc(deps) {
 
   ipcMain.handle('sounds:import', async () => {
     const result = await dialog.showOpenDialog(windows.settings() || windows.pet(), {
-      title: '添加一段音频',
+      title: tr('dialog.addSound'),
       properties: ['openFile'],
-      filters: [{ name: '音频', extensions: ['wav', 'mp3', 'ogg', 'm4a', 'flac'] }],
+      filters: [{ name: tr('dialog.audio'), extensions: ['wav', 'mp3', 'ogg', 'm4a', 'flac'] }],
     })
     if (result.canceled || !result.filePaths || !result.filePaths[0]) return { ok: false, canceled: true }
     const file = result.filePaths[0]
     try {
       const bytes = fs.readFileSync(file)
-      if (bytes.length > 8 * 1024 * 1024) return { ok: false, error: '音频超过 8MB 啦，换一段短一点的吧' }
+      if (bytes.length > 8 * 1024 * 1024) return { ok: false, error: tr('error.audioTooLarge') }
       const ext = path.extname(file).replace('.', '').toLowerCase() || 'wav'
       const name = path.basename(file).replace(/\.[^.]+$/, '').slice(0, 30)
       const entry = store.addSound(name, ext, bytes)

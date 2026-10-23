@@ -528,7 +528,7 @@
     "brushAria": "Brush size (8 to 80 pixels)",
     "brushLabel": "Brush size",
     "close": "Close",
-    "defaultName": "Photo pet",
+    "defaultName": "Photo character",
     "edit": {
       "eraseOn": "Erase: drag on the picture to remove leftovers; click “Erase” again or press Esc to stop.",
       "group": "Touch up",
@@ -621,7 +621,8 @@
       "result": "Result"
     },
     "zoomHint": "Drag the picture to move it; scroll to zoom.",
-    "zoomLabel": "Zoom"
+    "zoomLabel": "Zoom",
+    "confirmWhole": "Using the whole photo as the character needs one more confirmation"
   },
   "editor": {
     "addRow": "+ Add a row",
@@ -1153,5 +1154,22 @@
     "quit": "Let it rest",
     "quitBtn": "Quit for now",
     "quitHint": "Closing just this window leaves me in the tray"
+  },
+  "dialog": {
+    "pickRole": "Pick an image for the character",
+    "pickPhoto": "Pick a portrait photo",
+    "images": "Images",
+    "addSound": "Add a sound clip",
+    "audio": "Audio"
+  },
+  "error": {
+    "badImage": "That image won't open",
+    "fileMissing": "Can't find that file",
+    "imageTooLarge": "That image is over 25MB — please compress it first",
+    "noPhoto": "The photo didn't come through — pick another one",
+    "badOutput": "The generated character image won't open",
+    "noPhotoShort": "Haven't got the photo yet",
+    "audioTooLarge": "That clip is over 8MB — try a shorter one",
+    "noData": "Didn't receive the image data"
   }
 }

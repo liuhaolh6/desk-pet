@@ -621,7 +621,8 @@
       "result": "结果"
     },
     "zoomHint": "拖着画面挪一挪，滚轮能放大缩小",
-    "zoomLabel": "缩放"
+    "zoomLabel": "缩放",
+    "confirmWhole": "要用整张照片当角色的话，得再确认一次"
   },
   "editor": {
     "addRow": "+ 再加一行",
@@ -1153,5 +1154,22 @@
     "quit": "让它先休息",
     "quitBtn": "先退出啦",
     "quitHint": "只是关掉这个窗口的话，我还是会待在托盘里"
+  },
+  "dialog": {
+    "pickRole": "挑一张图片当角色",
+    "pickPhoto": "挑一张人像照片",
+    "images": "图片",
+    "addSound": "添加一段音频",
+    "audio": "音频"
+  },
+  "error": {
+    "badImage": "这张图打不开呢",
+    "fileMissing": "找不到这个文件",
+    "imageTooLarge": "图片超过 25MB 啦，先压缩一下好吗",
+    "noPhoto": "照片没拿到，重新选一张吧",
+    "badOutput": "生成的角色图打不开呢",
+    "noPhotoShort": "还没拿到照片",
+    "audioTooLarge": "音频超过 8MB 啦，换一段短一点的吧",
+    "noData": "没收到图片数据"
   }
 }
