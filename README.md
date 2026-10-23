@@ -15,11 +15,14 @@ Windows 桌面上的常驻小宠物：点一下看天气、被提醒喝水，换
 
 ## 下载
 
-从 [Releases](https://github.com/liuhaolh6/desk-pet/releases/latest) 下载 `DeskPet-<version>-portable.exe`（Windows x64，免安装，约 153MB，抠图模型随包，不需要联网下载）。
+从 [Releases](https://github.com/liuhaolh6/desk-pet/releases/latest) 下载，两种选一个（都是 Windows x64，约 150MB，抠图模型随包，不需要联网下载）：
+
+- **安装版** `DeskPet-<version>-setup.exe`：双击下一步，自动建桌面/开始菜单快捷方式，装到当前用户目录（不需要管理员）。卸载在「设置 → 应用」里找“桌宠”。
+- **便携版** `DeskPet-<version>-portable.exe`：免安装，双击即用，适合放 U 盘或临时试用。
 
 - 每个 Release 附带 `SHA256SUMS.txt`，可用 `Get-FileHash .\DeskPet-<version>-portable.exe -Algorithm SHA256` 核对。
 - 产物**未签名**（SignPath Foundation 审核中），SmartScreen 首次运行需要「更多信息 → 仍要运行」。
-- 便携版数据写在 exe 同级 `desk-pet-data\`，整个文件夹可以搬走；也可以用 `DESKPET_DATA_DIR` 指定。
+- 便携版数据写在 exe 同级 `desk-pet-data\`，整个文件夹可以搬走；安装版数据在 `%APPDATA%\desk-pet\`。两种都可以用 `DESKPET_DATA_DIR` 指定位置。
 
 ## 特性
 

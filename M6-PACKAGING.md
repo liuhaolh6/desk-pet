@@ -167,3 +167,51 @@ set "TMP=%TEMP%"
 set "ELECTRON_RUN_AS_NODE="
 "D:\project\deskpet\dist\DeskPet-0.2.0-portable.exe" --no-sandbox
 ```
+
+## 7. NSIS 安装器（0.6.7 起，ROADMAP P2-1）
+
+### 7.1 产物与形态
+
+| 项 | 值 |
+|---|---|
+| 文件 | `dist\DeskPet-<version>-setup.exe`（0.6.7：165,559,500 B，未签名） |
+| 形态 | **一键安装**（`oneClick: true`）：双击 → 几秒装完 → 自动启动，不需要管理员 |
+| 安装位置 | `%LOCALAPPDATA%\Programs\desk-pet`（per-user；目录名来自 `package.json` 的 `name`，**不是** `executableName`/`productName`） |
+| 快捷方式 | 开始菜单「桌宠」+ 桌面「桌宠」 |
+| 卸载入口 | 设置 → 应用 → 已安装的应用「桌宠 DeskPet 0.6.7」；或 `"%LOCALAPPDATA%\Programs\desk-pet\Uninstall DeskPet.exe"` |
+| 用户数据 | 安装版默认 `%APPDATA%\desk-pet`；`deleteAppDataOnUninstall: false`，卸载**不删**数据 |
+| 静默安装 | `DeskPet-0.6.7-setup.exe /S` |
+| 静默卸载 | `"%LOCALAPPDATA%\Programs\desk-pet\Uninstall DeskPet.exe" /S /currentuser` |
+
+### 7.2 构建
+
+```powershell
+# 火绒引擎会拦未签名进程写 %LOCALAPPDATA%\Temp，构建前把 TEMP 指到可写目录
+$env:TEMP = 'D:\project\deskpet\.tmp-runtime'
+$env:TMP  = $env:TEMP
+$env:ELECTRON_MIRROR = 'https://npmmirror.com/mirrors/electron/'
+$env:ELECTRON_BUILDER_BINARIES_MIRROR = 'https://npmmirror.com/mirrors/electron-builder-binaries/'
+npm run dist:installer      # 内含 predist:installer → npm run clean:dist
+```
+
+`clean:dist`（`tools/clean-dist.js`）先删 `dist/win-unpacked`：electron-builder 只覆盖拷贝，
+上一次“在 win-unpacked 里跑过应用”留下的 `desk-pet-boot.log` 会被打进安装包。
+
+### 7.3 验证结果（2026-10-23，本机 Win11 26200）
+
+| 步骤 | 结果 |
+|---|---|
+| 静默安装 `/S` | 15s，退出码 0；`%LOCALAPPDATA%\Programs\desk-pet\DeskPet.exe` 版本 **0.6.7**（247,297,536 B） |
+| 快捷方式 | 开始菜单 ✓、桌面 ✓ |
+| 卸载注册项 | `HKCU\...\Uninstall` 有「桌宠 DeskPet」0.6.7 + `UninstallString` |
+| 启动（安装版） | `DESKPET_DATA_DIR` 指到临时目录后起 CDP，`getAppStatus()` 报 `version 0.6.7`、`state bubble`，点一下正常冒泡 |
+| 静默卸载 | 0.3s 退出码 0；安装目录 0 个残留、两个快捷方式已删、ARP 条目已删、用户数据保留 |
+| 安装目录干净 | 修复 `log.js` 后安装目录里不再出现 `desk-pet-boot.log`（打包版 breadcrumb 改到 `%TEMP%`） |
+
+### 7.4 踩坑（都验证过）
+
+1. **目录名是 `desk-pet`**：一开始拿 `%LOCALAPPDATA%\Programs\DeskPet` 判断“装没装”，连续几轮都判成“静默安装无效”——实际早就装好了。验证脚本要么读 `UninstallString`，要么按 `name` 推路径。
+2. **向导式 + 静默安装是坏的**：`oneClick: false` 时 `$INSTDIR` 只由向导页的 `setInstallModePerUser` 赋值；静默模式没有页面 → `$INSTDIR` 为空 → `CHECK_APP_RUNNING` 里 PowerShell 的 `$_.Path.StartsWith('$INSTDIR')` 变成 `StartsWith('')`，**任何进程都算命中** → 误判“DeskPet 正在运行”，静默退出码 0、什么都没装；向导模式则卡在「无法关闭 DeskPet 进程」。改成一键安装后两个问题都消失（`oneClick.nsh` 在 `.onInit` 里就设好安装模式）。
+3. **`%TEMP%` 不可写**：报 `NSIS Error: Error writing temporary file…`，见 §5.2。
+4. **构建产物复用**：见 §7.2 的 `clean:dist`。
+5. **`/D=` 只在向导模式可靠**：一键安装固定装到 `%LOCALAPPDATA%\Programs\desk-pet`，想换位置就用便携版。

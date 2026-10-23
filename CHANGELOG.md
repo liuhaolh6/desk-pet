@@ -9,6 +9,21 @@
 - 计划中的工作与现有不足的完整清单见 [`ROADMAP.md`](ROADMAP.md)（成熟度评分、P0–P3 方向、未来展望）；
   机制细节与踩坑记录见 [`HANDOFF.md`](HANDOFF.md)。
 
+## [0.6.8] - 2026-10-23
+
+第一个能“双击安装”的版本：0.6.7 及以前只有便携版（解压到临时目录、还会被安全软件拦）。
+
+### 打包
+- **NSIS 安装器（ROADMAP P2-1）**：`DeskPet-0.6.8-setup.exe`，一键安装、无需管理员，装到
+  `%LOCALAPPDATA%\Programs\desk-pet`，带开始菜单/桌面快捷方式和卸载入口（设置 → 应用）；
+  卸载保留用户数据（`deleteAppDataOnUninstall: false`）。
+  踩坑与验证：§7 of [`M6-PACKAGING.md`](M6-PACKAGING.md)——尤其是**向导式安装器 + 静默安装是坏的**
+  （`$INSTDIR` 为空 → `CHECK_APP_RUNNING` 把任何进程当成 DeskPet → 退出码 0 但什么都没装），
+  所以改成 `oneClick: true`。新增 `npm run clean:dist`（`tools/clean-dist.js`）避免把上一次运行
+  留下的启动日志打进安装包。
+- **打包版启动日志不再写进安装目录**：`app/main/log.js` 的 breadcrumb 在打包版写到 `%TEMP%\desk-pet-boot.log`
+  （开发版仍写在仓库根），安装目录保持干净。
+
 ## [0.6.7] - 2026-10-23
 
 地基理顺的一版：主进程拆成 16 个模块（`main.js` 1451 → 226 行）、窗口状态机收口；顺手补上设置的可用性、喝水记录、天气细节和"主动说话"。

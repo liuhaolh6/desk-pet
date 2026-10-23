@@ -13,12 +13,12 @@
 | 是什么 | Windows x64 桌面宠物（Electron 44 + 离线 ONNX 人像抠图），悬浮在桌面上，点击看天气 / 喝水 / 温馨话 |
 | 本地目录 | `D:\project\deskpet` |
 | 仓库 | `ssh://git@ssh.github.com:443/liuhaolh6/desk-pet.git`，分支 `main`，**当前是私有仓库** |
-| 版本 | `0.6.7`，**已出包** `dist\DeskPet-0.6.7-portable.exe`（153,885,681 B ≈ 146.8 MiB，未签名，SHA-256 `920284dd…4521df`）与 `dist\win-unpacked\`；tag 推到 `v0.6.7`（`0.6.1`–`0.6.6` 的 tag 由各版收尾时打，见 `git tag`） |
-| 最近提交 | 0.6.7 打包 = 本提交；P1 全部落地：`e2952ca` P1-9 e2e 入库 · `6c7a4fb` P1-8 真机 a11y · `94358ae` P1-7 主动说话 · `cdb3531` P1-6 天气增强 · `469d343` P1-5 喝水记录 · `b106382` P1-4 设置可用性 · `6342b75` P1-3 单测 · `01de0b2` P1-2 状态机 · `80332c7` P1-1 完成；0.6.6 收尾 = `e01c1cb`/`12176d2`/`5be8c4d`；再往前 `adbe033` 0.6.5 首次引导 |
+| 版本 | `0.6.8`，**已出双包**：`dist\DeskPet-0.6.8-setup.exe`（165,558,348 B ≈ 157.9 MiB，安装器，未签名，SHA-256 `2d5dfe47…fff89c`）与 `dist\DeskPet-0.6.8-portable.exe`（153,882,861 B ≈ 146.8 MiB，便携版，SHA-256 `668ba228…e777a16`）；tag `v0.6.8` |
+| 最近提交 | 0.6.8 收尾 = 本提交；P2 进行中：P2-1 安装器（`nsis` 配置、`tools/clean-dist.js`、`boot-candidates` 单测）；P1 全部落地：`e2952ca` P1-9 e2e 入库 · `6c7a4fb` P1-8 真机 a11y · `94358ae` P1-7 主动说话 · `cdb3531` P1-6 天气增强 · `469d343` P1-5 喝水记录 · `b106382` P1-4 设置可用性 · `6342b75` P1-3 单测 · `01de0b2` P1-2 状态机 · `80332c7` P1-1 完成；0.6.6 收尾 = `e01c1cb`/`12176d2`/`5be8c4d`；再往前 `adbe033` 0.6.5 首次引导 |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js`（`npm test` = smoke + `npm run unit`）；带窗口的再加 `npm run test:e2e` |
-| 自动化基线 | smoke **61 项** · unit **100 例** · check-a11y **95 项** · a11y-audit **86 项** · a11y-keyboard **6 项** · a11y-tree **4 窗口 / 0 无名** · e2e **3 用例**，全部通过 |
-| 最新产物 | `dist/DeskPet-0.6.7-portable.exe`，153,885,681 字节，SHA-256 `920284dde614ade2d5618d28cf5317542c3922f80f19e87a81d59687d54521df`（`win-unpacked\` 同版本 247,297,536 字节） |
+| 自动化基线 | smoke **61 项** · unit **105 例** · check-a11y **95 项** · a11y-audit **86 项** · a11y-keyboard **6 项** · a11y-tree **4 窗口 / 0 无名** · e2e **3 用例**，全部通过 |
+| 最新产物 | 安装器 `dist/DeskPet-0.6.8-setup.exe` 165,558,348 字节，SHA-256 `2d5dfe47eb809af9e762b41b367d53da83c21d5634cfa31c9bfb0a82c9fff89c`；便携版 `dist/DeskPet-0.6.8-portable.exe` 153,882,861 字节，SHA-256 `668ba228f9f6c700a93fd1c48c0bfcabdefa910b21a74291c3c89ba62e777a16` |
 
 **能做什么**：换形象（照片抠图 / 导入 PNG）、点击看天气和喝水进度、按时提醒喝水、24 条内置温柔提示语、
 气泡内容自己排版（28 种模块）、音效可换、多显示器记忆与贴边吸附、托盘、开机自启、便携运行（数据跟着文件夹走）。
@@ -55,7 +55,7 @@
 | 角色 | 照片抠图（离线 U2Net 44MB，蒙版/擦除/旋转/翻转/回退） | ⚠️ | CPU 推理 0.9–1.3s；复杂背景/发丝仍可能残留 |
 | 设置 | 7 个分类面板、即时保存、角色图库、音效库 | ✅ | 无"恢复默认/撤销" |
 | 系统集成 | 托盘菜单、开机自启、单实例 | ⚠️ | 本机 `D:\project` 子树里的 exe 一律注册不上托盘（`Shell_NotifyIcon` 返回 `ERROR_ACCESS_DENIED(5)`，换到 `D:\`、`%TEMP%`、`D:\DeskPetTest` 就正常）→ 不是产品缺陷（§6.1 5.10）；`Ctrl+Alt+P` + 悬浮菜单兜底仍在 |
-| 打包 | portable exe、图标/版本信息、便携数据目录 | ✅ | 未签名；无安装器、无自动更新 |
+| 打包 | portable exe + NSIS 安装器（可选目录、桌面/开始菜单快捷方式、卸载）、图标/版本信息、便携数据目录 | ✅ | 未签名；无自动更新；安装器仅当前用户（无需管理员） |
 | 无障碍 | 4 窗口 + 7 面板 + 编辑器全标签页的自动化审计 | ✅ | 屏幕阅读器与真实高对比度主题**未验证** |
 
 ---
@@ -127,7 +127,7 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `lib/placement.js` | 185 | 多显示器归属、吸附、启动还原（纯函数） |
 | `lib/cutout*.js` + `lib/png.js` | 359/320/438/161 | 离线抠图：入口、数学、像素管线、PNG 编解码 |
 | `tools/smoke.js` | 1350 | `npm test` 的第一段：存储/角色/天气/气泡/几何/文案/引导/托盘/诊断/模块拆分/窗口状态机/天气泵/提醒/设置搜索与恢复默认/喝水记录 59 项断言 |
-| `tests/unit/*.test.js`（新） | 100 例 | `npm run unit`（`node:test`，零依赖）：`bubble-model` 19 · `placement` 16 · `weather` 24 · `cutout-math` 15 · `water-log` 15 · `nudges` 11（P1-3/P1-7） |
+| `tests/unit/*.test.js`（新） | 105 例 | `npm run unit`（`node:test`，零依赖）：`bubble-model` 19 · `placement` 16 · `weather` 24 · `cutout-math` 15 · `water-log` 15 · `nudges` 11 · `boot-candidates` 5（P1-3/P1-7/P2-1） |
 | `docs/USER-GUIDE.md` | 123 | 用户手册：三分钟上手 + 9 条 FAQ（0.6.6 / ROADMAP P0-4） |
 
 ### 3.3 气泡几何契约（0.6.1 起，改之前先读 `M14-NOTES.md`）
@@ -196,9 +196,9 @@ token 表上限 3，窗口关闭即清空。
 
 | 工具 | 覆盖 | 命令 | 当前 |
 |---|---|---|---|
-| 语法 | 47 个 JS 文件 | `npm run check` | ✅ |
+| 语法 | 49 个 JS 文件 | `npm run check` | ✅ |
 | `tools/smoke.js` | 存储/角色/天气码/`advice`/气泡模型/几何不变量/文案/首次引导/托盘兜底/诊断导出/主进程模块拆分/窗口状态机/预留-可见性分离/天气泵回退/提醒限流与勿扰/设置搜索与按页恢复默认/喝水记录与延后/主动说话 | `npm test` | ✅ 61 项 |
-| `tests/unit/` | 纯函数单测：气泡模型归一化/取值、多显示器放置与吸附、天气文案与 AQI、抠图数学、喝水记录、主动说话决策 | `npm run unit` | ✅ 100 例 |
+| `tests/unit/` | 纯函数单测：气泡模型归一化/取值、多显示器放置与吸附、天气文案与 AQI、抠图数学、喝水记录、主动说话决策、便携数据目录候选 | `npm run unit` | ✅ 105 例 |
 | `tools/check-a11y.js` | 静态无障碍断言（对比度数学、24px、reduced-motion、forced-colors 分支、回流、aria、`lang`、引导卡、托盘/诊断行、搜索框与恢复默认确认层） | `node tools/check-a11y.js` | ✅ 95 项 |
 | `tools/a11y-audit.js` | 真实 DOM 审计（AX 名称、对比度、目标尺寸、焦点、320px 回流、forced-colors、reduced-motion） | `--port <调试端口>` | ✅ 86 项 / 0 失败 |
 | `tools/a11y-keyboard.js` | 键盘-only 抠图全流程 | `node tools/a11y-keyboard.js` | ✅ 6 项 |
@@ -273,6 +273,15 @@ Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
 9. **未签名 exe 会触发 SmartScreen**；不要在任何文档/回复里声称"已签名"。
 10. **一次推超过 3 个 tag 不会触发任何 workflow**（GitHub 限制）；要发版就单独推那个 tag。
 11. **仓库私有**：匿名 API/网页一律 404，CI/Release 结果只能网页登录看或用 token。
+12. **安装器别再改回向导式**：`nsis.oneClick: false` 在静默安装（CI、`/S`）时没有向导页，`$INSTDIR` 为空，
+    electron-builder 模板里的 `CHECK_APP_RUNNING` 会拿空路径匹配进程、误判「应用正在运行」而以成功码退出。
+    现在固定 `oneClick: true` + `perMachine: false` + `createDesktopShortcut`，不要再用 `oneClick:false`。
+13. **安装目录名来自 `appId` 的主进程产物名**：`appId: com.liuhao.deskpet` → `%LOCALAPPDATA%\Programs\desk-pet`
+    （不是产品中文名“桌宠”）。验证脚本一律从 `app:status` 的 `dataDir`/exe 路径反推，不要猜。
+14. **安装版的启动日志在系统临时目录**：`path.dirname(process.execPath)` 在安装目录里不可写，
+    `breadcrumb()` 会回退到 `os.tmpdir()\desk-pet-boot.log`；排查“双击没反应”先看那里。
+15. **卸载是异步的**：`Uninstall DeskPet.exe /S` 退出码返回后文件还要再删几秒；脚本里要轮询而不是刚退出就断言失败。
+16. `dist\` 会累积十几版旧包（2GB+），每次出包前跑 `node tools/clean-dist.js`（保留当前版本与 `win-unpacked`）。
 
 ### 6.3 测试与环境细节
 12. **按下即收起气泡只在真正拖动（>4px）时发生**，否则第二次点击永远回到第一张卡。
@@ -314,14 +323,19 @@ Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
 
 ### 7.3 版本与发布
 - 版本号有**两处**：`package.json` 与 `package-lock.json`（含 `packages[""].version`）。
-- 本机构建 portable（64 位 NSIS 包装）：
+- 本机构建 portable（64 位 NSIS 包装）与安装器：
 
 ```powershell
 $env:ELECTRON_BUILDER_CACHE='D:\project\deskpet\.builder-cache'
 $env:CSC_IDENTITY_AUTO_DISCOVERY='false'
 $env:ELECTRON_BUILDER_NSIS_DIR='D:\project\deskpet\.tmp-verify\nsis-legacy'
+node tools/clean-dist.js                  # 先清旧包（保留当前版本 + win-unpacked）
 node node_modules/electron-builder/cli.js --win portable --x64
+node node_modules/electron-builder/cli.js --win nsis --x64   # → dist\DeskPet-<v>-setup.exe
 ```
+
+- 安装器验证（静默，无需管理员）：`"dist\DeskPet-<v>-setup.exe" /S` → `%LOCALAPPDATA%\Programs\desk-pet\DeskPet.exe`；
+  卸载 `"Uninstall DeskPet.exe" /S /currentuser`（异步，等几秒再断言）。
 
 - 发布：推**单个** `v*` tag → `release.yml` 构建并创建 Release（失败自动开 Issue）；
   签名工作流 `sign-release.yml` 在配置 `SIGNPATH_*` 变量后才生效（见 `SIGNING.md`）。
@@ -363,6 +377,6 @@ node node_modules/electron-builder/cli.js --win portable --x64
 
 > 继续 `D:\project\deskpet` 的 Windows 桌面宠物项目，先读 `HANDOFF.md`（§0 速览、§4 不变量、§6 坑）
 > 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.6`，`main` 已同步，tag 到 `v0.6.6`。
-> 验证基线：`npm run check` + `npm test`（smoke 61 项 + unit 100 例）+ `node tools/check-a11y.js`（95 项）全部通过；
+> 验证基线：`npm run check` + `npm test`（smoke 61 项 + unit 105 例）+ `node tools/check-a11y.js`（95 项）全部通过；
 > 带界面的还要跑 `npm run test:e2e`（3 用例）、`a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
 > 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。
