@@ -9,6 +9,8 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const model = require('../../app/bubble-model.js')
+const { createI18n } = require('../../lib/i18n.js')
+const t = createI18n({ locale: 'zh-CN', dict: require('../../locales/zh-CN.json') }).t
 
 const { newModule, normalizeStyle, normalizeModule, normalizeRow, normalizeCard, normalizeLayout, resolveCard, valueOf, styleToString, defaultLayout, STYLE_DEFAULT } = model
 
@@ -89,7 +91,7 @@ test('normalizeLayout：未出现的默认卡片会被补回来', () => {
   const layout = normalizeLayout({ cards: [{ id: 'weather', rows: [[{ type: 'text', text: '晴' }]] }] })
   const ids = layout.cards.map((c) => c.id)
   assert.ok(ids.includes('weather'))
-  assert.ok(ids.length >= defaultLayout().cards.length)
+  assert.ok(ids.length >= defaultLayout(t).cards.length)
 })
 
 test('resolveCard：只有连接符（·、/）的行被丢掉', () => {
@@ -117,12 +119,13 @@ test('resolveCard：动态模块全为空时整行丢掉（不显示空标签）
 })
 
 test('valueOf：名字缺省为「桌宠」', () => {
-  assert.equal(valueOf('name', {}), '桌宠')
-  assert.equal(valueOf('name', { name: '小芳' }), '小芳')
+  assert.equal(valueOf('name', { t }), '桌宠')
+  assert.equal(valueOf('name', { name: '小芳', t }), '小芳')
 })
 
 test('valueOf：天气各字段的格式', () => {
   const ctx = {
+    t,
     weather: {
       ok: true, temp: 13.4, feels: 11.2, low: 7, high: 18, precip: 0.2,
       humidity: 79, wind: 12.4, code: 0, text: '晴', icon: '☀️', city: '北京',
@@ -140,14 +143,15 @@ test('valueOf：天气各字段的格式', () => {
 })
 
 test('valueOf：天气未就绪时只给一句提示，数字字段留空', () => {
-  assert.equal(valueOf('weather.city', { weather: { ok: false, message: '定位中' } }), '定位中')
-  assert.equal(valueOf('weather.city', {}), '正在取天气…')
-  assert.equal(valueOf('weather.temp', { weather: { ok: false } }), '')
-  assert.equal(valueOf('weather.tip', {}), '')
+  assert.equal(valueOf('weather.city', { t, weather: { ok: false, message: '定位中' } }), '定位中')
+  assert.equal(valueOf('weather.city', { t }), '正在取天气…')
+  assert.equal(valueOf('weather.temp', { t, weather: { ok: false } }), '')
+  assert.equal(valueOf('weather.tip', { t }), '')
 })
 
 test('valueOf：紫外线、明天、未来几小时', () => {
   const ctx = {
+    t,
     weather: {
       ok: true, uv: 5.6,
       tomorrow: { low: 6, high: 15, text: '多云' },
@@ -164,6 +168,7 @@ test('valueOf：紫外线、明天、未来几小时', () => {
 
 test('valueOf：天气未来两天压成一行，缺数据时留空', () => {
   const ctx = {
+    t,
     weather: {
       ok: true,
       days: [
@@ -174,21 +179,21 @@ test('valueOf：天气未来两天压成一行，缺数据时留空', () => {
     },
   }
   assert.equal(valueOf('weather.days', ctx), '明天 6~15° 🌦️ · 后天 8~17° ☁️')
-  assert.equal(valueOf('weather.days', { weather: { ok: true } }), '')
-  assert.equal(valueOf('weather.days', { weather: { ok: true, days: [{ label: '今天' }] } }), '')
+  assert.equal(valueOf('weather.days', { t, weather: { ok: true } }), '')
+  assert.equal(valueOf('weather.days', { t, weather: { ok: true, days: [{ label: '今天' }] } }), '')
 })
 
 test('valueOf：空气模块在缺空气数据时不显示（断网也不出现空洞）', () => {
-  const withAir = { weather: { ok: true, air: { aqi: 35, text: '良', pm25: 12 } } }
+  const withAir = { t, weather: { ok: true, air: { aqi: 35, text: '良', pm25: 12 } } }
   assert.equal(valueOf('air.quality', withAir), '空气良（35）')
   assert.equal(valueOf('air.pm', withAir), 'PM2.5 12')
-  assert.equal(valueOf('air.quality', { weather: { ok: true } }), '')
-  assert.equal(valueOf('air.pm', { weather: { ok: true, air: { aqi: 35 } } }), '')
-  assert.equal(valueOf('air.quality', { weather: { ok: false, air: { aqi: 35, text: '良' } } }), '')
+  assert.equal(valueOf('air.quality', { t, weather: { ok: true } }), '')
+  assert.equal(valueOf('air.pm', { t, weather: { ok: true, air: { aqi: 35 } } }), '')
+  assert.equal(valueOf('air.quality', { t, weather: { ok: false, air: { aqi: 35, text: '良' } } }), '')
 })
 
 test('默认天气卡带一行空气 + 未来两天，且都是低对比度小字', () => {
-  const card = defaultLayout().cards.find((c) => c.id === 'weather')
+  const card = defaultLayout(t).cards.find((c) => c.id === 'weather')
   const flat = card.rows.flat()
   const types = flat.map((m) => m.type)
   assert.ok(types.includes('air.quality'))
@@ -199,26 +204,26 @@ test('默认天气卡带一行空气 + 未来两天，且都是低对比度小�
 })
 
 test('valueOf：离线缓存提示只在 stale 时出现', () => {
-  assert.equal(valueOf('weather.hint', { weather: { ok: true, stale: true } }), '离线缓存')
-  assert.equal(valueOf('weather.hint', { weather: { ok: true } }), '')
+  assert.equal(valueOf('weather.hint', { t, weather: { ok: true, stale: true } }), '离线缓存')
+  assert.equal(valueOf('weather.hint', { t, weather: { ok: true } }), '')
 })
 
 test('valueOf：喝水的进度、间隔与下次时间', () => {
-  assert.equal(valueOf('water.progress', { cups: 3 }), '●●●○○○○○')
-  assert.equal(valueOf('water.progress', { cups: 99 }), '●●●●●●●●')
-  assert.equal(valueOf('water.interval', { interval: 60 }), '每 60 分钟')
-  assert.equal(valueOf('water.interval', {}), '还没设提醒')
-  assert.equal(valueOf('water.cups', {}), '0')
-  assert.match(valueOf('water.next', { nextAt: Date.now() + 20 * 60000 }), /^再过 \d+ 分钟$/)
-  assert.equal(valueOf('water.next', { nextAt: Date.now() - 60000 }), '该喝啦')
-  assert.equal(valueOf('water.next', {}), '')
+  assert.equal(valueOf('water.progress', { cups: 3, t }), '●●●○○○○○')
+  assert.equal(valueOf('water.progress', { cups: 99, t }), '●●●●●●●●')
+  assert.equal(valueOf('water.interval', { interval: 60, t }), '每 60 分钟')
+  assert.equal(valueOf('water.interval', { t }), '还没设提醒')
+  assert.equal(valueOf('water.cups', { t }), '0')
+  assert.match(valueOf('water.next', { nextAt: Date.now() + 20 * 60000, t }), /^再过 \d+ 分钟$/)
+  assert.equal(valueOf('water.next', { nextAt: Date.now() - 60000, t }), '该喝啦')
+  assert.equal(valueOf('water.next', { t }), '')
 })
 
 test('valueOf：安静时段与上次喝水', () => {
-  assert.equal(valueOf('water.quiet', { quiet: { from: '23', to: '8' } }), '安静 23 点到 8 点')
-  assert.equal(valueOf('water.quiet', {}), '不设安静时段')
-  assert.equal(valueOf('water.last', {}), '今天还没喝呢')
-  assert.match(valueOf('water.last', { lastDrinkAt: Date.now() }), /^上次 \d{2}:\d{2}$/)
+  assert.equal(valueOf('water.quiet', { quiet: { from: '23', to: '8' }, t }), '安静 23 点到 8 点')
+  assert.equal(valueOf('water.quiet', { t }), '不设安静时段')
+  assert.equal(valueOf('water.last', { t }), '今天还没喝呢')
+  assert.match(valueOf('water.last', { lastDrinkAt: Date.now(), t }), /^上次 \d{2}:\d{2}$/)
 })
 
 test('styleToString：默认样式返回空串，逐项生成声明', () => {

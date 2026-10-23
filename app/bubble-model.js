@@ -14,37 +14,37 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   // ------------------------------------------------------------ module types
   const TYPES = [
-    { key: 'text', label: '写好的文字', field: 'text', sample: '文本' },
-    { key: 'random', label: '随机挑一句', sample: '记得喝水呀～' },
-    { key: 'name', label: '我的名字', sample: '小芳桌宠' },
-    { key: 'weather.icon', label: '天气：图标', sample: '🌤️' },
-    { key: 'weather.city', label: '天气：城市', sample: '北京' },
-    { key: 'weather.temp', label: '天气：现在几度', sample: '13°' },
-    { key: 'weather.text', label: '天气：晴雨', sample: '晴' },
-    { key: 'weather.feels', label: '天气：体感几度', sample: '体感 11°' },
-    { key: 'weather.range', label: '天气：今天高低温', sample: '7~18°' },
-    { key: 'weather.precip', label: '天气：会不会下雨', sample: '0%' },
-    { key: 'weather.humidity', label: '天气：湿度', sample: '79%' },
-    { key: 'weather.wind', label: '天气：风大不大', sample: '风 12km/h' },
-    { key: 'weather.sun', label: '天气：日出日落', sample: '06:42 日出 · 17:21 日落' },
-    { key: 'weather.uv', label: '天气：紫外线', sample: '紫外线 6' },
-    { key: 'weather.tomorrow', label: '天气：明天', sample: '明天 6~15° 多云' },
-    { key: 'weather.hourly', label: '天气：接下来几小时', sample: '15点 14° 多云 → …' },
-    { key: 'weather.days', label: '天气：未来两天', sample: '明天 6~15° ⛅ · 后天 5~14° 🌧️' },
-    { key: 'air.quality', label: '空气：好坏', sample: '空气良（35）· 出去走走正好' },
-    { key: 'air.pm', label: '空气：PM2.5', sample: 'PM2.5 12' },
-    { key: 'weather.tip', label: '天气：贴心提醒', sample: '记得带伞呀' },
-    { key: 'weather.updated', label: '天气：更新时间', sample: '更新于 22:12' },
-    { key: 'weather.hint', label: '天气：离线提示', sample: '离线缓存' },
-    { key: 'water.cups', label: '喝水：今天几杯', sample: '3' },
-    { key: 'water.next', label: '喝水：还有多久', sample: '再过 42 分钟' },
-    { key: 'water.progress', label: '喝水：今天进度', sample: '●●●○○○○○' },
-    { key: 'water.interval', label: '喝水：多久提醒一次', sample: '每 60 分钟' },
-    { key: 'water.quiet', label: '喝水：安静时段', sample: '安静 23 点到 8 点' },
-    { key: 'water.last', label: '喝水：上次什么时候', sample: '上次 22:12' },
-    { key: 'water.tip', label: '喝水：一句叮嘱', sample: '慢慢喝，别急呀' },
-    { key: 'time', label: '当前时间', sample: '22:12' },
-    { key: 'date', label: '今天的日期', sample: '10月19日 周日' },
+    { key: 'text', labelKey: 'bubble.type.text', field: 'text', sampleKey: 'bubble.sample.text' },
+    { key: 'random', labelKey: 'bubble.type.random', sampleKey: 'bubble.sample.random'  },
+    { key: 'name', labelKey: 'bubble.type.name', sampleKey: 'bubble.sample.name'  },
+    { key: 'weather.icon', labelKey: 'bubble.type.weather_icon', sampleKey: 'bubble.sample.weather_icon'  },
+    { key: 'weather.city', labelKey: 'bubble.type.weather_city', sampleKey: 'bubble.sample.weather_city'  },
+    { key: 'weather.temp', labelKey: 'bubble.type.weather_temp', sampleKey: 'bubble.sample.weather_temp'  },
+    { key: 'weather.text', labelKey: 'bubble.type.weather_text', sampleKey: 'bubble.sample.weather_text'  },
+    { key: 'weather.feels', labelKey: 'bubble.type.weather_feels', sampleKey: 'bubble.sample.weather_feels'  },
+    { key: 'weather.range', labelKey: 'bubble.type.weather_range', sampleKey: 'bubble.sample.weather_range'  },
+    { key: 'weather.precip', labelKey: 'bubble.type.weather_precip', sampleKey: 'bubble.sample.weather_precip'  },
+    { key: 'weather.humidity', labelKey: 'bubble.type.weather_humidity', sampleKey: 'bubble.sample.weather_humidity'  },
+    { key: 'weather.wind', labelKey: 'bubble.type.weather_wind', sampleKey: 'bubble.sample.weather_wind'  },
+    { key: 'weather.sun', labelKey: 'bubble.type.weather_sun', sampleKey: 'bubble.sample.weather_sun'  },
+    { key: 'weather.uv', labelKey: 'bubble.type.weather_uv', sampleKey: 'bubble.sample.weather_uv'  },
+    { key: 'weather.tomorrow', labelKey: 'bubble.type.weather_tomorrow', sampleKey: 'bubble.sample.weather_tomorrow'  },
+    { key: 'weather.hourly', labelKey: 'bubble.type.weather_hourly', sampleKey: 'bubble.sample.weather_hourly'  },
+    { key: 'weather.days', labelKey: 'bubble.type.weather_days', sampleKey: 'bubble.sample.weather_days'  },
+    { key: 'air.quality', labelKey: 'bubble.type.air_quality', sampleKey: 'bubble.sample.air_quality'  },
+    { key: 'air.pm', labelKey: 'bubble.type.air_pm', sampleKey: 'bubble.sample.air_pm'  },
+    { key: 'weather.tip', labelKey: 'bubble.type.weather_tip', sampleKey: 'bubble.sample.weather_tip'  },
+    { key: 'weather.updated', labelKey: 'bubble.type.weather_updated', sampleKey: 'bubble.sample.weather_updated'  },
+    { key: 'weather.hint', labelKey: 'bubble.type.weather_hint', sampleKey: 'bubble.sample.weather_hint'  },
+    { key: 'water.cups', labelKey: 'bubble.type.water_cups', sampleKey: 'bubble.sample.water_cups'  },
+    { key: 'water.next', labelKey: 'bubble.type.water_next', sampleKey: 'bubble.sample.water_next'  },
+    { key: 'water.progress', labelKey: 'bubble.type.water_progress', sampleKey: 'bubble.sample.water_progress'  },
+    { key: 'water.interval', labelKey: 'bubble.type.water_interval', sampleKey: 'bubble.sample.water_interval'  },
+    { key: 'water.quiet', labelKey: 'bubble.type.water_quiet', sampleKey: 'bubble.sample.water_quiet'  },
+    { key: 'water.last', labelKey: 'bubble.type.water_last', sampleKey: 'bubble.sample.water_last'  },
+    { key: 'water.tip', labelKey: 'bubble.type.water_tip', sampleKey: 'bubble.sample.water_tip'  },
+    { key: 'time', labelKey: 'bubble.type.time', sampleKey: 'bubble.sample.time'  },
+    { key: 'date', labelKey: 'bubble.type.date', sampleKey: 'bubble.sample.date'  },
   ]
 
   const TYPE_MAP = Object.fromEntries(TYPES.map((t) => [t.key, t]))
@@ -97,7 +97,7 @@
   }
 
   function normalizeCard(raw, fallback) {
-    const card = fallback ? JSON.parse(JSON.stringify(fallback)) : { id: uid('card'), name: '新的卡片', rows: [], action: false }
+    const card = fallback ? JSON.parse(JSON.stringify(fallback)) : { id: uid('card'), name: 'bubble.card.new', rows: [], action: false }
     if (!raw || typeof raw !== 'object') return card
     if (typeof raw.id === 'string' && raw.id) card.id = raw.id
     if (typeof raw.name === 'string' && raw.name) card.name = raw.name.slice(0, 20)
@@ -115,18 +115,19 @@
     return { id: uid(), type, text: '', style: { ...STYLE_DEFAULT, ...(style || {}) } }
   }
 
-  function defaultLayout() {
+  function defaultLayout(translate) {
+    const tr = typeof translate === 'function' ? translate : (key) => key
     const cards = [
       {
         id: 'weather',
-        name: '天气',
+        name: tr('bubble.card.weather'),
         action: false,
         rows: [
-          [textModule('🌤️ 天气', { bold: true })],
+          [textModule(tr('bubble.text.weatherTitle'), { bold: true })],
           [module('weather.icon'), module('weather.city'), module('weather.temp', { bold: true, size: 15 })],
           [module('weather.text'), module('weather.feels')],
           [module('weather.tip')],
-          [textModule('今日 '), module('weather.range'), textModule(' · 降水 '), module('weather.precip')],
+          [textModule(tr('bubble.text.todayPrefix')), module('weather.range'), textModule(tr('bubble.text.precip')), module('weather.precip')],
           [module('air.quality', { size: 11, color: '#5d6a86' }), module('weather.days', { size: 11, color: '#5d6a86' })],
           // #5d6a86 keeps the 11px hint line at ~4.8:1 on white (WCAG AA);
           // #8890a8 only reached 3.18:1.
@@ -135,11 +136,11 @@
       },
       {
         id: 'water',
-        name: '喝水',
+        name: tr('bubble.card.water'),
         action: true,
         rows: [
-          [textModule('💧 该喝水啦', { bold: true })],
-          [module('water.progress'), textModule(' 今天第 '), module('water.cups'), textModule(' 杯')],
+          [textModule(tr('bubble.text.waterTitle'), { bold: true })],
+          [module('water.progress'), textModule(tr('bubble.text.cupsPrefix')), module('water.cups'), textModule(tr('bubble.text.cupsSuffix'))],
           [module('water.next')],
           [module('water.interval'), textModule(' · '), module('water.quiet')],
           [module('water.tip')],
@@ -147,10 +148,10 @@
       },
       {
         id: 'random',
-        name: '想说的话',
+        name: tr('bubble.card.random'),
         action: false,
         rows: [
-          [textModule('💬 '), module('name', { bold: true })],
+          [textModule(tr('bubble.text.chatPrefix')), module('name', { bold: true })],
           [module('random')],
         ],
       },
@@ -160,18 +161,18 @@
       cards,
       queue: ['weather', 'water', 'random'],
       library: [
-        { id: uid('lib'), label: '当前时间', module: module('time') },
-        { id: uid('lib'), label: '天气一行', module: module('weather.icon') },
-        { id: uid('lib'), label: '贴心提醒', module: module('weather.tip') },
-        { id: uid('lib'), label: '未来几小时', module: module('weather.hourly') },
-        { id: uid('lib'), label: '未来两天', module: module('weather.days') },
-        { id: uid('lib'), label: '空气质量', module: module('air.quality') },
+        { id: uid('lib'), label: tr('bubble.library.time'), module: module('time') },
+        { id: uid('lib'), label: tr('bubble.library.weather'), module: module('weather.icon') },
+        { id: uid('lib'), label: tr('bubble.library.advice'), module: module('weather.tip') },
+        { id: uid('lib'), label: tr('bubble.library.hourly'), module: module('weather.hourly') },
+        { id: uid('lib'), label: tr('bubble.library.days'), module: module('weather.days') },
+        { id: uid('lib'), label: tr('bubble.library.air'), module: module('air.quality') },
       ],
     }
   }
 
-  function normalizeLayout(raw) {
-    const fallback = defaultLayout()
+  function normalizeLayout(raw, translate) {
+    const fallback = defaultLayout(translate)
     if (!raw || typeof raw !== 'object') return fallback
     const cards = []
     const byId = new Map(fallback.cards.map((c) => [c.id, c]))
@@ -206,12 +207,13 @@
     return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
   }
 
-  function pickRandom(list) {
-    if (!Array.isArray(list) || !list.length) return '我在呢～'
+  function pickRandom(list, t) {
+    if (!Array.isArray(list) || !list.length) return t('bubble.random.empty')
     return list[Math.floor(Math.random() * list.length)]
   }
 
   function valueOf(type, ctx) {
+    const t = (ctx && typeof ctx.t === 'function') ? ctx.t : (key) => key
     const w = (ctx && ctx.weather) || null
     const ok = w && w.ok
     // Weather numbers can be missing (partial API response) — never print "null".
@@ -219,39 +221,41 @@
     const deg = (v) => num(v) + '°'
     const pct = (v) => (Number.isFinite(Number(v)) ? Math.round(Number(v)) + '%' : '—')
     switch (type) {
-      case 'random': return pickRandom(ctx && ctx.phrases)
-      case 'name': return (ctx && ctx.name) || '桌宠'
+      case 'random': return pickRandom(ctx && ctx.phrases, t)
+      case 'name': return (ctx && ctx.name) || t('bubble.name.fallback')
       case 'time': return fmtTime(Date.now())
       case 'date': {
         const d = new Date()
-        const week = '日一二三四五六'[d.getDay()]
-        return (d.getMonth() + 1) + '月' + d.getDate() + '日 周' + week
+        const week = t('bubble.weekday.' + ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][d.getDay()])
+        return t('bubble.date', { month: d.getMonth() + 1, day: d.getDate(), week })
       }
       case 'weather.icon': return ok ? (w.icon || '🌤️') : ''
       // While the first fetch is in flight the card collapses to one friendly
       // line instead of a wall of em-dashes.
-      case 'weather.city': return ok ? (w.city || '当前') : ((w && w.message) || '正在取天气…')
+      case 'weather.city': return ok ? (w.city || t('bubble.weather.current')) : ((w && w.message) || t('bubble.weather.loading'))
       case 'weather.temp': return ok ? deg(w.temp) : ''
       case 'weather.text': return ok ? w.text : ''
-      case 'weather.feels': return ok && Number.isFinite(Number(w.feels)) ? '体感 ' + deg(w.feels) : ''
+      case 'weather.feels': return ok && Number.isFinite(Number(w.feels)) ? t('bubble.weather.feels', { temp: deg(w.feels) }) : ''
       case 'weather.range': return ok ? num(w.low) + '~' + num(w.high) + '°' : ''
       case 'weather.precip': return ok ? pct(w.precip) : ''
       case 'weather.humidity': return ok ? pct(w.humidity) : ''
-      case 'weather.wind': return ok && Number.isFinite(Number(w.wind)) ? '风 ' + Math.round(w.wind) + 'km/h' : ''
+      case 'weather.wind': return ok && Number.isFinite(Number(w.wind)) ? t('bubble.weather.wind', { speed: Math.round(w.wind) }) : ''
       case 'weather.sun': {
         if (!ok || !w.sunrise || !w.sunset) return ''
-        return w.sunrise + ' 日出 · ' + w.sunset + ' 日落'
+        return t('bubble.weather.sun', { rise: w.sunrise, set: w.sunset })
       }
-      case 'weather.uv': return ok && Number.isFinite(Number(w.uv)) ? '紫外线 ' + Math.round(w.uv) : ''
+      case 'weather.uv': return ok && Number.isFinite(Number(w.uv)) ? t('bubble.weather.uv', { n: Math.round(w.uv) }) : ''
       case 'weather.tomorrow': {
         if (!ok || !w.tomorrow || !Number.isFinite(Number(w.tomorrow.high))) return ''
-        return '明天 ' + deg(w.tomorrow.low) + '~' + deg(w.tomorrow.high) +
-          (w.tomorrow.text ? ' ' + w.tomorrow.text : '')
+        return t('bubble.weather.tomorrow', {
+          range: deg(w.tomorrow.low) + '~' + deg(w.tomorrow.high),
+          text: w.tomorrow.text ? ' ' + w.tomorrow.text : '',
+        })
       }
       case 'weather.hourly': {
         if (!ok || !Array.isArray(w.hourly) || !w.hourly.length) return ''
         return w.hourly.slice(0, 3)
-          .map((h) => h.hour + '点 ' + deg(h.temp) + (h.icon ? ' ' + h.icon : ''))
+          .map((h) => t('bubble.weather.hour', { hour: h.hour, temp: deg(h.temp) }) + (h.icon ? ' ' + h.icon : ''))
           .join(' → ')
       }
       case 'weather.days': {
@@ -263,15 +267,15 @@
       }
       case 'air.quality': {
         if (!ok || !w.air) return ''
-        return '空气' + w.air.text + '（' + num(w.air.aqi) + '）'
+        return t('bubble.air.quality', { text: w.air.text, aqi: num(w.air.aqi) })
       }
       case 'air.pm': {
         if (!ok || !w.air || !Number.isFinite(Number(w.air.pm25))) return ''
         return 'PM2.5 ' + num(w.air.pm25)
       }
       case 'weather.tip': return ok ? (w.advice || '') : ''
-      case 'weather.updated': return ok ? '更新于 ' + fmtTime(w.updatedAt) : ''
-      case 'weather.hint': return ok && w.stale ? '离线缓存' : ''
+      case 'weather.updated': return ok ? t('bubble.weather.updated', { time: fmtTime(w.updatedAt) }) : ''
+      case 'weather.hint': return ok && w.stale ? t('bubble.weather.stale') : ''
       case 'water.cups': return String((ctx && ctx.cups) || 0)
       case 'water.progress': {
         const n = Math.max(0, Math.min(8, Math.round(Number(ctx && ctx.cups) || 0)))
@@ -279,26 +283,26 @@
       }
       case 'water.interval': {
         const mins = Math.round(Number(ctx && ctx.interval) || 0)
-        return mins > 0 ? '每 ' + mins + ' 分钟' : '还没设提醒'
+        return mins > 0 ? t('bubble.water.interval', { n: mins }) : t('bubble.water.noInterval')
       }
       case 'water.quiet': {
         const q = (ctx && ctx.quiet) || null
-        if (!q) return '不设安静时段'
-        return '安静 ' + q.from + ' 点到 ' + q.to + ' 点'
+        if (!q) return t('bubble.water.noQuiet')
+        return t('bubble.water.quiet', { from: q.from, to: q.to })
       }
       case 'water.last': {
         const at = Number(ctx && ctx.lastDrinkAt) || 0
-        if (!at) return '今天还没喝呢'
+        if (!at) return t('bubble.water.none')
         const d = new Date(at)
-        return '上次 ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
+        return t('bubble.water.last', { time: String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') })
       }
       case 'water.tip':
-        return (ctx && ctx.waterTip) || '慢慢喝，别急呀'
+        return (ctx && ctx.waterTip) || t('bubble.water.tip')
       case 'water.next': {
         const due = ctx && ctx.nextAt
         if (!due) return ''
         const mins = Math.max(0, Math.round((due - Date.now()) / 60000))
-        return mins > 0 ? '再过 ' + mins + ' 分钟' : '该喝啦'
+        return mins > 0 ? t('bubble.water.next', { n: mins }) : t('bubble.water.due')
       }
       case 'text': return ''
       default: return ''

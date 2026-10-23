@@ -213,18 +213,9 @@
   },
   "bubble": {
     "type": {
-      "text": {
-        "label": "写好的文字",
-        "sample": "文本"
-      },
-      "random": {
-        "label": "随机挑一句",
-        "sample": "记得喝水呀～"
-      },
-      "name": {
-        "label": "我的名字",
-        "sample": "小芳桌宠"
-      },
+      "text": "写好的文字",
+      "random": "随机挑一句",
+      "name": "我的名字",
       "weatherIcon": {
         "label": "天气：图标",
         "sample": "🌤️"
@@ -329,14 +320,34 @@
         "label": "喝水：一句叮嘱",
         "sample": "慢慢喝，别急呀"
       },
-      "time": {
-        "label": "当前时间",
-        "sample": "22:12"
-      },
-      "date": {
-        "label": "今天的日期",
-        "sample": "10月19日 周日"
-      }
+      "time": "当前时间",
+      "date": "今天的日期",
+      "weather_icon": "天气：图标",
+      "weather_city": "天气：城市",
+      "weather_temp": "天气：现在几度",
+      "weather_text": "天气：晴雨",
+      "weather_feels": "天气：体感几度",
+      "weather_range": "天气：今天高低温",
+      "weather_precip": "天气：会不会下雨",
+      "weather_humidity": "天气：湿度",
+      "weather_wind": "天气：风大不大",
+      "weather_sun": "天气：日出日落",
+      "weather_uv": "天气：紫外线",
+      "weather_tomorrow": "天气：明天",
+      "weather_hourly": "天气：接下来几小时",
+      "weather_days": "天气：未来两天",
+      "air_quality": "空气：好坏",
+      "air_pm": "空气：PM2.5",
+      "weather_tip": "天气：贴心提醒",
+      "weather_updated": "天气：更新时间",
+      "weather_hint": "天气：离线提示",
+      "water_cups": "喝水：今天几杯",
+      "water_next": "喝水：还有多久",
+      "water_progress": "喝水：今天进度",
+      "water_interval": "喝水：多久提醒一次",
+      "water_quiet": "喝水：安静时段",
+      "water_last": "喝水：上次什么时候",
+      "water_tip": "喝水：一句叮嘱"
     },
     "card": {
       "new": "新的卡片",
@@ -363,42 +374,36 @@
     "random": {
       "empty": "我在呢～"
     },
-    "date": {
-      "format": "{month}月{day}日 周{weekday}",
-      "weekday": {
-        "sun": "日",
-        "mon": "一",
-        "tue": "二",
-        "wed": "三",
-        "thu": "四",
-        "fri": "五",
-        "sat": "六"
-      }
-    },
+    "date": "{month}月{day}日 周{week}",
     "weather": {
       "cityFallback": "当前",
       "loading": "正在取天气…",
-      "feels": "体感 {value}",
-      "wind": "风 {value}km/h",
-      "sun": "{sunrise} 日出 · {sunset} 日落",
-      "uv": "紫外线 {value}",
-      "tomorrow": "明天 {low}~{high}{text}",
+      "feels": "体感 {temp}",
+      "wind": "风 {speed}km/h",
+      "sun": "{rise} 日出 · {set} 日落",
+      "uv": "紫外线 {n}",
+      "tomorrow": "明天 {range}{text}",
       "hourly": "{hour}点 {temp}{icon}",
       "updated": "更新于 {time}",
-      "hint": "离线缓存"
+      "hint": "离线缓存",
+      "current": "当前",
+      "hour": "{hour}点 {temp}",
+      "stale": "离线缓存"
     },
     "air": {
       "quality": "空气{text}（{aqi}）"
     },
     "water": {
-      "interval": "每 {mins} 分钟",
+      "interval": "每 {n} 分钟",
       "noInterval": "还没设提醒",
-      "next": "再过 {mins} 分钟",
+      "next": "再过 {n} 分钟",
       "due": "该喝啦",
       "quiet": "安静 {from} 点到 {to} 点",
       "noQuiet": "不设安静时段",
       "noneToday": "今天还没喝呢",
-      "last": "上次 {time}"
+      "last": "上次 {time}",
+      "none": "今天还没喝呢",
+      "tip": "慢慢喝，别急呀"
     },
     "autoHide": "气泡留多久",
     "seconds": "秒",
@@ -411,7 +416,69 @@
     "phrasesHint": "每行一句，我会随机挑着说；改成你自己的话也行",
     "style": "气泡长什么样",
     "edit": "布置一下气泡…",
-    "styleHint": "想让哪句话出现在哪一行，都可以自己排"
+    "styleHint": "想让哪句话出现在哪一行，都可以自己排",
+    "sample": {
+      "random": "记得喝水呀～",
+      "name": "小芳桌宠",
+      "weather_icon": "🌤️",
+      "weather_city": "北京",
+      "weather_temp": "13°",
+      "weather_text": "晴",
+      "weather_feels": "体感 11°",
+      "weather_range": "7~18°",
+      "weather_precip": "0%",
+      "weather_humidity": "79%",
+      "weather_wind": "风 12km/h",
+      "weather_sun": "06:42 日出 · 17:21 日落",
+      "weather_uv": "紫外线 6",
+      "weather_tomorrow": "明天 6~15° 多云",
+      "weather_hourly": "15点 14° 多云 → …",
+      "weather_days": "明天 6~15° ⛅ · 后天 5~14° 🌧️",
+      "air_quality": "空气良（35）· 出去走走正好",
+      "air_pm": "PM2.5 12",
+      "weather_tip": "记得带伞呀",
+      "weather_updated": "更新于 22:12",
+      "weather_hint": "离线缓存",
+      "water_cups": "3",
+      "water_next": "再过 42 分钟",
+      "water_progress": "●●●○○○○○",
+      "water_interval": "每 60 分钟",
+      "water_quiet": "安静 23 点到 8 点",
+      "water_last": "上次 22:12",
+      "water_tip": "慢慢喝，别急呀",
+      "time": "22:12",
+      "date": "10月19日 周日",
+      "text": "文本"
+    },
+    "weekday": {
+      "sun": "日",
+      "mon": "一",
+      "tue": "二",
+      "wed": "三",
+      "thu": "四",
+      "fri": "五",
+      "sat": "六"
+    },
+    "name": {
+      "fallback": "桌宠"
+    },
+    "text": {
+      "weatherTitle": "🌤️ 天气",
+      "waterTitle": "💧 该喝水啦",
+      "todayPrefix": "今日 ",
+      "precip": " · 降水 ",
+      "cupsPrefix": " 今天第 ",
+      "cupsSuffix": " 杯",
+      "chatPrefix": "💬 "
+    },
+    "library": {
+      "time": "当前时间",
+      "weather": "天气一行",
+      "advice": "贴心提醒",
+      "hourly": "未来几小时",
+      "days": "未来两天",
+      "air": "空气质量"
+    }
   },
   "sound": {
     "preset": {

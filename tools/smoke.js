@@ -18,6 +18,9 @@ const { createI18n: createSmokeI18n } = require('../lib/i18n')
 // 烟测校验中文文案，所以显式拿 zh-CN 字典当翻译器
 const smokeT = createSmokeI18n({ locale: 'zh-CN', dict: require('../locales/zh-CN.json') }).t
 const bubble = require('../app/bubble-model')
+// 语言包里的中文（默认语言）——默认布局/取值断言用它当翻译器
+const { createI18n } = require('../lib/i18n.js')
+const bt = createI18n({ locale: 'zh-CN', dict: require('../locales/zh-CN.json') }).t
 const soundModel = require('../app/sound-model')
 const placement = require('../lib/placement')
 const cutoutMath = require('../lib/cutout-math')
@@ -138,7 +141,7 @@ const store = createStore(dir)
 
 // ---------------------------------------------------------------- bubble model
 {
-  const layout = bubble.defaultLayout()
+  const layout = bubble.defaultLayout(bt)
   assert.equal(layout.cards.length, 3)
   assert.deepEqual(layout.cards.map((c) => c.id), ['weather', 'water', 'random'])
   assert.deepEqual(layout.queue, ['weather', 'water', 'random'])
@@ -176,6 +179,7 @@ const store = createStore(dir)
 
 {
   const ctx = {
+  t: bt,
     weather: { ok: true, city: '北京', temp: 13, text: '晴', low: 7, high: 18, precip: 0, humidity: 79, icon: '☀️', updatedAt: Date.now(), stale: false },
     phrases: ['喝水呀'],
     name: '小芳',
@@ -187,7 +191,7 @@ const store = createStore(dir)
   assert.equal(bubble.resolveModule({ type: 'random', style: {} }, ctx).text, '喝水呀')
   assert.equal(bubble.resolveModule({ type: 'water.cups', style: {} }, ctx).text, '2')
   assert.equal(bubble.resolveModule({ type: 'weather.hint', style: {} }, ctx).text, '', '非离线时提示为空')
-  const offline = bubble.resolveModule({ type: 'weather.hint', style: {} }, { weather: { ok: true, stale: true } })
+  const offline = bubble.resolveModule({ type: 'weather.hint', style: {} }, { t: bt, weather: { ok: true, stale: true } })
   assert.equal(offline.text, '离线缓存')
   ok('模块取值（含离线提示）')
 }
@@ -200,7 +204,7 @@ const store = createStore(dir)
       [{ type: 'weather.hint', style: {} }],
     ],
   }
-  const rows = bubble.pruneRows(bubble.resolveCard(card, { weather: { ok: true, stale: false } }))
+  const rows = bubble.pruneRows(bubble.resolveCard(card, { t: bt, weather: { ok: true, stale: false } }))
   assert.equal(rows.length, 1, '空行被剪掉')
   assert.match(rows[0][0].css, /font-weight:600/, '样式转成 css')
   assert.match(rows[0][0].css, /font-size:18px/)
@@ -208,13 +212,13 @@ const store = createStore(dir)
 
   // Loading state: one friendly line, no em-dash wall, no glue-only rows.
   {
-    const card = bubble.defaultLayout().cards.find((c) => c.id === 'weather')
-    const rows = bubble.pruneRows(bubble.resolveCard(card, { weather: null }))
+    const card = bubble.defaultLayout(bt).cards.find((c) => c.id === 'weather')
+    const rows = bubble.pruneRows(bubble.resolveCard(card, { t: bt, weather: null }))
     const flat = rows.map((r) => r.map((m) => m.text).join('')).join(' / ')
     assert.ok(!/—/.test(flat), '天气还没到时不要出现一排破折号: ' + flat)
     assert.match(flat, /正在取天气…/, '天气还没到时给一句等待提示')
     assert.ok(rows.length <= 2, '天气还没到时卡片保持精简: ' + JSON.stringify(rows))
-    const noCity = bubble.pruneRows(bubble.resolveCard(card, { weather: { ok: false, error: 'NO_LOCATION', message: '还没告诉我你在哪座城市呢' } }))
+    const noCity = bubble.pruneRows(bubble.resolveCard(card, { t: bt, weather: { ok: false, error: 'NO_LOCATION', message: '还没告诉我你在哪座城市呢' } }))
     const noCityText = noCity.map((r) => r.map((m) => m.text).join('')).join(' / ')
     assert.match(noCityText, /还没告诉我你在哪座城市呢/, '没设置城市时直接说清楚: ' + noCityText)
     assert.ok(!/正在取天气/.test(noCityText), '没设置城市时不要假装在加载: ' + noCityText)
@@ -827,13 +831,13 @@ const PAD = 54
   for (const key of ['water.progress', 'water.interval', 'water.quiet', 'water.last', 'water.tip']) {
     assert.ok(modelJs.includes("key: '" + key + "'"), '新增喝水模块 ' + key)
   }
-  assert.equal(bubble.valueOf('water.progress', { cups: 3 }), '●●●○○○○○', '喝水进度按 8 格绘制')
-  assert.equal(bubble.valueOf('water.interval', { interval: 60 }), '每 60 分钟')
-  assert.equal(bubble.valueOf('water.quiet', { quiet: { from: 23, to: 8 } }), '安静 23 点到 8 点')
-  assert.equal(bubble.valueOf('water.quiet', { quiet: null }), '不设安静时段')
-  assert.equal(bubble.valueOf('water.last', { lastDrinkAt: 0 }), '今天还没喝呢')
-  assert.equal(bubble.valueOf('water.tip', { waterTip: '慢慢喝，别急呀' }), '慢慢喝，别急呀')
-  const waterCard = bubble.defaultLayout().cards.find((c) => c.id === 'water')
+  assert.equal(bubble.valueOf('water.progress', { t: bt,  cups: 3 }), '●●●○○○○○', '喝水进度按 8 格绘制')
+  assert.equal(bubble.valueOf('water.interval', { t: bt,  interval: 60 }), '每 60 分钟')
+  assert.equal(bubble.valueOf('water.quiet', { t: bt,  quiet: { from: 23, to: 8 } }), '安静 23 点到 8 点')
+  assert.equal(bubble.valueOf('water.quiet', { t: bt,  quiet: null }), '不设安静时段')
+  assert.equal(bubble.valueOf('water.last', { t: bt,  lastDrinkAt: 0 }), '今天还没喝呢')
+  assert.equal(bubble.valueOf('water.tip', { t: bt,  waterTip: '慢慢喝，别急呀' }), '慢慢喝，别急呀')
+  const waterCard = bubble.defaultLayout(bt).cards.find((c) => c.id === 'water')
   assert.ok(waterCard.rows.length >= 5, '喝水卡片默认 5 行（标题/进度/下次/间隔/叮嘱）')
   ok('气泡：固定比例、实测居中、超框收缩 + 截断、固定预留、喝水卡片内容')
 }
@@ -1409,7 +1413,7 @@ const PAD = 54
     assert.ok(modelJs.includes("key: '" + type + "'"), '模块类型 ' + type)
     assert.ok(modelJs.includes("case '" + type + "'"), 'valueOf 处理 ' + type)
   }
-  const card = bubble.defaultLayout().cards.find((c) => c.id === 'weather')
+  const card = bubble.defaultLayout(bt).cards.find((c) => c.id === 'weather')
   const flat = card.rows.flat()
   assert.ok(flat.some((m) => m.type === 'air.quality'), '默认天气卡带空气质量行')
   assert.ok(flat.some((m) => m.type === 'weather.days'), '默认天气卡带未来两天行')
@@ -1542,6 +1546,27 @@ const PAD = 54
   assert.ok(/onCutoutClosed: \(\) => \{ if \(cutoutService\) cutoutService\.clearInputs\(\) \},\s*i18n,/.test(mainS2), 'main.js 把 i18n 交给 createWindows')
   assert.equal(zhS2.pet.menu.hide, '先藏起来', '语言包里藏着菜单文案')
   ok('P2-6 阶段二：桌宠窗口与窗口标题走语言包')
+}
+
+{
+  // P2-6 stage 3-G: 默认气泡布置与模块清单的文案都在语言包里。
+  const root = path.join(__dirname, '..')
+  const modelS3 = fs.readFileSync(path.join(root, 'app', 'bubble-model.js'), 'utf8')
+  const petS3 = fs.readFileSync(path.join(root, 'app', 'pet.js'), 'utf8')
+  const editorS3 = fs.readFileSync(path.join(root, 'app', 'editor.js'), 'utf8')
+  const zhS3 = JSON.parse(fs.readFileSync(path.join(root, 'locales', 'zh-CN.json'), 'utf8'))
+  const cjkModel = (modelS3.replace(/\/\*[\s\S]*?\*\//g, '').match(/['"`][^'"`\n]*[\u4e00-\u9fff][^'"`\n]*['"`]/g) || [])
+  assert.deepEqual(cjkModel, [], 'bubble-model.js 里没有硬编码中文')
+  assert.ok(/labelKey: 'bubble\.type\./.test(modelS3) && /sampleKey: 'bubble\.sample\./.test(modelS3), '模块清单用 i18n 键而不是中文')
+  assert.ok(/typeof ctx\.t === 'function'\) \? ctx\.t : \(key\) => key/.test(modelS3), '取值缺翻译器时退键名（开发期能看出漏翻）')
+  assert.ok(/function defaultLayout\(translate\)/.test(modelS3) && /function normalizeLayout\(raw, translate\)/.test(modelS3), '默认布局接受翻译器')
+  assert.ok(/typeof translate === 'function' \? translate : \(key\) => key/.test(modelS3), '默认布局缺翻译器时退键名而不是静默变英文')
+  assert.ok(/model\.normalizeLayout\(settings\.bubble && settings\.bubble\.layout, t\)/.test(petS3), 'pet.js 把翻译器传给 normalizeLayout')
+  assert.ok(/model\.normalizeLayout\(initial\.settings\.bubble && initial\.settings\.bubble\.layout, tr\)/.test(editorS3), 'editor.js 把翻译器传给 normalizeLayout')
+  for (const key of ['bubble.type.weather_icon', 'bubble.type.water_cups', 'bubble.phrases', 'bubble.random.empty', 'bubble.weather.stale', 'bubble.card', 'editor.addRow', 'editor.preset']) {
+    assert.ok(key.split('.').reduce((o, k) => (o ? o[k] : undefined), zhS3) !== undefined, '语言包里有 ' + key)
+  }
+  ok('P2-6 阶段三-G：默认气泡与模块文案走语言包')
 }
 
 console.log('\n' + pass + ' checks passed')

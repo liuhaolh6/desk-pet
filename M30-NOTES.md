@@ -285,3 +285,20 @@ WMO 码表、AQI 分级、三天标签、建议句都写成中文字面量，共
 - 验证：同一数据目录 zh/en 重启后，en 下标题、三个按钮、预设组 aria-label、五个预设名、提示语、预览标签、加号按钮全英文；
   预览区剩余中文来自 `bubble-model.js`（阶段三-G）。a11y-audit 86/0。
 
+### 阶段三-G：气泡布置的数据与模块文案（已完成）
+
+- `app/bubble-model.js`：`TYPES` 里的 `label`/`sample` 换成 `labelKey`/`sampleKey`（`bubble.type.*` / `bubble.sample.*`），
+  模块清单不再内联中文；`valueOf(type, ctx)` 从 `ctx.t` 取翻译器，**没传翻译器时返回键名**（开发期能一眼看出漏翻，
+  而不是悄悄显示英文或空白）；`defaultLayout(translate)` / `normalizeLayout(raw, translate)` 接受翻译器，
+  默认卡片的名字/文案/日期/喝水句/天气句全部来自语言包。
+- `app/pet.js`、`app/editor.js`：把渲染层的 `t` / `tr` 传进 `normalizeLayout`，否则没有 `bubble.layout` 的新用户会看到键名。
+- 顺手修了一个**启动顺序 bug**：`registerI18nIpc` 原本在 `createWindows` 之后才注册，而 preload 用
+  `sendSync('i18n:boot')` 同步取字典——桌宠窗口先加载，拿到的是兜底 `zh-CN`，切 en 后只有后开的窗口是英文。
+  现在 i18n 通道紧跟在 `createMainI18n` 之后注册（`app/main.js:170` 附近）。
+- 验证：zh 一轮 11/11（气泡 2 行中文、无漏翻键名；布置页标题/预设中文）；en 一轮 9/9（页面 `lang=en-US`、
+  菜单/预设/布置页全英文、无 `editor.*`/`bubble.*` 键泄漏）。a11y-audit 86/0。
+- 已知未完成：`settings.bubble.phrases` 的默认短语存在 `lib/store.js`（中文），所以 en 下气泡里那句"想你了…"仍是中文。
+  这是**用户可编辑的内容**，下一步要么按语言给不同的初始短语，要么把默认值改成键名。
+
+基线 **299 → 134**（`lib/store.js` 29 · `app/main/ipc.js` 19 · `app/main/diagnostics.js` 16 · `app/onboard.html` 13 ·
+`app/sound-model.js` 11 是剩下的大头）。

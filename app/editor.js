@@ -39,6 +39,7 @@
       quiet: { from: 23, to: 8 },
       lastDrinkAt: Date.now() - 18 * 60000,
       waterTip: tr('editor.sample.waterTip'),
+      t: tr,
     }
   }
 
@@ -104,7 +105,7 @@
   // ------------------------------------------------------------------- rows
   function moduleLabel(mod) {
     if (mod.type === 'text') return tr('editor.module.text')
-    return model.TYPE_MAP[mod.type] ? model.TYPE_MAP[mod.type].label : mod.type
+    return model.TYPE_MAP[mod.type] ? tr(model.TYPE_MAP[mod.type].labelKey) : mod.type
   }
 
   function chipText(mod) {
@@ -255,7 +256,7 @@
           used.add(t.key)
           const opt = document.createElement('option')
           opt.value = t.key
-          opt.textContent = t.label
+          opt.textContent = tr(t.labelKey)
           group.appendChild(opt)
         })
         if (group.children.length) select.appendChild(group)
@@ -266,7 +267,7 @@
         if (used.has(t.key)) return
         const opt = document.createElement('option')
         opt.value = t.key
-        opt.textContent = t.label
+        opt.textContent = tr(t.labelKey)
         rest.appendChild(opt)
       })
       if (rest.children.length) select.appendChild(rest)
@@ -464,7 +465,7 @@
 
   function reset() {
     if (!confirm(tr('editor.confirm.reset'))) return
-    state.layout = model.defaultLayout()
+    state.layout = model.defaultLayout(tr)
     state.cardId = state.layout.cards[0].id
     state.sel = null
     markDirty()
@@ -476,7 +477,7 @@
   // One click replaces the current card with a ready-made layout: most people
   // just want the bubble to say less, not to assemble modules by hand.
   function presetRows(cardId, kind) {
-    const base = model.defaultLayout().cards.find((c) => c.id === cardId)
+    const base = model.defaultLayout(tr).cards.find((c) => c.id === cardId)
     const rows = base ? JSON.parse(JSON.stringify(base.rows)) : []
     const text = (v) => model.newModule('text', v)
     const mk = (type) => model.newModule(type, '')
@@ -515,7 +516,7 @@
     try {
       const initial = await api.getState()
       state.settings = initial.settings
-      state.layout = model.normalizeLayout(initial.settings.bubble && initial.settings.bubble.layout)
+      state.layout = model.normalizeLayout(initial.settings.bubble && initial.settings.bubble.layout, tr)
       state.cardId = state.layout.cards[0] ? state.layout.cards[0].id : 'weather'
     } catch (err) {
       status(tr('editor.status.noState'))

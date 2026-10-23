@@ -168,6 +168,8 @@ app.whenReady().then(() => {
   store = createStore(app.getPath('userData'))
   // P2-6：语言来自设置（空 = 跟随系统），坏文件/缺子串都不影响启动。
   i18n = createMainI18n({ requested: (store.readSettings().locale || ''), system: app.getLocale(), log })
+  // preload 在窗口加载时同步取字典，所以通道必须先于 createWindows 注册。
+  registerI18nIpc({ ipcMain, i18n })
   privacy = createPrivacy({ dir: store.dir, fs, path, log })
   catalog = createCatalog({ fs, store, assets: ASSETS, BrowserWindow, trayHost })
   windows = createWindows({
@@ -213,7 +215,6 @@ app.whenReady().then(() => {
     sendToPet: (channel, data) => { const pet = windows.pet(); if (pet && !pet.isDestroyed()) pet.webContents.send(channel, data) },
     isBusy: () => isForegroundFullscreen({ cache: fgCache }),
   })
-  registerI18nIpc({ ipcMain, i18n })
   registerIpc({
     ipcMain, dialog, shell, app, nativeImage, path, fs,
     store, version: VERSION, weatherPump, layout, winState, trayHost, diagnostics, updater, privacy,

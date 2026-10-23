@@ -79,7 +79,7 @@
   function applySettings(settings) {
     if (!settings) return
     state.settings = settings
-    state.layout = model.normalizeLayout(settings.bubble && settings.bubble.layout)
+    state.layout = model.normalizeLayout(settings.bubble && settings.bubble.layout, t)
     const size = clamp(Number(settings.size) || 220, 80, 480)
     document.documentElement.style.setProperty('--pet-size', size + 'px')
     pet.alt = settings.name || t('pet.alt')
@@ -308,6 +308,7 @@
       quiet,
       lastDrinkAt: Number(w.lastDrinkAt) || 0,
       waterTip: waterTip(cups, new Date().getHours()),
+      t,
     }
   }
 

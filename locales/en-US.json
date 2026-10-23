@@ -213,18 +213,9 @@
   },
   "bubble": {
     "type": {
-      "text": {
-        "label": "Written text",
-        "sample": "Text"
-      },
-      "random": {
-        "label": "Random line",
-        "sample": "Remember to drink water~"
-      },
-      "name": {
-        "label": "My name",
-        "sample": "Xiaofang"
-      },
+      "text": "Your text",
+      "random": "Random line",
+      "name": "My name",
       "weatherIcon": {
         "label": "Weather: icon",
         "sample": "🌤️"
@@ -329,20 +320,40 @@
         "label": "Water: a reminder",
         "sample": "Sip slowly, no rush"
       },
-      "time": {
-        "label": "Current time",
-        "sample": "22:12"
-      },
-      "date": {
-        "label": "Today's date",
-        "sample": "Sun, 10/19"
-      }
+      "time": "Current time",
+      "date": "Today’s date",
+      "weather_icon": "Weather: icon",
+      "weather_city": "Weather: city",
+      "weather_temp": "Weather: now",
+      "weather_text": "Weather: sky",
+      "weather_feels": "Weather: feels like",
+      "weather_range": "Weather: today’s high/low",
+      "weather_precip": "Weather: rain chance",
+      "weather_humidity": "Weather: humidity",
+      "weather_wind": "Weather: wind",
+      "weather_sun": "Weather: sunrise/sunset",
+      "weather_uv": "Weather: UV",
+      "weather_tomorrow": "Weather: tomorrow",
+      "weather_hourly": "Weather: next hours",
+      "weather_days": "Weather: next two days",
+      "air_quality": "Air: level",
+      "air_pm": "Air: PM2.5",
+      "weather_tip": "Weather: advice",
+      "weather_updated": "Weather: updated at",
+      "weather_hint": "Weather: offline hint",
+      "water_cups": "Water: cups today",
+      "water_next": "Water: next in",
+      "water_progress": "Water: progress",
+      "water_interval": "Water: interval",
+      "water_quiet": "Water: quiet hours",
+      "water_last": "Water: last drink",
+      "water_tip": "Water: one reminder"
     },
     "card": {
       "new": "New card",
       "weather": "Weather",
       "water": "Water",
-      "random": "Things to say",
+      "random": "Something to say",
       "weatherTitle": "🌤️ Weather",
       "waterTitle": "💧 Time to drink"
     },
@@ -361,44 +372,38 @@
       "air": "Air quality"
     },
     "random": {
-      "empty": "I'm right here~"
+      "empty": "I am here~"
     },
-    "date": {
-      "format": "{weekday}, {month}/{day}",
-      "weekday": {
-        "sun": "Sun",
-        "mon": "Mon",
-        "tue": "Tue",
-        "wed": "Wed",
-        "thu": "Thu",
-        "fri": "Fri",
-        "sat": "Sat"
-      }
-    },
+    "date": "{month}/{day} {week}",
     "weather": {
       "cityFallback": "Current location",
       "loading": "Fetching weather…",
-      "feels": "Feels like {value}",
-      "wind": "Wind {value}km/h",
-      "sun": "Sunrise {sunrise} · Sunset {sunset}",
-      "uv": "UV {value}",
-      "tomorrow": "Tomorrow {low}~{high}{text}",
+      "feels": "Feels {temp}",
+      "wind": "Wind {speed}km/h",
+      "sun": "{rise} rise · {set} set",
+      "uv": "UV {n}",
+      "tomorrow": "Tomorrow {range}{text}",
       "hourly": "{hour}:00 {temp}{icon}",
       "updated": "Updated {time}",
-      "hint": "Cached offline"
+      "hint": "Cached offline",
+      "current": "Here",
+      "hour": "{hour}:00 {temp}",
+      "stale": "Offline cache"
     },
     "air": {
       "quality": "Air {text} ({aqi})"
     },
     "water": {
-      "interval": "Every {mins} min",
+      "interval": "Every {n} minutes",
       "noInterval": "No reminder yet",
-      "next": "In {mins} min",
+      "next": "In {n} minutes",
       "due": "Time to drink",
-      "quiet": "Quiet {from}:00 to {to}:00",
+      "quiet": "Quiet {from}:00–{to}:00",
       "noQuiet": "No quiet hours",
       "noneToday": "Nothing today yet",
-      "last": "Last at {time}"
+      "last": "Last {time}",
+      "none": "Nothing yet today",
+      "tip": "Sip slowly, no rush"
     },
     "autoHide": "How long a bubble stays",
     "seconds": "sec",
@@ -411,7 +416,69 @@
     "phrasesHint": "One per line; I pick them at random. Your own words are welcome too.",
     "style": "How the bubble looks",
     "edit": "Arrange the bubble…",
-    "styleHint": "Put any line on any row — it's all up to you"
+    "styleHint": "Put any line on any row — it's all up to you",
+    "sample": {
+      "text": "Text",
+      "random": "Time for water~",
+      "name": "Pet",
+      "weather_icon": "🌤️",
+      "weather_city": "Beijing",
+      "weather_temp": "13°",
+      "weather_text": "Clear",
+      "weather_feels": "Feels 11°",
+      "weather_range": "7~18°",
+      "weather_precip": "0%",
+      "weather_humidity": "79%",
+      "weather_wind": "Wind 12km/h",
+      "weather_sun": "06:42 rise · 17:21 set",
+      "weather_uv": "UV 6",
+      "weather_tomorrow": "Tomorrow 6~15° Cloudy",
+      "weather_hourly": "15:00 14° Cloudy → …",
+      "weather_days": "Tomorrow 6~15° ⛅ · Day after 5~14° 🌧️",
+      "air_quality": "Air Good (35) · nice for a walk",
+      "air_pm": "PM2.5 12",
+      "weather_tip": "Take an umbrella",
+      "weather_updated": "Updated 22:12",
+      "weather_hint": "Offline cache",
+      "water_cups": "3",
+      "water_next": "In 42 minutes",
+      "water_progress": "●●●○○○○○",
+      "water_interval": "Every 60 minutes",
+      "water_quiet": "Quiet 23:00–08:00",
+      "water_last": "Last 22:12",
+      "water_tip": "Sip slowly, no rush",
+      "time": "22:12",
+      "date": "Oct 19, Sun"
+    },
+    "text": {
+      "weatherTitle": "🌤️ Weather",
+      "waterTitle": "💧 Time for water",
+      "todayPrefix": "Today ",
+      "precip": " · rain ",
+      "cupsPrefix": " cup #",
+      "cupsSuffix": " today",
+      "chatPrefix": "💬 "
+    },
+    "library": {
+      "time": "Current time",
+      "weather": "Weather line",
+      "advice": "Friendly advice",
+      "hourly": "Next hours",
+      "days": "Next two days",
+      "air": "Air quality"
+    },
+    "name": {
+      "fallback": "Pet"
+    },
+    "weekday": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    }
   },
   "sound": {
     "preset": {

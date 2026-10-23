@@ -7,6 +7,10 @@
 ## [Unreleased]
 
 ### 新增
+- **多语言：气泡布置的数据与模块文案（ROADMAP P2-6 阶段三-G）**：`app/bubble-model.js` 的模块清单改成 `labelKey`/`sampleKey`，
+  默认卡片、模块取值、日期/喝水/天气文案全部走语言包（`valueOf` 没拿到翻译器时返回键名，开发期能直接看出漏翻）。
+  顺带修了 i18n 通道注册晚于窗口创建的启动顺序 bug——切 en-US 后桌宠窗口不再是中文。
+  基线 **299 → 134**（剩下 store 默认短语、ipc/diagnostics/onboard/sound-model）；zh 11/11、en 9/9 运行时验证通过。
 - **多语言：气泡布置窗口进语言包（ROADMAP P2-6 阶段三-F）**：`app/editor.js` 的 54 处文案（卡片/行的按钮、
   模块类型下拉、样式面板、预设名、状态提示、二次确认）与 `app/editor.html` 的 13 处静态文案全部改成键，
   窗口首次挂上 `i18n.js` 并在启动时翻译标记。基线 **299 → 245**；en 下标题/按钮/预设/提示/`aria-label` 全英文，
