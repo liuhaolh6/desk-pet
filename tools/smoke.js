@@ -121,13 +121,14 @@ const store = createStore(dir)
 }
 
 {
-  // 24 条内置温馨提示 + 温柔口吻（不要命令式、不要冷冰冰的技术词）。
-  const phrases = DEFAULT_SETTINGS.bubble.phrases
-  assert.equal(phrases.length, 24, '内置 24 条温馨提示')
-  assert.equal(new Set(phrases).size, 24, '24 条互不重复')
-  assert.ok(phrases.every((p) => p.length >= 6 && p.length <= 30), '每条 6–30 字')
-  assert.ok(phrases.every((p) => !/必须|立刻|马上|不准|禁止/.test(p)), '不用命令式措辞')
-  assert.ok(phrases.filter((p) => /呀|啦|吧|哦|嘛|～|呢|？/.test(p)).length >= 22, '几乎每条都带语气词')
+  // 24 条内置温馨提示（P2-6 阶段三-M：已搬进语言包 bubble.phrasesSeed，代码里不再写死）
+  const seed = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'locales', 'zh-CN.json'), 'utf8')).bubble.phrasesSeed
+  assert.equal(seed.length, 24, '内置 24 条温馨提示')
+  assert.equal(new Set(seed).size, 24, '24 条互不重复')
+  assert.ok(seed.every((x) => x.length >= 6 && x.length <= 30), '每条 6–30 字')
+  assert.ok(seed.every((x) => !/必须|立刻|马上|不准|禁止/.test(x)), '不用命令式措辞')
+  assert.ok(seed.filter((x) => /呀|啦|吧|哦|嘛|～|呢|？/.test(x)).length >= 22, '几乎每条都带语气词')
+  assert.deepEqual(DEFAULT_SETTINGS.bubble.phrases, [], '用户短语默认为空 = 用种子')
   ok('24 条温馨提示')
 }
 
@@ -973,8 +974,8 @@ const PAD = 54
     assert.ok(/module\.exports = \{/.test(text), name + ' 有导出')
     // ipc.js is a flat list of ~40 handlers; it gets its own (looser) cap so
     // the rest stay small.
-    // ipc.js 是所有窗口的通道总表；P2-4 加了气泡窗口的通道，上限 430 → 450。
-    const cap = name === 'ipc.js' ? 450 : 320
+    // ipc.js 是所有窗口的通道总表；P2-4 加气泡窗口通道（430→450），P2-6 加 phrasesSeed（450→460）。
+    const cap = name === 'ipc.js' ? 460 : 320
     assert.ok(text.split('\n').length <= cap, name + ' 不超过 ' + cap + ' 行')
   }
   assert.ok(/require\('\.\/main\/log'\)/.test(mainJs), 'main.js 引用 log 模块')

@@ -250,7 +250,8 @@
     $('cooldown').addEventListener('change', (ev) => {
       save({ bubble: { cooldownMinutes: clamp(Number(ev.target.value) || 0, 0, 240) } }, true)
     })
-    $('phrases').addEventListener('change', (ev) => {
+    if ($('phrases')) $('phrases').placeholder = t('settings.bubble.phrasesPlaceholder')
+  $('phrases').addEventListener('change', (ev) => {
       const phrases = ev.target.value.split('\n').map((s) => s.trim()).filter(Boolean).slice(0, 30)
       save({ bubble: { phrases } }, true)
     })

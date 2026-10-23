@@ -478,7 +478,33 @@
       "thu": "Thu",
       "fri": "Fri",
       "sat": "Sat"
-    }
+    },
+    "phrasesSeed": [
+      "Remember to drink some water — I'm right here.",
+      "Sat too long? Stand up and stretch.",
+      "Eyes tired? Look out the window for a bit.",
+      "Pat pat — you've worked hard today.",
+      "Have you eaten properly? No skipping meals on my watch.",
+      "Three deep breaths — let the worry out.",
+      "Psst: I really like you.",
+      "Relax your shoulders a little.",
+      "Sleepy? Take a short nap, I'll watch the clock.",
+      "Thinking of you — click me and check the weather.",
+      "Be a little kinder to yourself today.",
+      "Cold hands? Go get a mug of hot water.",
+      "Bad mood? Maybe something sweet first?",
+      "Don't stay up late — sleep early, okay?",
+      "Stand tall — that's your best look.",
+      "Remember to blink — screens dry your eyes out.",
+      "Warm enough? Don't catch a cold.",
+      "You've got this — I'm right here with you.",
+      "Rest five minutes, come back stronger.",
+      "Secret compliment: you are genuinely great.",
+      "Want to listen to a song together and relax?",
+      "Slow is fine too — I'll wait for you.",
+      "How many cups of water today? Report in!",
+      "However busy — remember to smile."
+    ]
   },
   "sound": {
     "preset": {
@@ -1013,6 +1039,9 @@
       "locating": "Finding you…",
       "located": "Found you",
       "geoFailed": "Couldn't locate you — type the city name"
+    },
+    "bubble": {
+      "phrasesPlaceholder": "Leave empty to use my built-in lines"
     }
   },
   "role": {

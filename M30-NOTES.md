@@ -359,3 +359,18 @@ WMO 码表、AQI 分级、三天标签、建议句都写成中文字面量，共
 - 验证：en 数据目录 `privacySummary().endpoints[0]` = `turns a city name into coordinates`。
 
 基线 **76 → 66**。
+
+### 阶段三-M：内置短语搬进语言包（已完成）
+
+- `lib/store.js` 里 24 条内置短语文案 → `locales/*.json` 的 `bubble.phrasesSeed`（数组，zh/en 各 24 条）；
+  `DEFAULT_PHRASES` 变成 `[]`。用户自己的短语仍存在 `settings.bubble.phrases`，为空就用种子。
+- **数组走不了 `flatten`**（那里只收字符串），所以给 `createMainI18n` 加了 `seedOf(key)`：按点路径取值、
+  优先当前语言、退 zh-CN、再退 `[]`。IPC `state:get` 带出 `phrasesSeed`，`pet.js` 在首次快照里存一份。
+- 设置页短语输入框空着时显示占位提示「留空就用我内置的那几句话」，让"空 = 用内置"可发现。
+- 验证：en 数据目录点一下宠物 → 气泡正文 `Cold hands? Go get a mug of hot water.`（种子第 12 条），
+  `getState().phrasesSeed.length === 24`。
+
+基线 **66 → 42**。
+
+踩坑：把 `phrasesSeed` 直接挂到 `state` 上时引用了不存在的 `payload` 变量，渲染层 `boot()` 抛 `ReferenceError`，
+表现是"点宠物没反应"。教训：渲染层启动失败不会弹窗，只能看 `app.log` 里的 `pet-console` 行。

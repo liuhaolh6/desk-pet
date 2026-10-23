@@ -60,7 +60,13 @@ function createMainI18n({ requested = '', system = '', dir = '', log = () => {} 
   const i18n = createI18n({ locale, dict, fallbackDict })
   const stats = i18n.stats()
   log('i18n locale=' + locale + ' (requested=' + (wanted || '-') + ', available=' + available.join('/') + ') keys=' + stats.keys + ' fallback=' + stats.fallbackKeys)
-  return Object.assign(i18n, { available, requested: wanted })
+  // P2-6 阶段三-M：数组类内容（内置短语）不能走 flatten（那里只收字符串），单独给个取值口。
+  const seedOf = (key) => {
+    const walk = (obj, parts) => parts.reduce((acc, k) => (acc && typeof acc === 'object' ? acc[k] : undefined), obj)
+    const got = walk(dict, key.split('.'))
+    return Array.isArray(got) ? got : (Array.isArray(walk(fallbackDict, key.split('.'))) ? walk(fallbackDict, key.split('.')) : [])
+  }
+  return Object.assign(i18n, { available, requested: wanted, seedOf })
 }
 
 

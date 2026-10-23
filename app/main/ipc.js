@@ -66,6 +66,7 @@ function registerIpc(deps) {
     weather: weatherPump.current(),
     version,
     dataDir: store.dir,
+    phrasesSeed: (i18n && i18n.seedOf ? i18n.seedOf('bubble.phrasesSeed') : []),
   }))
 
   ipcMain.handle('app:status', () => ({

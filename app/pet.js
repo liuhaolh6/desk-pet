@@ -300,7 +300,9 @@
       : null
     return {
       weather: state.weather,
-      phrases: (s.bubble && s.bubble.phrases) || [],
+      phrases: (s.bubble && s.bubble.phrases && s.bubble.phrases.length)
+        ? s.bubble.phrases
+        : (state.phrasesSeed || []),
       name: s.name,
       cups,
       nextAt: (Number(w.lastDrinkAt) || 0) + (Number(w.intervalMinutes) || 60) * 60000,
@@ -619,6 +621,7 @@
     })
     try {
       const initial = await api.getState()
+      state.phrasesSeed = Array.isArray(initial.phrasesSeed) ? initial.phrasesSeed : []
       state.roles = initial.roles || []
       state.weather = initial.weather || null
       applySettings(initial.settings)
