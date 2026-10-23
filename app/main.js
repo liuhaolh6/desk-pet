@@ -29,6 +29,10 @@ const { createTrayHost } = require('./main/tray')
 const { createDiagnostics } = require('./main/diagnostics')
 const { createWindowState } = require('./window-state')
 const { createWindowLayout } = require('./main/window-layout')
+const { createWeatherPump } = require('./main/weather-pump')
+const { createReminders } = require('./main/reminder')
+const { createCutoutService } = require('./main/cutout-service')
+const { registerIpc } = require('./main/ipc')
 
 const logger = createLogger()
 const { breadcrumb, log } = logger
@@ -51,10 +55,11 @@ let editorWin = null
 let cutoutWin = null
 let onboardWin = null
 
-let weather = null
-let weatherTimer = null
-let reminderTimer = null
-let lastRemindAt = 0
+// P1-1 stage 3: weather, reminders, cutout and IPC live in modules. The
+// instances are created after the store exists (they read settings lazily).
+let weatherPump = null
+let reminders = null
+let cutoutService = null
 let quitting = false
 
 // P1-1: the tray + shortcut (P0-3) and the diagnostics export (P0-5) live in
@@ -67,7 +72,7 @@ const trayHost = createTrayHost({
     togglePet: () => togglePet(),
     openSettings: () => openSettings(),
     openEditor: () => openEditor(),
-    refreshWeather: (reason) => refreshWeather(reason),
+    refreshWeather: (reason) => weatherPump && weatherPump.refresh(reason),
     quit: () => { quitting = true; app.quit() },
   },
 })
@@ -75,7 +80,7 @@ const diagnostics = createDiagnostics({
   version: VERSION,
   getStore: () => store,
   logger,
-  getWeather: () => weather,
+  getWeather: () => (weatherPump ? weatherPump.current() : null),
   getTrayStatus: () => trayHost.status(),
   getShortcutReport: () => trayHost.shortcutReport(),
   log,
@@ -115,6 +120,14 @@ const layout = createWindowLayout({
 function sendMirror() {
   if (!petWin || petWin.isDestroyed()) return
   try { petWin.webContents.send('pet:mirror', layout.mirrorSide()) } catch (err) {}
+}
+
+// ----------------------------------------------------------------------- tray
+/** Show/hide the pet. Shared by the tray entry, its left click and the shortcut. */
+function togglePet() {
+  if (!petWin) return createPetWindow()
+  if (petWin.isVisible()) petWin.hide()
+  else { petWin.show(); petWin.focus() }
 }
 
 // ------------------------------------------------------------------ role URLs
@@ -222,7 +235,7 @@ function createPetWindow() {
     try { petWin.moveTop() } catch (err) {}
     log('pet-visible=' + petWin.isVisible() + ' onTop=' + petWin.isAlwaysOnTop())
     petWin.webContents.send('settings:changed', store.readSettings())
-    if (weather) petWin.webContents.send('weather:changed', weather)
+    if (weatherPump && weatherPump.current()) petWin.webContents.send('weather:changed', weatherPump.current())
     sendMirror()
   })
 }
@@ -314,7 +327,7 @@ function openCutout() {
   })
   cutoutWin.loadFile(path.join(__dirname, 'cutout.html'))
   winState.transition('cutout-open')
-  cutoutWin.on('closed', () => { cutoutWin = null; cutoutInputs.clear(); winState.transition('cutout-close') })
+  cutoutWin.on('closed', () => { cutoutWin = null; if (cutoutService) cutoutService.clearInputs(); winState.transition('cutout-close') })
 }
 
 /**
@@ -397,282 +410,6 @@ function broadcastRoles() {
   return roles
 }
 
-// -------------------------------------------------------------------- weather
-async function refreshWeather(reason) {
-  const s = store.readSettings()
-  const w = s.weather || {}
-  if (w.lat == null || w.lon == null) {
-    weather = { ok: false, error: 'NO_LOCATION', message: '还没告诉我你在哪座城市呢' }
-    sendWeather()
-    return weather
-  }
-  try {
-    weather = await fetchWeather({ lat: w.lat, lon: w.lon, city: w.city, label: w.label })
-    store.writeWeatherCache({ key: w.lat + ',' + w.lon, at: Date.now(), value: weather })
-  } catch (err) {
-    const cache = store.readWeatherCache()
-    if (cache && cache.value) {
-      weather = Object.assign({}, cache.value, { stale: true, error: String(err.message || err) })
-      // Older caches predate the advice line / hourly strip: fill what we can.
-      if (!weather.advice) weather.advice = advice(weather)
-      if (!Array.isArray(weather.hourly)) weather.hourly = []
-    } else weather = { ok: false, error: 'FETCH_FAILED', message: String(err.message || err) }
-  }
-  sendWeather()
-  return weather
-}
-
-function sendWeather() {
-  for (const win of BrowserWindow.getAllWindows()) {
-    if (!win.isDestroyed()) win.webContents.send('weather:changed', weather)
-  }
-}
-
-function scheduleWeather() {
-  if (weatherTimer) clearInterval(weatherTimer)
-  const s = store.readSettings()
-  const minutes = clamp(Number(s.weather && s.weather.refreshMinutes) || 15, 5, 180)
-  weatherTimer = setInterval(() => { refreshWeather('timer') }, minutes * 60000)
-}
-
-// ------------------------------------------------------------------ reminders
-function inQuietHours(w) {
-  const from = clamp(Number(w.quietFrom), 0, 23) * 60
-  const to = clamp(Number(w.quietTo), 0, 23) * 60
-  if (from === to) return false
-  const now = new Date()
-  const mins = now.getHours() * 60 + now.getMinutes()
-  return from < to ? (mins >= from && mins < to) : (mins >= from || mins < to)
-}
-
-function startReminders() {
-  if (reminderTimer) clearInterval(reminderTimer)
-  reminderTimer = setInterval(() => {
-    const s = store.readSettings()
-    if (s.mode === 'quiet') return
-    if (inQuietHours(s.water || {})) return
-    const interval = clamp(Number(s.water.intervalMinutes) || 60, 5, 600) * 60000
-    const last = Number(s.water.lastDrinkAt) || 0
-    if (Date.now() - last < interval) return
-    if (Date.now() - lastRemindAt < 10 * 60000) return
-    lastRemindAt = Date.now()
-    if (petWin && petWin.isVisible()) {
-      petWin.webContents.send('remind:water')
-    } else {
-      try {
-        new Notification({ title: s.name || '桌宠', body: '该喝水啦，慢慢喝～' }).show()
-      } catch (err) {}
-    }
-  }, 60000)
-}
-
-// ----------------------------------------------------------------------- tray
-/** Show/hide the pet. Shared by the tray entry, its left click and the shortcut. */
-function togglePet() {
-  if (!petWin) return createPetWindow()
-  if (petWin.isVisible()) petWin.hide()
-  else { petWin.show(); petWin.focus() }
-}
-
-// ---------------------------------------------------------------------- menu
-// The pet window deliberately has no right-click menu; everything lives in the
-// renderer's hover menu and the tray menu.
-
-// ----------------------------------------------------------------------- IPC
-// One limit for both "pick a file" and "decode a data URL", measured on the
-// binary bytes. 25MB of JPEG is ~33MB of base64, so a 30MB base64 cap used to
-// reject files that the 25MB file check had just accepted.
-const MAX_IMAGE_BYTES = 25 * 1024 * 1024
-
-function decodeImageDataUrl(dataUrl) {
-  if (typeof dataUrl !== 'string') throw new Error('没收到图片数据')
-  const match = dataUrl.match(/^data:(image\/(?:png|jpeg|jpg|webp));base64,([A-Za-z0-9+/=\s]+)$/i)
-  if (!match) throw new Error('这个格式还看不了呢')
-  const buffer = Buffer.from(match[2].replace(/\s/g, ''), 'base64')
-  if (!buffer.length) throw new Error('这张图是空的')
-  if (buffer.length > MAX_IMAGE_BYTES) throw new Error('图片超过 25MB 啦，先压缩一下好吗')
-  return { buffer, mime: match[1].toLowerCase() }
-}
-
-/** One JSON line per cutout attempt; rotate at 256KB. Local diagnostics only. */
-function cutoutTrace(entry) {
-  try {
-    const file = path.join(store.dir, 'cutout-trace.jsonl')
-    try { if (fs.statSync(file).size > 256 * 1024) fs.renameSync(file, file + '.1') } catch (err) {}
-    fs.appendFileSync(file, JSON.stringify(Object.assign({ at: new Date().toISOString() }, entry)) + '\n')
-  } catch (err) {
-    log('cutout trace failed', String(err))
-  }
-}
-
-function cutoutErrorMessage(code) {
-  if (code === 'NO_PERSON') return '没找到清晰的人像'
-  if (code === 'OVER_SEGMENTED') return '画面里人像占得太多了，可能把背景也当成你了'
-  if (code === 'MODEL_MISSING' || code === 'MODEL_LOAD_FAILED') return '抠图模型还没准备好'
-  if (code === 'BAD_OUTPUT_SHAPE' || code === 'NO_OUTPUT') return '模型这次没给出结果'
-  return '这次没抠成'
-}
-
-// ------------------------------------------------------------------- worker
-// The compose/encode path blocks the main thread for ~60ms and inference for
-// ~600ms; both run in a utility process instead (P1-5). If the worker cannot
-// start (or dies), cutout:run falls back to running in-process.
-let cutoutWorker = null
-let cutoutWorkerSeq = 0
-const cutoutWorkerPending = new Map()
-
-function cutoutWorkerPath() {
-  const script = path.join(__dirname, '..', 'lib', 'cutout-worker.js')
-  if (!app.isPackaged) return script
-  // lib is asarUnpacked so the utility process gets a real file path and can
-  // resolve onnxruntime-node/onnxruntime-common from the same unpacked tree.
-  const unpacked = script.replace('app.asar', 'app.asar.unpacked')
-  try { if (fs.existsSync(unpacked)) return unpacked } catch (err) {}
-  return script
-}
-
-function ensureCutoutWorker() {
-  if (cutoutWorker) return cutoutWorker
-  const worker = utilityProcess.fork(cutoutWorkerPath(), [], { serviceName: 'deskpet-cutout' })
-  worker.on('message', (message) => {
-    const pending = cutoutWorkerPending.get(message && message.id)
-    if (!pending) return
-    cutoutWorkerPending.delete(message.id)
-    clearTimeout(pending.timer)
-    pending.resolve(message)
-  })
-  worker.on('exit', (code) => {
-    log('cutout worker exited code=' + code)
-    cutoutWorker = null
-    for (const pending of cutoutWorkerPending.values()) {
-      clearTimeout(pending.timer)
-      pending.reject(Object.assign(new Error('WORKER_EXITED'), { code: 'WORKER_EXITED' }))
-    }
-    cutoutWorkerPending.clear()
-  })
-  cutoutWorker = worker
-  return worker
-}
-
-function stopCutoutWorker() {
-  if (cutoutWorker) {
-    try { cutoutWorker.kill() } catch (err) {}
-    cutoutWorker = null
-  }
-}
-
-function runCutoutInWorker(rgba, width, height, options) {
-  return new Promise((resolve, reject) => {
-    let worker
-    try { worker = ensureCutoutWorker() } catch (err) {
-      reject(Object.assign(new Error('WORKER_SPAWN_FAILED: ' + err.message), { code: 'WORKER_SPAWN_FAILED' }))
-      return
-    }
-    const id = ++cutoutWorkerSeq
-    const timer = setTimeout(() => {
-      cutoutWorkerPending.delete(id)
-      reject(Object.assign(new Error('WORKER_TIMEOUT'), { code: 'WORKER_TIMEOUT' }))
-    }, 60000)
-    cutoutWorkerPending.set(id, { resolve, reject, timer })
-    const payload = rgba.buffer.slice(rgba.byteOffset, rgba.byteOffset + rgba.byteLength)
-    try {
-      // Electron's postMessage transfer list only accepts MessagePorts; the
-      // ArrayBuffer is structured-cloned (copied) instead.
-      worker.postMessage({
-        type: 'run',
-        id,
-        rgba: payload,
-        width,
-        height,
-        canvas: options.canvas,
-        preprocess: options.preprocess,
-        decontaminate: options.decontaminate,
-      })
-    } catch (err) {
-      cutoutWorkerPending.delete(id)
-      clearTimeout(timer)
-      reject(Object.assign(new Error('WORKER_POST_FAILED: ' + err.message), { code: 'WORKER_POST_FAILED' }))
-    }
-  })
-}
-
-/**
- * Run the cutout, preferring the utility process. Returns the same shape as
- * `cutout.cutoutImageRGBA` (png/maskPng/coverage/...), with decode done here.
- */
-async function runCutoutDecoded(image, options) {
-  const { rgba, width, height } = cutout.loadWorkingRGBA(nativeImage, image)
-  const inline = process.env.DESKPET_CUTOUT_INLINE === '1'
-  if (!inline) {
-    try {
-      const message = await runCutoutInWorker(rgba, width, height, options)
-      if (message && message.ok) {
-        return {
-          png: Buffer.from(message.png),
-          maskPng: Buffer.from(message.maskPng),
-          coverage: message.coverage,
-          bands: message.bands,
-          timings: message.timings,
-          ms: message.ms,
-          preprocess: message.preprocess,
-          source: message.source,
-          working: message.working,
-          cutout: message.cutout,
-        }
-      }
-      throw Object.assign(new Error(message && message.message || 'worker failed'), {
-        code: (message && message.code) || 'CUTOUT_FAILED',
-        coverage: message && message.coverage,
-      })
-    } catch (err) {
-      // A real segmentation answer (NO_PERSON / OVER_SEGMENTED) must be
-      // reported as-is; only infrastructure failures fall back in-process.
-      const code = (err && err.code) || 'CUTOUT_FAILED'
-      if (['NO_PERSON', 'OVER_SEGMENTED', 'MODEL_MISSING', 'MODEL_LOAD_FAILED', 'NO_OUTPUT', 'BAD_OUTPUT_SHAPE', 'BAD_IMAGE'].includes(code)) {
-        throw err
-      }
-      log('cutout worker failed, running in-process', code, String(err && err.message || err))
-      stopCutoutWorker()
-      return cutout.cutoutImageRGBA(rgba, width, height, options)
-    }
-  }
-  return cutout.cutoutImageRGBA(rgba, width, height, options)
-}
-
-// ------------------------------------------------------- cutout input tokens
-// The renderer must not receive the full-size photo (a 25MB JPEG becomes ~33MB
-// of base64). `cutout:pick`/`cutout:load` keep the decoded native image here
-// and hand the renderer a token plus a small preview; `cutout:run` is then
-// called with the token only.
-const CUTOUT_INPUT_LIMIT = 3
-const cutoutInputs = new Map()
-
-function previewDataUrl(image, max = 1200) {
-  const preview = cutout.scaleOnly(image, max)
-  return 'data:image/png;base64,' + preview.toPNG().toString('base64')
-}
-
-function rememberCutoutInput(image, name) {
-  const token = 'c' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8)
-  cutoutInputs.set(token, { image, name: String(name || '').slice(0, 30), at: Date.now() })
-  while (cutoutInputs.size > CUTOUT_INPUT_LIMIT) {
-    const oldest = cutoutInputs.keys().next().value
-    cutoutInputs.delete(oldest)
-  }
-  return token
-}
-
-function cutoutInputPayload(image, name) {
-  const size = image.getSize()
-  return {
-    token: rememberCutoutInput(image, name),
-    dataUrl: previewDataUrl(image),
-    name: String(name || '').slice(0, 30),
-    width: size.width,
-    height: size.height,
-  }
-}
-
 function roleList() {
   const index = store.readRoles()
   return index.roles.map((r) => ({
@@ -697,362 +434,6 @@ function soundList() {
 }
 
 // 诊断导出（P0-5）已拆到 app/main/diagnostics.js（P1-1）。
-
-function registerIpc() {
-  ipcMain.handle('state:get', () => ({
-    settings: store.readSettings(),
-    roles: roleList(),
-    weather,
-    version: VERSION,
-    dataDir: store.dir,
-  }))
-
-  ipcMain.handle('app:status', () => ({
-    version: VERSION,
-    electron: process.versions.electron,
-    platform: process.platform,
-    dataDir: store.dir,
-    tray: trayHost.status(),
-    // `isRegistered` re-reads the OS state instead of trusting the register()
-    // return value, which is what a bug report should record.
-    shortcut: trayHost.shortcutReport(),
-    // P1-2: which interaction mode the pet is in, plus how many impossible
-    // transitions were attempted since launch (a bug report should have both).
-    window: { state: winState.state, illegal: winState.illegal, lastIllegal: winState.lastIllegal },
-  }))
-
-  ipcMain.handle('settings:set', (ev, patch) => {
-    const prev = store.readSettings()
-    const next = store.writeSettings(patch || {})
-    applySettingsSideEffects(prev, next)
-    broadcastSettings()
-    if (patch && patch.weather) { refreshWeather('settings'); scheduleWeather() }
-    if (patch && patch.water) startReminders()
-    return next
-  })
-
-  ipcMain.handle('roles:list', () => roleList())
-
-  ipcMain.handle('roles:import', async () => {
-    const result = await dialog.showOpenDialog(settingsWin || petWin, {
-      title: '挑一张图片当角色',
-      properties: ['openFile'],
-      filters: [{ name: '图片', extensions: ['png', 'jpg', 'jpeg', 'webp'] }],
-    })
-    if (result.canceled || !result.filePaths || !result.filePaths[0]) return { ok: false, canceled: true }
-    const file = result.filePaths[0]
-    let image = nativeImage.createFromPath(file)
-    if (image.isEmpty()) return { ok: false, error: '这张图打不开呢' }
-    const size = image.getSize()
-    const max = 610
-    if (size.width > max || size.height > max) {
-      const scale = Math.min(max / size.width, max / size.height)
-      image = image.resize({ width: Math.round(size.width * scale), height: Math.round(size.height * scale), quality: 'best' })
-    }
-    const name = path.basename(file).replace(/\.[^.]+$/, '').slice(0, 30)
-    const entry = store.addRole(name, image.toPNG())
-    store.writeSettings({ roleId: entry.id })
-    broadcastSettings()
-    broadcastRoles()
-    return { ok: true, role: entry, roles: roleList() }
-  })
-
-  ipcMain.handle('roles:delete', (ev, id) => {
-    const result = store.deleteRole(id)
-    const s = store.readSettings()
-    if (result.ok && s.roleId === id) store.writeSettings({ roleId: 'default' })
-    broadcastSettings()
-    broadcastRoles()
-    return Object.assign({}, result, { roles: roleList() })
-  })
-
-  // ---- photo cutout -------------------------------------------------------
-  ipcMain.on('cutout:open', openCutout)
-  ipcMain.on('cutout:close', () => { if (cutoutWin) cutoutWin.close() })
-
-  ipcMain.handle('cutout:pick', async () => {
-    const result = await dialog.showOpenDialog(cutoutWin || settingsWin || petWin, {
-      title: '挑一张人像照片',
-      properties: ['openFile'],
-      filters: [{ name: '图片', extensions: ['png', 'jpg', 'jpeg', 'webp'] }],
-    })
-    if (result.canceled || !result.filePaths || !result.filePaths[0]) return { ok: false, canceled: true }
-    const file = result.filePaths[0]
-    let stat
-    try { stat = fs.statSync(file) } catch (err) { return { ok: false, error: '找不到这个文件' } }
-    if (stat.size > MAX_IMAGE_BYTES) return { ok: false, error: '图片超过 25MB 啦，先压缩一下好吗' }
-    const image = nativeImage.createFromBuffer(fs.readFileSync(file))
-    if (image.isEmpty()) return { ok: false, error: '这张图打不开呢' }
-    const name = path.basename(file).replace(/\.[^.]+$/, '').slice(0, 30)
-    return Object.assign({ ok: true }, cutoutInputPayload(image, name))
-  })
-
-  // Drag & drop: the file already lives in the renderer, so it arrives once and
-  // is replaced by a token for every later call.
-  ipcMain.handle('cutout:load', (ev, payload) => {
-    let decoded
-    try { decoded = decodeImageDataUrl(payload && payload.dataUrl) } catch (err) {
-      return { ok: false, error: err.message }
-    }
-    const image = nativeImage.createFromBuffer(decoded.buffer)
-    if (image.isEmpty()) return { ok: false, error: '这张图打不开呢' }
-    return Object.assign({ ok: true }, cutoutInputPayload(image, payload && payload.name))
-  })
-
-  ipcMain.handle('cutout:run', async (ev, payload) => {
-    const startedAt = Date.now()
-    let image = null
-    const token = payload && typeof payload.token === 'string' ? payload.token : ''
-    if (token && cutoutInputs.has(token)) {
-      image = cutoutInputs.get(token).image
-    } else if (payload && payload.dataUrl) {
-      // Back-compat: an older renderer still hands over the base64 image.
-      let decoded
-      try { decoded = decodeImageDataUrl(payload.dataUrl) } catch (err) {
-        cutoutTrace({ ok: false, mode: 'none', code: 'BAD_IMAGE', ms: Date.now() - startedAt, error: err.message })
-        return { ok: false, mode: 'none', code: 'BAD_IMAGE', error: err.message }
-      }
-      image = nativeImage.createFromBuffer(decoded.buffer)
-    } else {
-      cutoutTrace({ ok: false, mode: 'none', code: 'BAD_IMAGE', ms: Date.now() - startedAt, error: '还没拿到照片' })
-      return { ok: false, mode: 'none', code: 'BAD_IMAGE', error: '照片没拿到，重新选一张吧' }
-    }
-    if (!image || image.isEmpty()) {
-      cutoutTrace({ ok: false, mode: 'none', code: 'BAD_IMAGE', ms: Date.now() - startedAt })
-      return { ok: false, mode: 'none', code: 'BAD_IMAGE', error: '这张图打不开呢' }
-    }
-    const inputSize = image.getSize()
-    try {
-      const result = await runCutoutDecoded(image, { canvas: 610 })
-      const dataUrl = 'data:image/png;base64,' + result.png.toString('base64')
-      cutoutTrace({
-        ok: true,
-        mode: 'cutout',
-        code: null,
-        input: inputSize,
-        working: result.working,
-        shape: [1, 1, 320, 320],
-        output: [610, 610],
-        coverage: result.coverage,
-        bands: result.bands,
-        cutout: result.cutout,
-        preprocess: result.preprocess,
-        timings: result.timings,
-        ms: Date.now() - startedAt,
-      })
-      return {
-        ok: true,
-        mode: 'cutout',
-        dataUrl,
-        maskDataUrl: 'data:image/png;base64,' + result.maskPng.toString('base64'),
-        preprocess: result.preprocess,
-        width: 610,
-        height: 610,
-        coverage: result.coverage,
-        cutout: result.cutout,
-        source: result.source,
-        bands: result.bands,
-        ms: result.ms,
-      }
-    } catch (err) {
-      const code = (err && err.code) || 'CUTOUT_FAILED'
-      // Fallback keeps the app usable, but it is explicitly labelled: the
-      // renderer must show "整张照片" and ask for a second confirmation
-      // before it can be saved as a role.
-      const fallback = cutout.scaleOnly(image, 610)
-      const fallbackSize = fallback.getSize()
-      cutoutTrace({
-        ok: false,
-        mode: 'fallback',
-        code,
-        input: inputSize,
-        coverage: typeof err.coverage === 'number' ? err.coverage : null,
-        output: [fallbackSize.width, fallbackSize.height],
-        ms: Date.now() - startedAt,
-        error: err.message,
-      })
-      return {
-        ok: false,
-        mode: 'fallback',
-        code,
-        error: cutoutErrorMessage(code),
-        fallbackDataUrl: 'data:image/png;base64,' + fallback.toPNG().toString('base64'),
-        width: fallbackSize.width,
-        height: fallbackSize.height,
-      }
-    }
-  })
-
-  ipcMain.handle('cutout:save', (ev, payload) => {
-    let decoded
-    try { decoded = decodeImageDataUrl(payload && payload.dataUrl) } catch (err) {
-      return { ok: false, error: err.message }
-    }
-    const image = nativeImage.createFromBuffer(decoded.buffer)
-    if (image.isEmpty()) return { ok: false, error: '生成的角色图打不开呢' }
-    const mode = payload && payload.mode === 'fallback' ? 'fallback' : 'cutout'
-    if (mode === 'fallback' && (!payload || payload.confirmFallback !== true)) {
-      return { ok: false, code: 'FALLBACK_UNCONFIRMED', error: '要用整张照片当角色的话，得再确认一次' }
-    }
-    const send = cutout.scaleOnly(image, 610)
-    const name = String((payload && payload.name) || '照片角色').trim().slice(0, 30) || '照片角色'
-    const entry = store.addRole(name, send.toPNG(), { cutout: mode === 'cutout', mode })
-    store.writeSettings({ roleId: entry.id })
-    broadcastSettings()
-    broadcastRoles()
-    return { ok: true, role: entry, roles: roleList() }
-  })
-
-  ipcMain.handle('weather:get', () => weather)
-
-  ipcMain.handle('sounds:list', () => soundList())
-
-  ipcMain.handle('sounds:import', async () => {
-    const result = await dialog.showOpenDialog(settingsWin || petWin, {
-      title: '添加一段音频',
-      properties: ['openFile'],
-      filters: [{ name: '音频', extensions: ['wav', 'mp3', 'ogg', 'm4a', 'flac'] }],
-    })
-    if (result.canceled || !result.filePaths || !result.filePaths[0]) return { ok: false, canceled: true }
-    const file = result.filePaths[0]
-    try {
-      const bytes = fs.readFileSync(file)
-      if (bytes.length > 8 * 1024 * 1024) return { ok: false, error: '音频超过 8MB 啦，换一段短一点的吧' }
-      const ext = path.extname(file).replace('.', '').toLowerCase() || 'wav'
-      const name = path.basename(file).replace(/\.[^.]+$/, '').slice(0, 30)
-      const entry = store.addSound(name, ext, bytes)
-      return { ok: true, file: entry, files: soundList() }
-    } catch (err) {
-      return { ok: false, error: String(err.message || err) }
-    }
-  })
-
-  ipcMain.handle('sounds:delete', (ev, id) => {
-    const deleted = store.deleteSound(id)
-    if (deleted.ok) {
-      const s = store.readSettings()
-      const events = (s.sound && s.sound.events) || {}
-      let touched = false
-      for (const key of Object.keys(events)) {
-        if (events[key] && events[key].fragment === 'file:' + id) {
-          events[key] = Object.assign({}, events[key], { fragment: 'preset:ding' })
-          touched = true
-        }
-      }
-      if (touched) {
-        const next = store.writeSettings({ sound: Object.assign({}, s.sound, { events }) })
-        applySettingsSideEffects(s, next)
-        broadcastSettings()
-      }
-    }
-    return Object.assign({}, deleted, { files: soundList() })
-  })
-
-  ipcMain.handle('weather:refresh', () => refreshWeather('manual'))
-  ipcMain.handle('geocode', async (ev, q) => {
-    try { return { ok: true, list: await geocode(q) } }
-    catch (err) { return { ok: false, error: String(err.message || err), list: [] } }
-  })
-
-  ipcMain.on('pet:drag', (ev, delta) => {
-    if (!petWin || !delta) return
-    // Opt-in diagnostic: count how many window moves a drag actually performs
-    // (the renderer coalesces them to one per animation frame).
-    if (process.env.DESKPET_TRACE_DRAG === '1') log('pet-drag', Math.round(Number(delta.dx) || 0), Math.round(Number(delta.dy) || 0))
-    const s = store.readSettings()
-    const b = petWin.getBounds()
-    const size = clamp(Number(s.size) || 220, 80, 480)
-    const pet = placement.petRectOf({ x: b.x, y: layout.petTopLeft().y }, size, WIN_PAD)
-    pet.x += Math.round(Number(delta.dx) || 0)
-    pet.y += Math.round(Number(delta.dy) || 0)
-
-    const displays = layout.getDisplays()
-    const display = placement.displayForRect(displays, pet)
-    if (!display) return
-    let next = placement.clampPet(pet, display.workArea)
-    if (s.snap && s.snap.enabled) next = placement.snapPet(next, display.workArea, s.snap.gap)
-    // 0.6.2: never drag the pet closer to the top than the reserved bubble strip.
-    const maxTop = display.workArea.y + Math.max(0, display.workArea.height - size)
-    const floorTop = Math.min(maxTop, display.workArea.y + layout.reserve)
-    if (next.y < floorTop) next = { ...next, y: floorTop }
-
-    const extra = Math.max(0, b.height - size)
-    // Window top = pet top - reserved bubble space (above) or exactly the pet
-    // top (below), so dragging with a bubble open does not make the pet sink.
-    layout.petPos = { x: next.x, y: next.y }
-    petWin.setBounds(layout.windowBoundsForPet(next.x, next.y, size, extra))
-    sendMirror()
-  })
-
-  ipcMain.on('pet:drag-end', () => {
-    if (!petWin) return
-    const s = store.readSettings()
-    const size = clamp(Number(s.size) || 220, 80, 480)
-    const pos = layout.petTopLeft()
-    const display = placement.displayAt(layout.getDisplays(), { x: pos.x + size / 2, y: pos.y + size / 2 })
-    store.writeSettings({ position: { x: pos.x, y: pos.y, displayId: display ? display.id : null } })
-    sendMirror()
-  })
-
-  // 0.6.2: interactivity is decided in the main process from the cursor
-  // position and the rects the renderer reports. Renderer `mousemove` is not
-  // reliable enough: the very first move after switching to click-through can
-  // be swallowed, which made the pet unclickable until the pointer left and
-  // came back.
-  ipcMain.on('pet:rects', (ev, rects) => layout.setHitRects(rects))
-  ipcMain.on('pet:dragging', (ev, on) => {
-    if (on) winState.transition('drag-start')
-    else if (winState.is('dragging')) winState.transition('drag-end')
-    layout.updateInteractive()
-  })
-
-  // The menu is a renderer-side overlay; the machine needs to know whether it is
-  // open because it changes the reserved strip and gates bubble/drag events.
-  ipcMain.on('pet:menu', (ev, open) => {
-    winState.transition(open ? 'menu-open' : 'menu-close')
-  })
-
-  // Visible-vs-reserved are two different questions. `pet:bubble` answers "is a
-  // card up" (drives the state machine), `pet:reserve` only resizes the strip.
-  // Conflating them made a pure re-measure send bubble-show while dragging.
-  let bubbleVisible = false
-  ipcMain.handle('pet:bubble', (ev, payload) => {
-    const visible = !!(payload && payload.visible)
-    if (visible !== bubbleVisible) {
-      bubbleVisible = visible
-      winState.transition(visible ? 'bubble-show' : 'bubble-hide')
-    }
-    // Hiding keeps the reserved strip (0.6.4): pass null instead of 0.
-    return layout.applyBubbleHeight(visible ? (payload && payload.height) : null)
-  })
-
-  ipcMain.handle('pet:reserve', (ev, height) => layout.applyBubbleHeight(height == null ? null : Number(height) || 0))
-
-  // The renderer hides the bubble without touching the reserve (that resize was
-  // the 0.6.4 flicker), but the machine still has to leave `bubble`.
-  ipcMain.on('pet:bubble-hidden', () => {
-    if (!bubbleVisible) return
-    bubbleVisible = false
-    winState.transition('bubble-hide')
-  })
-
-  ipcMain.on('pet:hide', () => { if (petWin) petWin.hide() })
-  ipcMain.on('pet:open-settings', openSettings)
-  ipcMain.on('pet:open-editor', openEditor)
-  ipcMain.on('onboard:open', () => openOnboard(true))
-  ipcMain.on('onboard:dismiss', dismissOnboard)
-  ipcMain.on('pet:water-done', () => {
-    const s = store.readSettings()
-    const today = new Date()
-    const key = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate()
-    const cups = s.water.today && s.water.today.date === key ? Number(s.water.today.cups) + 1 : 1
-    store.writeSettings({ water: { lastDrinkAt: Date.now(), today: { date: key, cups } } })
-  })
-
-  ipcMain.on('app:quit', () => { quitting = true; app.quit() })
-  ipcMain.handle('app:open-data-dir', () => shell.openPath(store.dir))
-  ipcMain.handle('app:diagnostics', () => diagnostics.export())
-}
 
 // ---------------------------------------------------------------------- boot
 log('before lock')
@@ -1120,15 +501,50 @@ if (!hasLock) {
     session.defaultSession.setPermissionRequestHandler((wc, permission, callback) => {
       callback(permission === 'geolocation')
     })
-    registerIpc()
+    cutoutService = createCutoutService({
+      store, nativeImage, cutout, app, utilityProcess,
+      path, fs, log, rootDir: __dirname,
+    })
+    weatherPump = createWeatherPump({
+      store, fetchWeather, advice, clamp, log,
+      getWindows: () => BrowserWindow.getAllWindows(),
+    })
+    reminders = createReminders({
+      store, clamp,
+      isPetVisible: () => !!(petWin && petWin.isVisible()),
+      sendToPet: (channel) => { if (petWin && !petWin.isDestroyed()) petWin.webContents.send(channel) },
+      notify: ({ title, body }) => { try { new Notification({ title, body }).show() } catch (err) {} },
+    })
+    registerIpc({
+      ipcMain, dialog, shell, app, nativeImage, path, fs,
+      store, version: VERSION, weatherPump, layout, winState, trayHost, diagnostics,
+      cutoutService, cutout, placement, clamp, winPad: WIN_PAD, log,
+      windows: {
+        pet: () => petWin,
+        settings: () => settingsWin,
+        editor: () => editorWin,
+        cutout: () => cutoutWin,
+      },
+      actions: {
+        openSettings: () => openSettings(),
+        openEditor: () => openEditor(),
+        openCutout: () => openCutout(),
+        openOnboard: (force) => openOnboard(force),
+        dismissOnboard: () => dismissOnboard(),
+      },
+      lists: {
+        roleList, soundList, roleUrl, geocode, broadcastSettings, broadcastRoles, sendMirror, applySettingsSideEffects,
+      },
+      setQuitting: (v) => { quitting = v },
+    })
     log('store=' + store.dir)
     createPetWindow()
     trayHost.create()
     trayHost.registerShortcut()
     log('windows created pet=' + (petWin ? 'yes' : 'no') + ' tray=' + (trayHost.ready() ? 'yes' : 'no') + ' shortcut=' + trayHost.shortcutReport().ok)
-    refreshWeather('boot')
-    scheduleWeather()
-    startReminders()
+    weatherPump.refresh('boot')
+    weatherPump.schedule()
+    reminders.start()
     if (process.env.DESKPET_OPEN_SETTINGS === '1') setTimeout(openSettings, 800)
     if (process.env.DESKPET_OPEN_EDITOR === '1') setTimeout(openEditor, 800)
     // M17 P0-1: first run gets the three-step card (once). Existing installs
@@ -1143,6 +559,6 @@ if (!hasLock) {
     screen.on('display-metrics-changed', () => layout.ensureOnScreen())
   }).catch((err) => log('whenReady failed', (err && err.stack) || String(err)))
 
-  app.on('before-quit', () => { quitting = true; stopCutoutWorker(); try { globalShortcut.unregisterAll() } catch (err) {} })
+  app.on('before-quit', () => { quitting = true; if (cutoutService) cutoutService.stopWorker(); try { globalShortcut.unregisterAll() } catch (err) {} })
   app.on('window-all-closed', () => { /* keep running in the tray */ })
 }

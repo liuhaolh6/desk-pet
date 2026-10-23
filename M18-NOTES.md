@@ -128,3 +128,37 @@ node tools/check-a11y.js  # 57 项
    （请求 84px，桌宠跑了 147px）。拖动必须用带 `screenX/screenY` 的合成 `PointerEvent`。
 2. **桌宠渲染色块比 `size` 高 3%（hover 缩放）**：`getBoundingClientRect()` 会比逻辑尺寸多 7px，
    比对落点时用 **底边** 或放到 12px 容差，别拿左上角死磕 5px。
+
+## 6. 阶段 3：`ipc.js` / `weather-pump.js` / `reminder.js` / `cutout-service.js`
+
+### 6.1 抽了什么
+
+| 文件 | 行数 | 内容 |
+|---|---|---|
+| `app/main/ipc.js`（新） | 404 | 全部 `ipcMain` 通道（state/app/settings/roles/sounds/weather/cutout/pet/onboard），以及 `pet:bubble` 的 `bubbleVisible` 去重 |
+| `app/main/weather-pump.js`（新） | 81 | `createWeatherPump()`：取数、缓存回退（补 `advice`/`hourly`）、定时器夹取 5–180 分钟 |
+| `app/main/reminder.js`（新） | 67 | `createReminders()`：勿扰模式 / 勿扰时段 / 间隔 / 10 分钟限流；`tick()` 返回本次判定便于断言 |
+| `app/main/cutout-service.js`（新） | 232 | 解码、输入令牌（3 个上限）、`utilityProcess`、真实答案不重试、进程内回退、`cutout-trace.jsonl` |
+| `app/main.js` | **564**（原 1148） | 只剩窗口创建、设置生效、协议、服务实例化与装配 |
+
+依赖注入的边界是刻意画宽的：`ipc.js` 拿到的是 `windows: { pet, settings, ... }` **函数**（不是窗口对象），
+所以窗口关了再开也不会拿到旧引用；`store`、`layout`、`winState`、`trayHost`、`diagnostics`、`cutout` 全部由主文件传。
+
+### 6.2 验证
+
+| 门禁 | 结果 |
+|---|---|
+| `npm run check` | 25 个文件语法全绿（新增 4 个模块） |
+| smoke | **57 项**（新增天气泵：`NO_LOCATION`/缓存回退/间隔夹取/`stop()`；提醒：到点/限流/勿扰/跨午夜） |
+| `check-a11y` / `a11y-audit` / `a11y-keyboard` | 57 / **86:0** / 6:6 |
+| `cdp-p11-stage3.js`（真机 44.9.0，CDP 9229） | **17/17**：state/app/status/weather/refresh/cutout 错误路径/诊断导出/roles/sounds/bubble→状态机/idle 回位/日志无异常 |
+
+测试脚本踩的坑：`app.log` 在 **开发态写仓库根**、打包态才写数据目录（`logger.setFile` 的分支），
+断言"本次运行无异常"时要先 `slice(lastIndexOf('boot electron='))`，否则会翻到上一次启动的旧报错。
+同样，`setSettings` 触发的天气刷新是**异步**的，读 `weather:get` 前得等一下，否则还看到 `NO_LOCATION`。
+
+### 6.3 剩下的 564 行
+
+按块大致是：窗口创建（`createPetWindow` 等 ~230 行）、设置生效与广播（~80）、协议处理（~45）、
+抠图窗口/引导窗（~90）、选择数据目录与启动（~90）。下一步拆 `windows.js`（窗口工厂）+ `boot.js`（数据目录/锁/ready）
+就能压到 300 行以内；`ipc.js` 如果还要再小，可按 roles/sounds/cutout 三个域再分文件。

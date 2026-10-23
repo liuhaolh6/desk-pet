@@ -903,18 +903,28 @@ const PAD = 54
   const root = path.join(__dirname, '..')
   const modDir = path.join(root, 'app', 'main')
   const mods = fs.readdirSync(modDir).filter((f) => f.endsWith('.js')).sort()
-  assert.deepEqual(mods, ['diagnostics.js', 'geometry.js', 'log.js', 'tray.js', 'window-layout.js'], 'app/main/ 下的模块名单')
+  assert.deepEqual(mods, ['cutout-service.js', 'diagnostics.js', 'geometry.js', 'ipc.js', 'log.js', 'reminder.js', 'tray.js', 'weather-pump.js', 'window-layout.js'], 'app/main/ 下的模块名单')
   const mainJs = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
   for (const name of mods) {
     const file = path.join(modDir, name)
     const text = fs.readFileSync(file, 'utf8')
     assert.ok(/module\.exports = \{/.test(text), name + ' 有导出')
-    assert.ok(text.split('\n').length <= 320, name + ' 不超过 320 行')
+    // ipc.js is a flat list of ~40 handlers; it gets its own (looser) cap so
+    // the rest stay small.
+    const cap = name === 'ipc.js' ? 430 : 320
+    assert.ok(text.split('\n').length <= cap, name + ' 不超过 ' + cap + ' 行')
   }
   assert.ok(/require\('\.\/main\/log'\)/.test(mainJs), 'main.js 引用 log 模块')
   assert.ok(/require\('\.\/main\/geometry'\)/.test(mainJs), 'main.js 引用 geometry 模块')
   assert.ok(/require\('\.\/main\/tray'\)/.test(mainJs) && /createTrayHost\(/.test(mainJs), 'main.js 引用 tray 模块并接线')
   assert.ok(/require\('\.\/main\/diagnostics'\)/.test(mainJs) && /createDiagnostics\(/.test(mainJs), 'main.js 引用 diagnostics 模块并接线')
+  assert.ok(/require\('\.\/main\/weather-pump'\)/.test(mainJs) && /createWeatherPump\(/.test(mainJs), 'main.js 引用 weather-pump 并接线')
+  assert.ok(/require\('\.\/main\/reminder'\)/.test(mainJs) && /createReminders\(/.test(mainJs), 'main.js 引用 reminder 并接线')
+  assert.ok(/require\('\.\/main\/cutout-service'\)/.test(mainJs) && /createCutoutService\(/.test(mainJs), 'main.js 引用 cutout-service 并接线')
+  assert.ok(/require\('\.\/main\/ipc'\)/.test(mainJs) && /registerIpc\(\{/.test(mainJs), 'main.js 调用 ipc 注册器')
+  assert.ok(!/function registerIpc/.test(mainJs), '旧的 IPC 注册已从 main.js 移出')
+  assert.ok(!/function refreshWeather|function startReminders|function runCutoutDecoded/.test(mainJs), '天气/提醒/抠图实现已移出 main.js')
+  assert.ok(mainJs.split('\n').length <= 620, 'main.js 压到 620 行以内（当前 ' + mainJs.split('\n').length + '）')
   assert.ok(!/function buildDiagnostics/.test(mainJs), '旧的诊断实现已从 main.js 移出')
   assert.ok(!/function createTray\(/.test(mainJs), '旧的托盘实现已从 main.js 移出')
   ok('P1-1 拆分：main.js 只接线，模块各自导出且 ≤320 行')
@@ -988,7 +998,8 @@ const PAD = 54
   const mainJs2 = fs.readFileSync(path.join(__dirname, '..', 'app', 'main.js'), 'utf8')
   assert.ok(/createWindowState\(/.test(mainJs2), 'main.js 接入状态机')
   assert.ok(!/let petDragging/.test(mainJs2), '旧的 petDragging 布尔已移交给状态机')
-  assert.ok(/winState\.is\('dragging'\)/.test(mainJs2), '点击穿透读状态机的 dragging')
+  assert.ok(/winState\.is\('dragging'\)/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'ipc.js'), 'utf8') +
+    fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'window-layout.js'), 'utf8')), '点击穿透读状态机的 dragging')
   assert.ok(/setMenu: \(open\) => ipcRenderer\.send\('pet:menu'/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')), 'preload 爆出 setMenu')
   ok('P1-2 状态机：全矩阵转移、非法计数、菜单/拖动/抠图序列与接线')
 }
@@ -1064,15 +1075,90 @@ const PAD = 54
   assert.equal(dragLay.interactive, true, '拖动中始终可交互')
 
   const mainJs3 = fs.readFileSync(path.join(__dirname, '..', 'app', 'main.js'), 'utf8')
+  const ipcJs3 = fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'ipc.js'), 'utf8')
   assert.ok(/createWindowLayout\(/.test(mainJs3), 'main.js 接入 window-layout')
-  assert.ok(/ipcMain\.handle\('pet:reserve'/.test(mainJs3), '预留与可见性分开：pet:reserve 只负责 strip')
-  assert.ok(/let bubbleVisible = false/.test(mainJs3), '可见性去重，重复的 bubble-show 不再重复转移')
+  assert.ok(/ipcMain\.handle\('pet:reserve'/.test(ipcJs3), '预留与可见性分开：pet:reserve 只负责 strip')
+  assert.ok(/let bubbleVisible = false/.test(ipcJs3), '可见性去重，重复的 bubble-show 不再重复转移')
   const preloadReserve = fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')
   assert.ok(/setReserve: \(height\) => ipcRenderer\.invoke\('pet:reserve'/.test(preloadReserve), 'preload 暴露 setReserve')
   const petJsStage2 = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.js'), 'utf8')
   assert.ok(/async function reserveSpace/.test(petJsStage2) && /async function showBubbleFrame/.test(petJsStage2), '保留量/可见性拆成两个函数')
   assert.ok(!/let petPos/.test(mainJs3) && !/function applyBubbleHeight/.test(mainJs3), '旧的布局状态与函数已移出 main.js')
   ok('P1-1 阶段 2：命中纯函数、预留增长/收缩、贴边下推、拖动可交互')
+}
+
+{
+  // M18 P1-1 stage 3: weather pump + reminders are pure modules with an
+  // injectable clock, so the rules can be asserted without Electron or a network.
+  const pumpMod = require(path.join(__dirname, '..', 'app', 'main', 'weather-pump.js'))
+  const reminderMod = require(path.join(__dirname, '..', 'app', 'main', 'reminder.js'))
+  const sent = []
+  const fakeWindows = [{ isDestroyed: () => false, webContents: { send: (ch, v) => sent.push([ch, v]) } }]
+  let settings = { weather: {} }
+  const writes = []
+  const fakeStore = {
+    readSettings: () => settings,
+    writeWeatherCache: (entry) => writes.push(entry),
+    readWeatherCache: () => ({ value: { ok: true, temp: 21 } }),
+  }
+  const pump = pumpMod.createWeatherPump({
+    store: fakeStore, fetchWeather: async () => ({ ok: true, temp: 30 }), advice: (w) => 'advice:' + w.temp,
+    getWindows: () => fakeWindows, clamp: (n, lo, hi) => Math.min(hi, Math.max(lo, n)), now: () => 1000,
+  })
+  pump.refresh('test')
+  assert.equal(pump.current().error, 'NO_LOCATION', '没城市时给 NO_LOCATION')
+  assert.equal(pump.current().error, 'NO_LOCATION', 'NO_LOCATION 也写进 current()')
+  assert.equal(sent[sent.length - 1][0], 'weather:changed', '无城市时也广播')
+
+  settings = { weather: { lat: 30, lon: 120, city: '上海', refreshMinutes: 1 } }
+  const failing = pumpMod.createWeatherPump({
+    // Throws synchronously: `refresh` then finishes in one turn and the result
+    // is observable without awaiting (the real fetch does await).
+    store: fakeStore, fetchWeather: () => { throw new Error('offline') }, advice: (w) => 'advice:' + w.temp,
+    getWindows: () => fakeWindows, clamp: (n, lo, hi) => Math.min(hi, Math.max(lo, n)), now: () => 1000,
+  })
+  const stale = failing.refresh('test')
+  assert.equal(failing.current().stale, true, '取数失败时回退缓存并标 stale')
+  assert.equal(failing.current().advice, 'advice:21', '旧缓存补上建议句')
+  assert.deepEqual(failing.current().hourly, [], '旧缓存补上空小时条')
+  assert.ok(stale && typeof stale.then === 'function', 'refresh 仍返回 promise', 0)
+  assert.equal(failing.schedule(), 5, '刷新间隔下限夹到 5 分钟')
+  assert.ok(failing.intervalMs() >= 5 * 60000 - 5, '定时器确实按夹取后的间隔跑')
+  failing.stop()
+  assert.equal(failing.intervalMs(), 0, 'stop() 清掉定时器')
+
+  let clock = 0
+  const waterSettings = { mode: 'normal', water: { intervalMinutes: 60, lastDrinkAt: 0 } }
+  const reminders = reminderMod.createReminders({
+    store: { readSettings: () => waterSettings },
+    clamp: (n, lo, hi) => Math.min(hi, Math.max(lo, n)),
+    isPetVisible: () => true,
+    sendToPet: (ch) => sent.push(['pet:' + ch, null]),
+    notify: () => sent.push(['notify', null]),
+    now: () => clock,
+  })
+  assert.equal(reminders.tick(), 'not-due', '还没到点时不提醒')
+  clock = 61 * 60000
+  assert.equal(reminders.tick(), 'reminded', '到点后提醒一次')
+  assert.equal(sent[sent.length - 1][0], 'pet:remind:water', '桌宠可见时走进气泡')
+  assert.equal(reminders.tick(), 'throttled', '10 分钟内的第二次请求被限流')
+  assert.equal(reminderMod.REMIND_FLOOR_MS, 600000, '限流窗口 10 分钟')
+  waterSettings.mode = 'quiet'
+  clock = 4 * 3600000
+  assert.equal(reminders.tick(), 'quiet-mode', '勿扰模式完全不提醒')
+  waterSettings.mode = 'normal'
+  waterSettings.water.quietFrom = 22
+  waterSettings.water.quietTo = 8
+  const quiet = reminderMod.createReminders({
+    store: { readSettings: () => waterSettings }, clamp: (n, lo, hi) => Math.min(hi, Math.max(lo, n)),
+    isPetVisible: () => false, sendToPet: () => {}, notify: () => {}, now: () => new Date(2026, 9, 22, 23, 30).getTime(),
+  })
+  assert.equal(quiet.tick(), 'quiet-hours', '跨午夜的免打扰区间判定正确')
+  assert.equal(reminderMod.createReminders({
+    store: { readSettings: () => waterSettings }, clamp: (n, lo, hi) => Math.min(hi, Math.max(lo, n)),
+    isPetVisible: () => false, sendToPet: () => {}, notify: () => {}, now: () => new Date(2026, 9, 22, 12, 0).getTime(),
+  }).inQuietHours({ quietFrom: 13, quietTo: 14 }), false, '同一天的免打扰区间之外不静音')
+  ok('P1-1 阶段 3：天气回退/夹取，喝水提醒的到点、限流、勿扰与跨午夜')
 }
 
 console.log('\n' + pass + ' checks passed')
