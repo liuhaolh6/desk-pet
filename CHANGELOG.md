@@ -10,6 +10,12 @@
   机制细节与踩坑记录见 [`HANDOFF.md`](HANDOFF.md)。
 
 ### 重构
+- **主进程拆模块（阶段 4，收口）**（ROADMAP P1-1）：新增 `app/main/windows.js`（297 行，五个窗口的创建/单例/设置副效应）、
+  `catalog.js`（106，角色与声音目录 + `pet-role://`/`pet-sound://` 协议 + 广播）、`boot.js`（81，选数据目录 + 单实例锁），
+  `app/main.js` 564 → **226 行**，P1-1 的“单文件 ≤300 行”目标达成。
+  `layout` 与窗口的循环依赖用 `onMirror: () => windows.sendMirror()` 晚绑定闭包断开；
+  行为不变（57+57+86+6 全绿，运行时 stage3 17/17、stage4 12/12）。见 [`M18-NOTES.md`](M18-NOTES.md) §7。
+
 - **主进程拆模块（阶段 1）**（ROADMAP P1-1 / L21）：新增 `app/main/log.js`、`geometry.js`、`tray.js`、`diagnostics.js`
   （合计 281 行），`app/main.js` 从 1451 行降到 **1284 行**，只做接线；行为与对外 API 不变
   （`app:status` 字段形状、托盘菜单项、诊断导出文件格式均同 0.6.6）。smoke 新增模块契约与几何纯函数断言（54 项）。

@@ -162,3 +162,35 @@ node tools/check-a11y.js  # 57 项
 按块大致是：窗口创建（`createPetWindow` 等 ~230 行）、设置生效与广播（~80）、协议处理（~45）、
 抠图窗口/引导窗（~90）、选择数据目录与启动（~90）。下一步拆 `windows.js`（窗口工厂）+ `boot.js`（数据目录/锁/ready）
 就能压到 300 行以内；`ipc.js` 如果还要再小，可按 roles/sounds/cutout 三个域再分文件。
+
+## 7. 阶段 4：`windows.js` / `catalog.js` / `boot.js`（P1-1 收口）
+
+| 文件 | 行数 | 内容 |
+|---|---:|---|
+| `app/main/windows.js` | 297 | 五个窗口的创建与单例；`applySettingsEffects`（尺寸/置顶/开机自启）；`openOnboard`/`dismissOnboard`；抠图窗开关同时驱动状态机 |
+| `app/main/catalog.js` | 106 | `roleUrl/roleList/soundList`、`pet-role://`与`pet-sound://`协议处理、`broadcastSettings/broadcastRoles` |
+| `app/main/boot.js` | 81 | 数据目录候选与可写探测、日志落盘位置（开发态写仓库根、打包态写数据目录）、单实例锁 |
+| `app/main.js` | **226**（原 564） | 只剩：读启动参数、`bootDataDir`、实例化 10 个模块、`registerIpc`、几个 `app.on` |
+
+### 7.1 两个循环依赖与各自的解法
+
+1. **`layout` ↔ 窗口**：layout 要发镜像（要用窗口），窗口要用 layout 算位置。解法是两边都给 thunk：
+   layout 拿 `getWindow: () => windows.pet()`、`onMirror: () => windows.sendMirror()`，
+   窗口模块拿 `layout` 实例（layout 先建，但它的回调要等窗口存在才会被调到）。
+2. **`catalog` ↔ `store`**：`store` 在 `whenReady` 里才存在（数据目录刚选完），而协议处理器在启动时就注册。
+   解法是 `createCatalog` 在 `whenReady` 里、`store` 之后才调用，`protocol.handle` 也搬到里面——
+   反正 `loadFile` 一定在它后面。
+
+### 7.2 验证
+
+| 门禁 | 结果 |
+|---|---|
+| `npm run check` | 28 个文件语法全绿 |
+| smoke | **57 项**（新增：模块名单 12 个、`main.js` ≤300 行、窗口全在 windows.js 创建、目录/锁不再在 main.js） |
+| `check-a11y` / `a11y-audit` / `a11y-keyboard` | 57 / **86:0** / 6:6 |
+| `cdp-p11-stage4.js`（真机 44.9.0，CDP 9229） | **12/12**：设置/编辑器打开与单例、抠图进 cutout 再回 idle、引导窗重开与关闭、托盘与快捷键状态、诊断导出、`illegal===0` |
+
+### 7.3 验证脚本自身的两个小坑
+
+- 状态查询是 `deskPet.getAppStatus()`（不是 `getStatus`），诊断导出返回 `{ ok, path, bytes }`（不是 `file`）。
+- 窗口关闭要用页面里的 `window.close()`（CDP 的 `Target.closeTarget` 在 Electron 里会让渲染进程不掉线但不关窗）。
