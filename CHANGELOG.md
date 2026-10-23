@@ -9,6 +9,10 @@
 - 计划中的工作与现有不足的完整清单见 [`ROADMAP.md`](ROADMAP.md)（成熟度评分、P0–P3 方向、未来展望）；
   机制细节与踩坑记录见 [`HANDOFF.md`](HANDOFF.md)。
 
+## [0.6.7] - 2026-10-23
+
+地基理顺的一版：主进程拆成 16 个模块（`main.js` 1451 → 226 行）、窗口状态机收口；顺手补上设置的可用性、喝水记录、天气细节和"主动说话"。
+
 ### 工程化
 - **真窗口 e2e 入库（ROADMAP P1-9）**：把散在 `.tmp-verify/` 里的一次性 CDP 脚本整理成 `tools/e2e/`——
   `run.js` 用临时数据目录起一个干净的 Electron（不需要 xvfb），`cases/` 三条用例：`noresize`（连点 5 次 + 收起，
@@ -100,6 +104,13 @@
 
 - **只抠图抢焦点**（随 P1-2）：气泡与悬停菜单改用 `showInactive`；抠图窗口平时不抢焦点，
   只有点“开始”才 `focus()`。以前鼠标移到桌宠身上就会把焦点从编辑器/浏览器抢走。
+
+### 打包
+- 0.6.7 便携版：`dist/DeskPet-0.6.7-portable.exe`（153,885,681 B ≈ 146.8 MiB，未签名，`electron-builder` 26.15.3 / Electron 44.9.0）；
+  SHA-256 `920284dde614ade2d5618d28cf5317542c3922f80f19e87a81d59687d54521df`。
+- 出包后把 `win-unpacked` 复制到 `D:\DeskPetTest\app`，用 `DESKPET_DATA_DIR=D:\DeskPetTest\data` 启动实测 15/15：
+  版本 0.6.7、托盘 `{ok:true}`（目录外启动通知区可见 `小芳 · 桌宠`）、快捷键 `registered:true`、状态机 `idle→bubble` 无非法转移、
+  气泡不改变窗口高度（444）、喝水写入、诊断导出、设置页搜索命中「喝水」3 条。
 
 ## [0.6.6] - 2026-10-22
 
