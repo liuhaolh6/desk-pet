@@ -1195,5 +1195,29 @@
     "appLog": "## Last 200 lines of app.log",
     "cutoutTrace": "## Last 60 lines of cutout-trace.jsonl",
     "sep": ": "
+  },
+  "privacy": {
+    "net": {
+      "geocode": {
+        "what": "turns a city name into coordinates",
+        "when": "when you change city / refresh weather"
+      },
+      "forecast": {
+        "what": "fetches the forecast (by coordinates)",
+        "when": "every 30 min / manual refresh"
+      },
+      "air": {
+        "what": "fetches air quality (by coordinates)",
+        "when": "when an air module is on the board"
+      },
+      "update": {
+        "what": "reads the version file update.json (no identifiers)",
+        "when": "once at launch, then every 24 h"
+      },
+      "github": {
+        "what": "only opens the browser when you click \"Download\"",
+        "when": "only when you click it"
+      }
+    }
   }
 }

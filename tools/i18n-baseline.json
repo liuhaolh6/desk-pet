@@ -12,7 +12,7 @@
     "app/main/nudge-pump.js": 1,
     "app/main/ipc.js": 0,
     "app/main/windows.js": 4,
-    "app/main/privacy.js": 10,
+    "app/main/privacy.js": 0,
     "app/main/cutout-service.js": 9,
     "app/main/diagnostics.js": 0,
     "app/preload.js": 0,

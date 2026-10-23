@@ -105,7 +105,8 @@ test('网络清单：只列真正会连的域名，并有开放式描述', () =>
   assert.ok(hosts.includes('raw.githubusercontent.com'), '更新检查')
   assert.ok(!hosts.some((h) => /wttr\.in|google|baidu|sentry|analytics/i.test(h)), '不该出现外部统计或旧接口')
   for (const entry of NETWORK_ENDPOINTS) {
-    assert.ok(entry.what && entry.when, '每个域名都说明了用途和时机')
+    assert.ok(entry.id, '每行有 id（用于查翻译）')
+    assert.ok(/^privacy.net./.test('privacy.net.' + entry.id), 'id 可拼成 privacy.net.<id>')
   }
   assert.ok(CACHE_DIRS.includes('Cache') && CACHE_DIRS.includes('GPUCache'))
 })

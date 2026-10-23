@@ -1195,5 +1195,29 @@
     "appLog": "## app.log 末尾 200 行",
     "cutoutTrace": "## cutout-trace.jsonl 末尾 60 行",
     "sep": "："
+  },
+  "privacy": {
+    "net": {
+      "geocode": {
+        "what": "城市名换经纬度",
+        "when": "换城市 / 刷新天气"
+      },
+      "forecast": {
+        "what": "取天气预报（经纬度）",
+        "when": "每 30 分钟 / 手动刷新"
+      },
+      "air": {
+        "what": "取空气质量（经纬度）",
+        "when": "公告栏里有空气模块时"
+      },
+      "update": {
+        "what": "读新版号 update.json（无标识）",
+        "when": "启动后一次，之后每 24 小时"
+      },
+      "github": {
+        "what": "只在你点“去下载”时用浏览器打开",
+        "when": "你主动点击"
+      }
+    }
   }
 }

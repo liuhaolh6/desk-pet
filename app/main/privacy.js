@@ -12,11 +12,11 @@
 'use strict'
 
 const NETWORK_ENDPOINTS = [
-  { host: 'geocoding-api.open-meteo.com', what: '城市名换经纬度', when: '换城市 / 刷新天气' },
-  { host: 'api.open-meteo.com', what: '取天气预报（经纬度）', when: '每 30 分钟 / 手动刷新' },
-  { host: 'air-quality-api.open-meteo.com', what: '取空气质量（经纬度）', when: '公告栏里有空气模块时' },
-  { host: 'raw.githubusercontent.com', what: '读新版号 update.json（无标识）', when: '启动后一次，之后每 24 小时' },
-  { host: 'github.com', what: '只在你点“去下载”时用浏览器打开', when: '你主动点击' },
+  { id: 'geocode', host: 'geocoding-api.open-meteo.com' },
+  { id: 'forecast', host: 'api.open-meteo.com' },
+  { id: 'air', host: 'air-quality-api.open-meteo.com' },
+  { id: 'update', host: 'raw.githubusercontent.com' },
+  { id: 'github', host: 'github.com' },
 ]
 
 const CACHE_DIRS = [
@@ -33,7 +33,8 @@ const CACHE_DIRS = [
   'Service Worker',
 ]
 
-function createPrivacy({ dir, fs, path, log }) {
+function createPrivacy({ dir, fs, path, log , t }) {
+  const tr = (key) => (typeof t === 'function' ? t(key) : key)
   function sizeOf(target) {
     let stat
     try {
@@ -90,7 +91,7 @@ function createPrivacy({ dir, fs, path, log }) {
         caches: { count: caches.length, bytes: caches.reduce((sum, c) => sum + c.bytes, 0) },
       },
       junkBytes: sizeOf(logFile) + sizeOf(traceFile) + caches.reduce((sum, c) => sum + c.bytes, 0),
-      endpoints: NETWORK_ENDPOINTS,
+      endpoints: NETWORK_ENDPOINTS.map((e) => ({ host: e.host, what: tr('privacy.net.' + e.id + '.what'), when: tr('privacy.net.' + e.id + '.when') })),
     }
   }
 

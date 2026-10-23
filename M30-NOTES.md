@@ -348,3 +348,14 @@ WMO 码表、AQI 分级、三天标签、建议句都写成中文字面量，共
 - 验证：en 数据目录 `exportDiagnostics()` 产物头部 = `# Desk Pet diagnostics` / `Generated:` / `## App` / `Version: 0.6.9`。
 
 基线 **92 → 76**。
+
+### 阶段三-L：隐私面板的网络清单（已完成）
+
+- `app/main/privacy.js` 10 处 → 0：五个域名的「做什么 / 什么时候连」改成 `privacy.net.<id>.what|when`，
+  只在 `summary()` 生成时翻译（`tr()` 缺翻译器退键名）。
+- 同时把数据里的 `id` 留下来：渲染/排序用 id，翻译按 id 查，不让展示文案当主键。
+- 单测原来断言 `entry.what && entry.when`，现在断言「每行有 id 且能拼成 `privacy.net.<id>`」——
+  翻译是否齐全由 `check-i18n` 保证，单测不需要重复。
+- 验证：en 数据目录 `privacySummary().endpoints[0]` = `turns a city name into coordinates`。
+
+基线 **76 → 66**。

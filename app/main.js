@@ -170,7 +170,7 @@ app.whenReady().then(() => {
   i18n = createMainI18n({ requested: (store.readSettings().locale || ''), system: app.getLocale(), log })
   // preload 在窗口加载时同步取字典，所以通道必须先于 createWindows 注册。
   registerI18nIpc({ ipcMain, i18n })
-  privacy = createPrivacy({ dir: store.dir, fs, path, log })
+  privacy = createPrivacy({ dir: store.dir, fs, path, log, t })
   catalog = createCatalog({ fs, store, assets: ASSETS, BrowserWindow, trayHost })
   windows = createWindows({
     BrowserWindow, screen, app, store, layout, winState,
