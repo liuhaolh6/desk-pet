@@ -44,6 +44,7 @@ const { createWindows } = require('./main/windows')
 const { createCatalog } = require('./main/catalog')
 const { bootDataDir } = require('./main/boot')
 const { registerIpc } = require('./main/ipc')
+const { createMainI18n, registerI18nIpc } = require('./main/i18n')
 
 const logger = createLogger()
 const { breadcrumb, log } = logger
@@ -70,12 +71,18 @@ let cutoutService = null
 let privacy = null
 let quitting = false
 
+// P2-6: one translator for the main process; renderers get the dictionary over
+// IPC (`i18n:dict`) and do their own lookup with the same `t()`.
+let i18n = null
+function t(key, vars) { return i18n ? i18n.t(key, vars) : key }
+
 // P1-1: the tray + shortcut (P0-3) and the diagnostics export (P0-5) live in
 // modules; main.js only wires them to the pet window and the store.
 const trayHost = createTrayHost({
   assets: ASSETS,
   readSettings: () => store.readSettings(),
   log,
+  t: (key, vars) => t(key, vars),
   actions: {
     togglePet: () => windows && windows.togglePet(),
     openSettings: () => windows && windows.openSettings(),
@@ -159,6 +166,8 @@ app.whenReady().then(() => {
   log('ready')
   app.setAppUserModelId('com.deskpet.app')
   store = createStore(app.getPath('userData'))
+  // P2-6：语言来自设置（空 = 跟随系统），坏文件/缺子串都不影响启动。
+  i18n = createMainI18n({ requested: (store.readSettings().locale || ''), system: app.getLocale(), log })
   privacy = createPrivacy({ dir: store.dir, fs, path, log })
   catalog = createCatalog({ fs, store, assets: ASSETS, BrowserWindow, trayHost })
   windows = createWindows({
@@ -192,17 +201,18 @@ app.whenReady().then(() => {
     getWindows: () => BrowserWindow.getAllWindows(),
   })
   reminders = createReminders({
-    store, clamp,
+    store, clamp, t,
     isPetVisible: () => { const pet = windows.pet(); return !!(pet && pet.isVisible()) },
     sendToPet: (channel) => { const pet = windows.pet(); if (pet && !pet.isDestroyed()) pet.webContents.send(channel) },
     notify: ({ title, body }) => { try { new Notification({ title, body }).show() } catch (err) {} },
   })
   const fgCache = { at: 0, value: false }
   nudges = createNudgePump({
-    store, log,
+    store, log, t,
     sendToPet: (channel, data) => { const pet = windows.pet(); if (pet && !pet.isDestroyed()) pet.webContents.send(channel, data) },
     isBusy: () => isForegroundFullscreen({ cache: fgCache }),
   })
+  registerI18nIpc({ ipcMain, i18n })
   registerIpc({
     ipcMain, dialog, shell, app, nativeImage, path, fs,
     store, version: VERSION, weatherPump, layout, winState, trayHost, diagnostics, updater, privacy,

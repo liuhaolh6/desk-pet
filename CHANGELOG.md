@@ -7,6 +7,12 @@
 ## [Unreleased]
 
 ### 新增
+- **多语言骨架（ROADMAP P2-6 阶段一）**：文案搬进 `locales/zh-CN.json`（`locales/en-US.json` 结构同步就位），
+  主进程、渲染层、纯 Node 各有一个 `t()`；设置 → 其他 多了语言下拉（跟随系统 / 中文 / English），
+  **改完重开桌宠生效**。真正的地基是尺子：`tools/check-i18n.js` 剥掉注释后数出每个文件还剩多少处内联中文，
+  基线 `tools/i18n-baseline.json` 只降不升，`npm test` 里跟着跑；渲染层文案改用 `data-i18n` 标记 +
+  `applyStatic()` 填充，HTML 回到纯结构。本阶段收口 30 个文件、880 处待抽取（剩最多的是设置页与气泡模型），
+  已知限制与分阶段计划见 [`M30-NOTES.md`](M30-NOTES.md)。
 - **抠图评测链路（ROADMAP P2-5 的前置部分）**：模型选择从代码变成数据（`lib/cutout-model.js`：
   `DESKPET_CUTOUT_MODEL` 绝对路径 → 安装版 `resources/models` → 仓库 `assets/models`，小于 1MB 的文件视为没下载完）；
   新增评测 CLI `npm run cutout:eval`（IoU / 边缘锐度 / 耗时 / 覆盖率，逐图 + 汇总，`--json` 可机读）与

@@ -18,6 +18,8 @@ function createNudgePump(options) {
   const sendToPet = o.sendToPet || (() => {})
   const isBusy = o.isBusy || (() => Promise.resolve(false))
   const store = o.store
+  // P2-6：注意 probe() 里有个局部 `t`（时间），所以翻译器叫 tr。
+  const tr = o.t || ((key) => key)
   const tickMs = Number(o.tickMs) > 0 ? Number(o.tickMs) : 60 * 1000
 
   const state = { sessionStart: 0, lastInteraction: 0, lastNudgeAt: 0 }
@@ -35,6 +37,15 @@ function createNudgePump(options) {
     return { cfg: (s.nudge || {}), mode: s.mode }
   }
 
+  /** 三种主动说话文案，跟随界面语言。 */
+  function nudgeTexts() {
+    return {
+      'late-night': tr('nudge.lateNight'),
+      'long-use': tr('nudge.longUse'),
+      away: tr('nudge.away'),
+    }
+  }
+
   function snapshot() {
     return { sessionStart: state.sessionStart, lastInteraction: state.lastInteraction, lastNudgeAt: state.lastNudgeAt }
   }
@@ -48,6 +59,7 @@ function createNudgePump(options) {
     return {
       state: snapshot(),
       decision: decide({
+        texts: nudgeTexts(),
         now: t,
         cfg: { ...s.cfg, ...(opts.cfg || {}) },
         quiet: opts.quiet !== undefined ? !!opts.quiet : s.mode === 'quiet',
@@ -64,6 +76,7 @@ function createNudgePump(options) {
     const s = settings()
     if (s.mode === 'quiet') return null
     const d = decide({
+      texts: nudgeTexts(),
       now: t,
       cfg: s.cfg,
       quiet: false,

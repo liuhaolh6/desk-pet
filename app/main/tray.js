@@ -21,11 +21,12 @@ const SHORTCUT_LABEL = 'Ctrl+Alt+P'
  * @param {() => object} deps.readSettings
  * @param {Function} deps.log
  * @param {object} deps.actions     togglePet / openSettings / openEditor / refreshWeather / quit
+ * @param {Function} [deps.t]       i18n translator (P2-6); defaults to identity
  */
-function createTrayHost({ assets, readSettings, log, actions }) {
+function createTrayHost({ assets, readSettings, log, actions, t = (key) => key }) {
   let tray = null
-  let status = { ok: false, reason: '还没创建' }
-  let shortcutStatus = { ok: false, accelerator: SHORTCUT_LABEL, reason: '还没注册' }
+  let status = { ok: false, reason: t('tray.status.pending') }
+  let shortcutStatus = { ok: false, accelerator: SHORTCUT_LABEL, reason: t('tray.shortcut.pending') }
 
   function create() {
     let iconPath = path.join(assets, 'tray.png')
@@ -36,24 +37,24 @@ function createTrayHost({ assets, readSettings, log, actions }) {
       tray = new Tray(image)
     } catch (err) {
       tray = null
-      status = { ok: false, reason: '托盘没能创建出来：' + ((err && err.message) || String(err)) }
+      status = { ok: false, reason: t('tray.status.failed', { message: (err && err.message) || String(err) }) }
       log('tray create failed', (err && err.stack) || String(err))
       return
     }
     const s = readSettings()
-    tray.setToolTip(s.name + ' · 桌宠')
+    tray.setToolTip(t('app.tooltip', { name: s.name }))
     const menu = Menu.buildFromTemplate([
-      { label: '显示 / 隐藏', click: actions.togglePet },
-      { label: '设置…', click: actions.openSettings },
-      { label: '布置气泡…', click: actions.openEditor },
-      { label: '看看天气', click: () => actions.refreshWeather('tray') },
+      { label: t('tray.toggle'), click: actions.togglePet },
+      { label: t('tray.settings'), click: actions.openSettings },
+      { label: t('tray.bubble'), click: actions.openEditor },
+      { label: t('tray.weather'), click: () => actions.refreshWeather('tray') },
       { type: 'separator' },
-      { label: '先退出啦', click: actions.quit },
+      { label: t('tray.quit'), click: actions.quit },
     ])
     tray.setContextMenu(menu)
     tray.on('click', actions.togglePet)
     status = image.isEmpty()
-      ? { ok: false, reason: '托盘图标是空的，系统那边可能看不到它' }
+      ? { ok: false, reason: t('tray.status.emptyIcon') }
       : { ok: true, reason: '' }
     log('tray created empty=' + image.isEmpty() + ' icon=' + iconPath + ' menu=' + menu.items.map((i) => i.label || i.type).join('|'))
     try { log('tray bounds=' + JSON.stringify(tray.getBounds())) } catch (err) { log('tray bounds unavailable', String(err)) }
@@ -69,7 +70,7 @@ function createTrayHost({ assets, readSettings, log, actions }) {
       const ok = globalShortcut.register(ACCELERATOR, actions.togglePet)
       shortcutStatus = ok
         ? { ok: true, accelerator: SHORTCUT_LABEL, reason: '' }
-        : { ok: false, accelerator: SHORTCUT_LABEL, reason: '这个组合被别的程序占用了' }
+        : { ok: false, accelerator: SHORTCUT_LABEL, reason: t('tray.shortcut.taken') }
     } catch (err) {
       shortcutStatus = { ok: false, accelerator: SHORTCUT_LABEL, reason: (err && err.message) || String(err) }
     }
@@ -83,7 +84,7 @@ function createTrayHost({ assets, readSettings, log, actions }) {
     return Object.assign({}, shortcutStatus, { registered })
   }
 
-  function setTooltip(name) { if (tray) tray.setToolTip(name + ' · 桌宠') }
+  function setTooltip(name) { if (tray) tray.setToolTip(t('app.tooltip', { name })) }
 
   return {
     create,

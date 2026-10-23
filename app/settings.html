@@ -325,6 +325,19 @@
         <section class="panel" data-panel="other" hidden>
           <div class="card">
             <div class="field">
+              <span class="field-label">界面语言</span>
+              <div class="field-body">
+                <div class="control-line">
+                  <select id="localeSelect" aria-label="界面语言" aria-describedby="localeHint">
+                    <option value="">跟随系统</option>
+                    <option value="zh-CN">简体中文</option>
+                    <option value="en-US">English</option>
+                  </select>
+                </div>
+                <p class="field-hint" id="localeHint">改完要重开桌宠才会换语言；现在的语言：<span id="localeNow">—</span></p>
+              </div>
+            </div>
+            <div class="field">
               <span class="field-label">东西放哪</span>
               <div class="field-body">
                 <div class="control-line">
@@ -369,9 +382,9 @@
                   </ul>
                   <p class="field-hint">联网只有四处：换城市时把城市名发给 open-meteo 换经纬度；之后只用经纬度取天气和空气质量；启动后读一次 GitHub 上的新版号（24 小时最多一次）；只有你点“去下载”才会打开浏览器。没有账号、没有埋点，照片不会上传。</p>
                   <div class="control-line">
-                    <button id="privacyCleanBtn" type="button" class="danger-small">清理日志和缓存</button>
-                    <button id="privacyConfirmBtn" type="button" class="danger-small" hidden>真的清理</button>
-                    <button id="privacyCancelBtn" type="button" class="ghost-small" hidden>算了</button>
+                    <button id="privacyCleanBtn" type="button" class="danger-small" aria-label="清理日志和缓存">清理日志和缓存</button>
+                    <button id="privacyConfirmBtn" type="button" class="danger-small" aria-label="确认清理日志和缓存" hidden>真的清理</button>
+                    <button id="privacyCancelBtn" type="button" class="ghost-small" aria-label="取消清理" hidden>算了</button>
                   </div>
                   <p id="privacyStatus" class="field-hint"></p>
                 </details>
@@ -382,7 +395,7 @@
               <div class="field-body">
                 <button id="updateBtn" type="button">检查更新</button>
                 <p id="updateStatus" class="field-hint">有新版会在这里和气泡里说一声，点“去下载”打开发布页。</p>
-                <label class="check-row"><input id="updateBootToggle" type="checkbox"><span>启动时自动看一眼</span><em>之后每 24 小时最多一次，只读一个版本号</em></label>
+                <label class="check-row"><input id="updateBootToggle" type="checkbox" aria-label="启动时自动看一眼新版本"><span>启动时自动看一眼</span><em>之后每 24 小时最多一次，只读一个版本号</em></label>
               </div>
             </div>
             <div class="field">

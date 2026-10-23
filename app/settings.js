@@ -88,6 +88,7 @@
       node.value = value
     }
     setIfIdle('name', settings.name || '')
+    setIfIdle('localeSelect', settings.locale || '')
     setIfIdle('size', settings.size)
     $('sizeVal').textContent = settings.size + 'px'
     $('alwaysOnTop').checked = !!settings.alwaysOnTop
@@ -105,7 +106,7 @@
     setIfIdle('quietTo', settings.water ? settings.water.quietTo : 8)
     const nudge = settings.nudge || {}
     $('nudgeEnabled').checked = nudge.enabled !== false
-    $('updateBootToggle').checked = !(state.settings.update && state.settings.update.checkOnBoot === false)
+    $('updateBootToggle').checked = !(settings.update && settings.update.checkOnBoot === false)
     $('nudgeLongUse').checked = nudge.longUse !== false
     $('nudgeLateNight').checked = nudge.lateNight !== false
     $('nudgeAway').checked = nudge.away !== false
@@ -191,6 +192,11 @@
       save({ snap: { gap } }, true)
     })
     $('mode').addEventListener('change', (ev) => save({ mode: ev.target.value }, true))
+    // P2-6：语言只在启动时读一次字典，所以这里明确告诉用户要重开。
+    const localeSelect = $('localeSelect')
+    if (localeSelect) {
+      localeSelect.addEventListener('change', () => save({ locale: localeSelect.value }, true, '记下了，重开桌宠后换成这个语言'))
+    }
     $('refreshMinutes').addEventListener('change', (ev) => {
       save({ weather: { refreshMinutes: Number(ev.target.value) } }, true)
     })
@@ -374,7 +380,8 @@
 
     const bootToggle = $('updateBootToggle')
     if (bootToggle) {
-      bootToggle.checked = !(state.settings.update && state.settings.update.checkOnBoot === false)
+      // wire() 在 state.settings 就绪前跑，这里不能假设它已经有值。
+      bootToggle.checked = !(state.settings && state.settings.update && state.settings.update.checkOnBoot === false)
       bootToggle.addEventListener('change', () => {
         save({ update: { checkOnBoot: !!bootToggle.checked } }, true, bootToggle.checked ? '下次启动会看一眼' : '启动时不再检查更新')
       })
@@ -917,6 +924,19 @@
 
   // P0-3: the tray icon is not guaranteed to be visible in every Windows shell,
   // so the page states plainly which fallbacks work instead of pretending.
+  // P2-6: “现在的语言”来自主进程（设置里存的是偏好，可能是“跟随系统”）。
+  async function renderLocaleStatus() {
+    const now = $('localeNow')
+    if (!now) return
+    try {
+      const info = await api.getI18n()
+      const names = { 'zh-CN': '简体中文', 'en-US': 'English' }
+      now.textContent = (names[info.locale] || info.locale) + '（可用：' + (info.available || []).join(' / ') + '，共 ' + (info.keys || 0) + ' 条）'
+    } catch (err) {
+      now.textContent = '读不到'
+    }
+  }
+
   async function renderAppStatus() {
     const trayEl = $('trayStatus')
     const keyEl = $('shortcutStatus')
@@ -961,6 +981,7 @@
       $('dataDir').title = state0.dataDir || ''
       fill(state0.settings)
       renderAppStatus()
+      renderLocaleStatus()
       renderUpdateStatus()
     } catch (err) {
       setStatus('没读到设置，稍后再试')

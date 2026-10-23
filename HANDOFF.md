@@ -17,7 +17,7 @@
 | 最近提交 | 0.6.9 = 本提交（P2-3 更新提示 + P2-8 隐私文档）；`dba1115` P2-1 安装器 · `58f94b4` P2-2 签名准备；P1 全部落地：`e2952ca` P1-9 e2e 入库 · `6c7a4fb` P1-8 真机 a11y · `94358ae` P1-7 主动说话 · `cdb3531` P1-6 天气增强 · `469d343` P1-5 喝水记录 · `b106382` P1-4 设置可用性 · `6342b75` P1-3 单测 · `01de0b2` P1-2 状态机 · `80332c7` P1-1 完成；0.6.6 收尾 = `e01c1cb`/`12176d2`/`5be8c4d`；再往前 `adbe033` 0.6.5 首次引导 |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js`（`npm test` = smoke + `npm run unit`）；带窗口的再加 `npm run test:e2e` |
-| 自动化基线 | smoke **62 项** · unit **146 例** · check-a11y **95 项** · a11y-audit **86 项** · a11y-keyboard **6 项** · a11y-tree **4 窗口 / 0 无名** · e2e **3 用例**，全部通过 |
+| 自动化基线 | smoke **63 项** · unit **164 例** · check-a11y **95 项** · check-i18n **30 文件 / 880 处** · a11y-audit **86 项** · a11y-keyboard **6 项** · a11y-tree **4 窗口 / 0 无名** · e2e **3 用例**，全部通过 |
 | 最新产物 | 安装器 `dist/DeskPet-0.6.8-setup.exe` 165,558,348 字节，SHA-256 `2d5dfe47eb809af9e762b41b367d53da83c21d5634cfa31c9bfb0a82c9fff89c`；便携版 `dist/DeskPet-0.6.8-portable.exe` 153,882,861 字节，SHA-256 `668ba228f9f6c700a93fd1c48c0bfcabdefa910b21a74291c3c89ba62e777a16` |
 
 **能做什么**：换形象（照片抠图 / 导入 PNG）、点击看天气和喝水进度、按时提醒喝水、24 条内置温柔提示语、
@@ -112,6 +112,11 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `app/main/water-ipc.js`（新） | 75 | 喝水四个通道：记一杯（写 log）、「稍后 10 分钟」、「今日/本周统计」、导出 CSV |
 | `lib/nudges.js`（新） | 86 | 主动说话的纯决策：`decide()`（久坐/深夜/久未互动/限流/勿扰）、`isNightHour`、`DEFAULTS` |
 | `app/main/nudge-pump.js`（新） | 102 | 说话泵：每分钟驱动 `decide()`，同一个气泡出口，全屏时跳过并记日志；`probe()` 可注入时间与状态 |
+| `lib/i18n.js`（新，P2-6） | 101 | 纯 Node 的多语言核心：`flatten/interpolate/createI18n/keyDiff/matchLocale`（不碰文件系统，可直接单测） |
+| `app/main/i18n.js`（新，P2-6） | 95 | 主进程：`availableLocales` 读 `locales/`、`createMainI18n({requested,system})`、`registerI18nIpc`（`i18n:boot` 同步 / `i18n:info` / `i18n:dict`） |
+| `app/i18n.js`（新，P2-6） | 104 | 渲染层：`create(dict,locale)` + `applyStatic(document,bridge)`（`data-i18n` / `-html` / `-title` / `-aria-label` / `-placeholder` / `-alt` + `documentElement.lang`），UMD |
+| `locales/zh-CN.json` / `en-US.json`（新） | — | 语言包（嵌套 JSON，点号键 = 层级）；两份键名必须完全一致，检查器强制 |
+| `tools/check-i18n.js`（新，P2-6） | 296 | 剥注释后数内联中文：键名对齐 / 空串 / 每文件不得高于基线（`--list` 看计数、`--update` 重写基线） |
 | `app/main/fullscreen.js`（新） | 54 | 前台是否全屏：`execFile` 调 PowerShell 读前景窗口矩形与任务栏，2 秒缓存、失败按「不是全屏」 |
 | `lib/water-log.js`（新） | 109 | 喝水记录的纯函数：`dayKey/clockOf/cleanLog/summarize/toCsv`（本地时区、七天窗口、老 `today.cups` 升级路径） |
 | `app/main/log.js` | 60 | 呼吸日志：`createLogger()` → `log/breadcrumb/setFile/filePath/tail`（纯 Node，无 Electron） |
@@ -120,7 +125,7 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `app/main/diagnostics.js` | 99 | 诊断导出：脱敏设置 + 日志尾巴 → txt，返回 `{ok,path,bytes}` |
 | `app/pet.js` | 676 | 桌宠渲染、气泡几何与 60% 字号下限 + 截断、命中区上报、手势仲裁、菜单、气泡上的「稍后 10 分钟」 |
 | `app/pet.css` | 450 | 气泡 1026:700 框、动效、reduced-motion |
-| `app/settings.js` / `.html` / `.css` | 860 / 360 / 1042 | 设置窗口，7 个 `data-panel` 分类；侧边栏搜索（`FIND_INDEX` + 打分 + 键盘）、顶栏按页「恢复这页默认」（二次确认层）、天气页最近城市；其他面板带托盘/快捷键状态与诊断导出 |
+| `app/settings.js` / `.html` / `.css` | 997 / 417 / 1102 | 设置窗口，7 个 `data-panel` 分类；侧边栏搜索（`FIND_INDEX` + 打分 + 键盘）、顶栏按页「恢复这页默认」（二次确认层）、天气页最近城市；其他面板带托盘/快捷键状态、诊断导出与语言下拉 |
 | `app/cutout.js` / `.html` / `.css` | 621 / — / 353 | 抠图窗口：三态视图、擦除、旋转、保存 |
 | `app/editor.js` / `.html` / `.css` | 537 / — / 233 | 气泡布置编辑器 |
 | `app/onboard.js` / `.html` / `.css` | 57 / 52 / 183 | 首次欢迎卡（M17 P0-1）：三步说明 + 两个按钮，关闭即写 `onboarded` |
@@ -135,8 +140,8 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `lib/cutout-eval.js`（新） | 137 | 评测指标纯函数：iou / boundaryLength / edgeSharpness / maskFromImage / summarize |
 | `tools/cutout-eval.js`（新） | 150 | 评测 CLI：逐图跑真实 ONNX 管线，输出 IoU/edge/ms/coverage |
 | `tools/make-cutout-golden.js`（新） | 145 | 合成 golden set 生成器（10 张 + 真值蒙版） |
-| `tools/smoke.js` | 1402 | `npm test` 的第一段：存储/角色/天气/气泡/几何/文案/引导/托盘/诊断/模块拆分/窗口状态机/天气泵/提醒/设置搜索与恢复默认/喝水记录 59 项断言 |
-| `tests/unit/*.test.js` | 146 例 | `npm run unit`（`node:test`，零依赖）：`bubble-model` 19 · `placement` 16 · `weather` 24 · `cutout-math` 15 · `water-log` 15 · `nudges` 11 · `boot-candidates` 5 · `update-check` 13 · `privacy` 5 · `cutout-model` 10 · `cutout-eval` 13（P1-3/P1-7/P2-1/P2-3/P2-5/P2-8） |
+| `tools/smoke.js` | 1511 | `npm test` 的第一段：存储/角色/天气/气泡/几何/文案/引导/托盘/诊断/模块拆分/窗口状态机/天气泵/提醒/设置搜索与恢复默认/喝水记录/多语言 63 项断言 |
+| `tests/unit/*.test.js` | 164 例 | `npm run unit`（`node:test`，零依赖）：`bubble-model` 19 · `placement` 16 · `weather` 24 · `cutout-math` 15 · `water-log` 15 · `nudges` 11 · `boot-candidates` 5 · `update-check` 13 · `privacy` 5 · `cutout-model` 10 · `cutout-eval` 13 · `i18n` 18（P1-3/P1-7/P2-1/P2-3/P2-5/P2-6/P2-8） |
 | `docs/USER-GUIDE.md` | 123 | 用户手册：三分钟上手 + 9 条 FAQ（0.6.6 / ROADMAP P0-4） |
 | `docs/PRIVACY.md`（新） | 84 | 隐私说明：不发遥测、照片不外传、联网三处、数据目录、一键清理（P2-8） |
 
@@ -200,6 +205,13 @@ token 表上限 3，窗口关闭即清空。
 ### 4.10 设置读取必须走缓存
 `store.readSettings()` 在拖动/气泡每帧被调用，已有 mtime 校验的缓存（无缓存时 175µs/次）。
 
+### 4.11 `registerI18nIpc` 必须留在 `createPet` 之前
+`app/preload.js` 用 `ipcRenderer.sendSync('i18n:boot')` 同步取字典（`sendSync` 没有超时兜底）。
+`app/main.js` 里 `registerI18nIpc(...)` 在第 215 行、`windows.createPet()` 在第 247 行——**顺序不能颠倒**，
+否则第一个窗口加载时会卡在等回包。新增窗口一律走 `windows.js`（`createWindows()` 更早），顺序天然成立。
+另：`webPreferences` 没开 `sandbox:false`，preload 是沙箱环境，**不能 `require` 本项目模块**，
+所以 preload 里的 `t()` 是自包含的副本。
+
 ---
 
 ## 5. 验证矩阵
@@ -207,8 +219,9 @@ token 表上限 3，窗口关闭即清空。
 | 工具 | 覆盖 | 命令 | 当前 |
 |---|---|---|---|
 | 语法 | 49 个 JS 文件 | `npm run check` | ✅ |
-| `tools/smoke.js` | 存储/角色/天气码/`advice`/气泡模型/几何不变量/文案/首次引导/托盘兜底/诊断导出/主进程模块拆分/窗口状态机/预留-可见性分离/天气泵回退/提醒限流与勿扰/设置搜索与按页恢复默认/喝水记录与延后/主动说话/气泡独立窗口 | `npm test` | ✅ 62 项 |
-| `tests/unit/` | 纯函数单测：气泡模型归一化/取值、多显示器放置与吸附、天气文案与 AQI、抠图数学、喝水记录、主动说话决策、便携数据目录候选、版本比较与更新决策、隐私清理边界、抠图模型解析与评测指标 | `npm run unit` | ✅ 146 例 |
+| `tools/smoke.js` | 存储/角色/天气码/`advice`/气泡模型/几何不变量/文案/首次引导/托盘兜底/诊断导出/主进程模块拆分/窗口状态机/预留-可见性分离/天气泵回退/提醒限流与勿扰/设置搜索与按页恢复默认/喝水记录与延后/主动说话/气泡独立窗口/多语言骨架 | `npm test` | ✅ 63 项 |
+| `tools/check-i18n.js` | 语言包键名对齐、空串、每个文件的内联中文数不得高于基线（剥注释后计数） | `node tools/check-i18n.js` | ✅ 30 文件 / 880 处 |
+| `tests/unit/` | 纯函数单测：气泡模型归一化/取值、多显示器放置与吸附、天气文案与 AQI、抠图数学、喝水记录、主动说话决策、便携数据目录候选、版本比较与更新决策、隐私清理边界、抠图模型解析与评测指标、多语言计数与静态覆盖 | `npm run unit` | ✅ 164 例 |
 | `tools/check-a11y.js` | 静态无障碍断言（对比度数学、24px、reduced-motion、forced-colors 分支、回流、aria、`lang`、引导卡、托盘/诊断行、搜索框与恢复默认确认层） | `node tools/check-a11y.js` | ✅ 95 项 |
 | `tools/a11y-audit.js` | 真实 DOM 审计（AX 名称、对比度、目标尺寸、焦点、320px 回流、forced-colors、reduced-motion） | `--port <调试端口>` | ✅ 86 项 / 0 失败 |
 | `tools/a11y-keyboard.js` | 键盘-only 抠图全流程 | `node tools/a11y-keyboard.js` | ✅ 6 项 |
@@ -315,6 +328,17 @@ Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
     参考目录里那份 58MB 模型是截断的。
 24. **每次抠图 trace 写 `<数据目录>/cutout-trace.jsonl`**（>256KB 轮转），排查先看它。
 
+### 6.6 多语言（P2-6 起）
+25. **`t()` 必须是同步的**：渲染层拿字典走 `ipcRenderer.sendSync('i18n:boot')`（`preload.js` 的
+    `readBoot()`），所以 `registerI18nIpc` 一定要在 `createPet()` 之前（§4.11）。改主进程装配顺序时先看这里。
+26. **preload 在沙箱里**（`sandbox` 未关），`require('../lib/i18n.js')` 会失败——preload 里的 `t()`
+    是自包含副本，改插值语义要两处一起改（`lib/i18n.js` 的 `interpolate` 与 `preload.js` 的 `apply`）。
+27. **基线数字不能跨版本比**：`tools/check-i18n.js` 第一版只数 HTML 属性值、漏了文本节点，
+    修好后 `settings.html` 从 28 跳到 173。同一个文件只能和后一版自己比（`--update` 会重写基线）。
+28. **剥注释是刚需**：注释里的中文不算文案，`stripJsComments` 用小状态机处理模板串；
+    在块注释里写 `/* */` 会提前闭合注释（写文档时踩过，语法直接报错）。
+29. **动态拼的键**（`'tray.status.' + status`）会让「语言包里没人用的键」误报，所以那条只提示不失败。
+
 ---
 
 ## 7. 工作流
@@ -379,6 +403,7 @@ node node_modules/electron-builder/cli.js --win nsis --x64   # → dist\DeskPet-
 | 改气泡外观/几何/命中区 | §3.3、§4.1–4.4、[`M14-NOTES.md`](M14-NOTES.md)、[`M16-NOTES.md`](M16-NOTES.md) |
 | 改抠图链路 | [`M12-PLAN.md`](M12-PLAN.md)、[`M12-HANDOFF.md`](M12-HANDOFF.md)、`lib/cutout-pixels.js` |
 | 碰无障碍 | [`A11Y-AUDIT.md`](A11Y-AUDIT.md)、`tools/check-a11y.js` |
+| 改文案 / 加语言 | [`M30-NOTES.md`](M30-NOTES.md)（分层、同步取字典的理由、基线怎么降）、`tools/check-i18n.js --list` |
 | 打包/发版踩坑 | [`M6-PACKAGING.md`](M6-PACKAGING.md)、`CONTRIBUTING.md` |
 | 签名 | [`SIGNING.md`](SIGNING.md) |
 | 模型与二进制资产决策 | [`MODEL-ASSETS.md`](MODEL-ASSETS.md) |

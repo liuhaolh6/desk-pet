@@ -957,7 +957,7 @@ const PAD = 54
     assert.ok(fs.existsSync(path.join(repo, 'docs/PRIVACY.md')), 'docs/PRIVACY.md 存在')
   }
 
-  assert.deepEqual(mods, ['boot.js', 'catalog.js', 'cutout-service.js', 'diagnostics.js', 'fullscreen.js', 'geometry.js', 'ipc.js', 'log.js', 'nudge-pump.js', 'overlay.js', 'privacy.js', 'reminder.js', 'tray.js', 'updater.js', 'water-ipc.js', 'weather-pump.js', 'window-layout.js', 'windows.js'], 'app/main/ 下的模块名单')
+  assert.deepEqual(mods, ['boot.js', 'catalog.js', 'cutout-service.js', 'diagnostics.js', 'fullscreen.js', 'geometry.js', 'i18n.js', 'ipc.js', 'log.js', 'nudge-pump.js', 'overlay.js', 'privacy.js', 'reminder.js', 'tray.js', 'updater.js', 'water-ipc.js', 'weather-pump.js', 'window-layout.js', 'windows.js'], 'app/main/ 下的模块名单')
   const mainJs = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
   for (const name of mods) {
     const file = path.join(modDir, name)
@@ -1480,6 +1480,31 @@ const PAD = 54
   assert.ok(/overlay = createOverlay\(/.test(mainP24), 'main.js 创建 overlay 实例')
   assert.ok(/inset: 0/.test(ovCss), 'overlay.css 铺满整窗')
   ok('P2-4 气泡独立窗口：懒建、不抢焦点、跟随、首帧补发、点击转发')
+}
+
+{
+  // P2-6: 多语言。主进程持字典、渲染层按需取；语言包必须键名一致。
+  const root = path.join(__dirname, '..')
+  const i18nMain = fs.readFileSync(path.join(root, 'app', 'main', 'i18n.js'), 'utf8')
+  const i18nLib = fs.readFileSync(path.join(root, 'lib', 'i18n.js'), 'utf8')
+  const traySrc = fs.readFileSync(path.join(root, 'app', 'main', 'tray.js'), 'utf8')
+  const mainP26 = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
+  const preloadP26 = fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')
+  const zh = JSON.parse(fs.readFileSync(path.join(root, 'locales', 'zh-CN.json'), 'utf8'))
+  const en = JSON.parse(fs.readFileSync(path.join(root, 'locales', 'en-US.json'), 'utf8'))
+
+  assert.ok(/function createMainI18n/.test(i18nMain) && /function registerI18nIpc/.test(i18nMain), '主进程 i18n：建字典 + 注册通道')
+  assert.ok(/fallbackDict/.test(i18nLib) && /matchLocale/.test(i18nLib), 'lib/i18n：缺键回退 zh-CN、语言匹配')
+  assert.ok(/registerI18nIpc\(\{ ipcMain, i18n \}\)/.test(mainP26) && /createMainI18n\(/.test(mainP26), 'main.js 装配 i18n')
+  assert.ok(/getI18n: \(\) => ipcRenderer\.invoke\('i18n:info'\)/.test(preloadP26) && /getStrings/.test(preloadP26), 'preload 暴露 getI18n / getStrings')
+  const cjkTray = traySrc.match(/['"`][^'"`\n]*[\u4e00-\u9fff][^'"`\n]*['"`]/g) || []
+  assert.deepEqual(cjkTray, [], 'tray.js 里没有硬编码中文')
+  const { flatten } = require(path.join(root, 'lib', 'i18n'))
+  const keysZh = Object.keys(flatten(zh)).sort()
+  const keysEn = Object.keys(flatten(en)).sort()
+  assert.deepEqual(keysZh, keysEn, 'zh-CN 与 en-US 键名一致')
+  assert.ok(keysZh.length >= 15, '语言包至少 15 条（当前 ' + keysZh.length + '）')
+  ok('P2-6 多语言：主进程字典 + 渲染层取用 + 语言包键名一致 + 托盘无硬编码')
 }
 
 console.log('\n' + pass + ' checks passed')

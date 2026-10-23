@@ -49,7 +49,7 @@ function createReminders(deps) {
     if (now() - lastRemindAt < REMIND_FLOOR_MS) return 'throttled'
     lastRemindAt = now()
     if (isPetVisible()) sendToPet('remind:water')
-    else notify({ title: s.name || '桌宠', body: '该喝水啦，慢慢喝～' })
+    else notify({ title: s.name || t('app.name'), body: t('water.notifyBody') })
     return 'reminded'
   }
 

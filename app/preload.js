@@ -8,6 +8,45 @@ const { contextBridge, ipcRenderer } = require('electron')
 
 const subscriptions = new Map()
 
+/**
+ * P2-6: the bridge's own `t()`.
+ *
+ * This file runs in the sandboxed preload world, where a bare `require` cannot
+ * load our own modules (`app/i18n.js` included), so the three lines that matter
+ * — dotted lookup, `{name}` interpolation, missing key → the key — are repeated
+ * here. `lib/i18n.js` owns the contract and its unit tests lock the semantics;
+ * `tools/smoke.js` asserts this copy matches it.
+ *
+ * Synchronous on purpose: pages translate their markup before the first paint.
+ */
+function readBoot() {
+  let boot = null
+  try { boot = ipcRenderer.sendSync('i18n:boot') } catch (err) { boot = null }
+  return (boot && typeof boot === 'object') ? boot : { locale: 'zh-CN', available: ['zh-CN'], dict: {} }
+}
+
+function makeI18n() {
+  const boot = readBoot()
+  const dict = (boot.dict && typeof boot.dict === 'object') ? boot.dict : {}
+  function t(key, vars) {
+    const raw = Object.prototype.hasOwnProperty.call(dict, key) ? dict[key] : key
+    if (!vars) return raw
+    return String(raw).replace(/\{(\w+)\}/g, (whole, name) => (
+      Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : whole
+    ))
+  }
+  const available = Array.isArray(boot.available) && boot.available.length ? boot.available : [boot.locale || 'zh-CN']
+  return {
+    locale: boot.locale || 'zh-CN',
+    available,
+    t,
+    has: (key) => Object.prototype.hasOwnProperty.call(dict, key),
+    keys: () => Object.keys(dict),
+  }
+}
+
+const i18n = makeI18n()
+
 function subscribe(channel, callback) {
   if (typeof callback !== 'function') return () => {}
   const handler = (_event, payload) => { try { callback(payload) } catch (err) {} }
@@ -26,6 +65,11 @@ contextBridge.exposeInMainWorld('deskPet', {
   // state
   getState: () => ipcRenderer.invoke('state:get'),
   getAppStatus: () => ipcRenderer.invoke('app:status'),
+  // P2-6：当前语言与合并后的字典。同步 t() 在 preload 里就绪，异步这两个是给
+  // 「切换语言要重启」的状态展示用的。
+  i18n,
+  getI18n: () => ipcRenderer.invoke('i18n:info'),
+  getStrings: () => ipcRenderer.invoke('i18n:dict'),
   exportDiagnostics: () => ipcRenderer.invoke('app:diagnostics'),
   // P2-3：更新检查（force=true 由用户点按钮触发）
   // P2-4: what is on disk + wipe the rebuildable junk (never settings/photos).

@@ -1,0 +1,34 @@
+{
+  "app": {
+    "name": "桌宠",
+    "tooltip": "{name} · 桌宠"
+  },
+  "tray": {
+    "toggle": "显示 / 隐藏",
+    "settings": "设置…",
+    "bubble": "布置气泡…",
+    "weather": "看看天气",
+    "quit": "先退出啦",
+    "status": {
+      "pending": "还没创建",
+      "emptyIcon": "托盘图标是空的，系统那边可能看不到它",
+      "failed": "托盘没能创建出来：{message}"
+    },
+    "shortcut": {
+      "pending": "还没注册",
+      "taken": "这个组合被别的程序占用了"
+    }
+  },
+  "nudge": {
+    "lateNight": "都这个点啦，今天的活儿留一点给明天也没关系～",
+    "longUse": "坐了快一个钟头了，起来走两步、喝口水吧",
+    "away": "好久没见你啦，我还在呀"
+  },
+  "water": {
+    "notifyTitle": "桌宠",
+    "notifyBody": "该喝水啦，慢慢喝～"
+  },
+  "weather": {
+    "failLog": "天气没拿到：{message}"
+  }
+}

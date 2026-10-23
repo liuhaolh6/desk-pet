@@ -1,0 +1,34 @@
+{
+  "app": {
+    "name": "DeskPet",
+    "tooltip": "{name} · desk pet"
+  },
+  "tray": {
+    "toggle": "Show / hide",
+    "settings": "Settings…",
+    "bubble": "Arrange bubble…",
+    "weather": "Check weather",
+    "quit": "Quit for now",
+    "status": {
+      "pending": "not created yet",
+      "emptyIcon": "the tray icon is empty, Windows may not show it",
+      "failed": "the tray could not be created: {message}"
+    },
+    "shortcut": {
+      "pending": "not registered yet",
+      "taken": "another app already owns this chord"
+    }
+  },
+  "nudge": {
+    "lateNight": "It's late — tomorrow can have some of tonight's work.",
+    "longUse": "You've been sitting for almost an hour. Stand up, stretch, sip some water.",
+    "away": "Been a while. I'm still here."
+  },
+  "water": {
+    "notifyTitle": "DeskPet",
+    "notifyBody": "Time for some water — no rush."
+  },
+  "weather": {
+    "failLog": "weather failed: {message}"
+  }
+}
