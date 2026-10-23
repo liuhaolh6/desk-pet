@@ -560,8 +560,8 @@
     "addRow": "+ Add a row",
     "closeBtn": "Close",
     "confirm": {
-      "close": "There are unsaved changes. Close anyway?",
-      "reset": "Reset the bubble to the default? Unsaved changes will be lost."
+      "close": "You have unsaved changes — close anyway?",
+      "reset": "Reset the bubble to default? Unsaved changes will be lost."
     },
     "error": {
       "loadSettings": "Could not load settings — try again later.",
@@ -590,7 +590,27 @@
     },
     "module": {
       "chip": "({label})",
-      "text": "Custom text"
+      "text": "Your text",
+      "other": "({label})",
+      "heading": "This piece",
+      "empty": "Pick a piece first — the right side edits its text and look",
+      "type": "What is this piece",
+      "weather": "Weather",
+      "water": "Water",
+      "time": "Time",
+      "rest": "Other",
+      "textLabel": "Text",
+      "style": "Fine-tune the look",
+      "size": "Size",
+      "show": "Display",
+      "bold": "Bold",
+      "italic": "Italic",
+      "color": "Text color",
+      "background": "Background",
+      "clear": "Clear",
+      "moveBefore": "Earlier",
+      "moveAfter": "Later",
+      "delete": "Delete"
     },
     "op": {
       "backward": "Move later",
@@ -603,12 +623,12 @@
       "group": "One-click layouts",
       "label": "Start with:",
       "nextPrefix": "Next in about ",
-      "rich": "Detailed",
-      "simple": "Minimal",
+      "rich": "Rich",
+      "simple": "Simple",
       "standard": "Standard"
     },
     "preview": {
-      "empty": "This card is still empty",
+      "drank": "Just drank",
       "later": "Later"
     },
     "resetBtn": "Reset to default",
@@ -616,30 +636,57 @@
       "add": "Add content after this row",
       "delete": "Delete this row",
       "down": "Move row down",
-      "empty": "This row is empty — use ＋ on the right to add something.",
-      "up": "Move row up"
+      "empty": "This row is empty — use ＋ on the right to add content",
+      "up": "Move row up",
+      "remove": "Delete this row"
     },
     "sample": {
       "city": "Beijing",
       "defaultText": "Text",
-      "name": "Xiaofang",
-      "phrase": "Remember to take a sip of water.",
-      "text": "Write something",
-      "weather": "Sunny"
+      "name": "Pet",
+      "phrase": "Time for some water~",
+      "text": "Some words",
+      "weather": "Sunny",
+      "sky": "Clear",
+      "waterTip": "Sip slowly, no rush",
+      "cupsPrefix": "Cup #",
+      "cupsSuffix": " today",
+      "nextPrefix": "Next in about "
     },
     "saveBtn": "Save",
     "tab": {
       "moveDown": "Move this card later (the click order follows)",
       "moveUp": "Move this card earlier (the click order follows)"
     },
-    "tip": "Click a block to edit what it says and how it looks; use ↑ ↓ on the left of a row to reorder.",
+    "tip": "Click a piece to edit its text and look on the right; the ↑ ↓ on a row reorder it.",
     "toast": {
       "maxRows": "Six rows is the limit.",
       "orderChanged": "Order changed — I will cycle the cards in this order.",
       "preset": "Switched to “{label}” — check the preview below.",
       "reset": "Back to default (do not forget to save).",
       "saved": "Saved — click the pet to see it."
-    }
+    },
+    "title": "Bubble layout",
+    "reset": "Reset to default",
+    "save": "Save",
+    "close": "Close",
+    "presetsAria": "Presets",
+    "presetsLabel": "Pick one:",
+    "card": {
+      "moveUp": "Move earlier (click order follows)",
+      "moveDown": "Move later (click order follows)",
+      "empty": "This card is empty"
+    },
+    "status": {
+      "reorder": "Order updated — I will show cards in this order",
+      "maxRows": "Six rows max",
+      "saved": "Saved — click the pet to see it",
+      "reset": "Back to default (remember to save)",
+      "preset": "Switched to \"{name}\" — check the preview below",
+      "noState": "Could not read settings, try again later",
+      "saveFailed": "Save failed, try again?"
+    },
+    "previewLabel": "Preview"
   },
   "onboard": {
     "hello": "Hi, I'm ",

@@ -8,6 +8,11 @@
 (function () {
   const api = window.deskPet
   const model = window.DeskPetBubble
+  // P2-6 stage 3-F: this window's copy comes from the dictionary.
+  const i18nLib = window.deskPetI18n
+  const i18n = (api && api.i18n) || null
+  if (i18nLib && i18n) i18nLib.applyStatic(document, i18n)
+  const tr = (key, vars) => (i18n && typeof i18n.t === 'function' ? i18n.t(key, vars) : key)
   const $ = (id) => document.getElementById(id)
 
   const state = {
@@ -23,17 +28,17 @@
   function sampleContext(card) {
     return {
       weather: {
-        ok: true, city: '北京', temp: 13, text: '晴', low: 7, high: 18,
+        ok: true, city: tr('editor.sample.city'), temp: 13, text: tr('editor.sample.sky'), low: 7, high: 18,
         precip: 0, humidity: 79, icon: '☀️', updatedAt: Date.now() - 8 * 60000,
       },
-      phrases: (state.settings && state.settings.bubble && state.settings.bubble.phrases) || ['记得喝口水呀～'],
-      name: (state.settings && state.settings.name) || '小芳桌宠',
+      phrases: (state.settings && state.settings.bubble && state.settings.bubble.phrases) || [tr('editor.sample.phrase')],
+      name: (state.settings && state.settings.name) || tr('editor.sample.name'),
       cups: card && card.id === 'water' ? 3 : 2,
       nextAt: Date.now() + 42 * 60000,
       interval: 60,
       quiet: { from: 23, to: 8 },
       lastDrinkAt: Date.now() - 18 * 60000,
-      waterTip: '慢慢喝，别急呀',
+      waterTip: tr('editor.sample.waterTip'),
     }
   }
 
@@ -71,12 +76,12 @@
     const up = document.createElement('button')
     up.className = 'tab'
     up.textContent = '↑'
-    up.title = '往前挪一张（点击顺序也会跟着换）'
+    up.title = tr('editor.card.moveUp')
     up.onclick = () => moveCard(-1)
     const down = document.createElement('button')
     down.className = 'tab'
     down.textContent = '↓'
-    down.title = '往后挪一张（点击顺序也会跟着换）'
+    down.title = tr('editor.card.moveDown')
     down.onclick = () => moveCard(1)
     tabs.appendChild(up)
     tabs.appendChild(down)
@@ -93,19 +98,19 @@
     state.layout.queue = cards.map((c) => c.id)
     markDirty()
     renderTabs()
-    status('顺序换好啦，之后点我就按这个顺序出卡')
+    status(tr('editor.status.reorder'))
   }
 
   // ------------------------------------------------------------------- rows
   function moduleLabel(mod) {
-    if (mod.type === 'text') return '写好的文字'
+    if (mod.type === 'text') return tr('editor.module.text')
     return model.TYPE_MAP[mod.type] ? model.TYPE_MAP[mod.type].label : mod.type
   }
 
   function chipText(mod) {
     const sample = model.resolveModule(mod, sampleContext(currentCard()))
     if (sample.text) return sample.text
-    return '（' + moduleLabel(mod) + '）'
+    return tr('editor.module.other', { label: moduleLabel(mod) })
   }
 
   function renderRows() {
@@ -126,7 +131,7 @@
       if (!row.length) {
         const empty = document.createElement('span')
         empty.className = 'lib-empty'
-        empty.textContent = '这一行空着，点右边的 ＋ 加点内容'
+        empty.textContent = tr('editor.row.empty')
         chips.appendChild(empty)
       }
       rowEl.appendChild(chips)
@@ -141,15 +146,15 @@
         b.onclick = fn
         return b
       }
-      actions.appendChild(mk('↑', '整行往上', () => moveRow(ri, ri - 1)))
-      actions.appendChild(mk('↓', '整行往下', () => moveRow(ri, ri + 1)))
-      actions.appendChild(mk('＋', '在这一行后面加点内容', () => {
-        card.rows[ri].push(model.newModule('text', '写点什么'))
+      actions.appendChild(mk('↑', tr('editor.row.up'), () => moveRow(ri, ri - 1)))
+      actions.appendChild(mk('↓', tr('editor.row.down'), () => moveRow(ri, ri + 1)))
+      actions.appendChild(mk('＋', tr('editor.row.add'), () => {
+        card.rows[ri].push(model.newModule('text', tr('editor.sample.text')))
         state.sel = { ri, ci: card.rows[ri].length - 1 }
         markDirty()
         renderAll()
       }))
-      actions.appendChild(mk('×', '删掉这一行', () => {
+      actions.appendChild(mk('×', tr('editor.row.remove'), () => {
         card.rows.splice(ri, 1)
         state.sel = null
         markDirty()
@@ -219,24 +224,24 @@
     const mod = card && sel ? (card.rows[sel.ri] || [])[sel.ci] : null
 
     const h = document.createElement('h3')
-    h.textContent = '这一块'
+    h.textContent = tr('editor.module.heading')
     box.appendChild(h)
 
     if (!mod) {
       const empty = document.createElement('div')
       empty.className = 'lib-empty'
-      empty.textContent = '先点一块内容，右边就能改它写什么、长什么样'
+      empty.textContent = tr('editor.module.empty')
       box.appendChild(empty)
       return
     }
 
-    const typeField = field('这一块是什么', (() => {
+    const typeField = field(tr('editor.module.type'), (() => {
       // Group the flat type list so 23 modules do not read as one wall of text.
       const GROUPS = [
-        ['写点什么', ['text', 'random', 'name']],
-        ['天气', ['weather']],
-        ['喝水', ['water']],
-        ['时间', ['time', 'date']],
+        [tr('editor.module.text'), ['text', 'random', 'name']],
+        [tr('editor.module.weather'), ['weather']],
+        [tr('editor.module.water'), ['water']],
+        [tr('editor.module.time'), ['time', 'date']],
       ]
       const select = document.createElement('select')
       const byKey = new Map(model.TYPES.map((t) => [t.key, t]))
@@ -256,7 +261,7 @@
         if (group.children.length) select.appendChild(group)
       }
       const rest = document.createElement('optgroup')
-      rest.label = '其他'
+      rest.label = tr('editor.module.rest')
       model.TYPES.forEach((t) => {
         if (used.has(t.key)) return
         const opt = document.createElement('option')
@@ -269,7 +274,7 @@
       select.value = mod.type
       select.onchange = () => {
         mod.type = select.value
-        if (mod.type === 'text' && !mod.text) mod.text = '文字'
+        if (mod.type === 'text' && !mod.text) mod.text = tr('editor.sample.text')
         markDirty()
         renderAll()
       }
@@ -283,7 +288,7 @@
       input.value = mod.text
       input.maxLength = 200
       input.oninput = () => { mod.text = input.value; markDirty(); renderRows(); renderPreview() }
-      box.appendChild(field('写什么', input))
+      box.appendChild(field(tr('editor.module.textLabel'), input))
     }
 
     // Everything visual hides behind one disclosure: the common case is just
@@ -291,7 +296,7 @@
     const advanced = document.createElement('details')
     advanced.className = 'advanced'
     const summary = document.createElement('summary')
-    summary.textContent = '再调调样式'
+    summary.textContent = tr('editor.module.style')
     advanced.appendChild(summary)
 
     const size = document.createElement('input')
@@ -304,9 +309,9 @@
       markDirty()
       renderAll()
     }
-    advanced.appendChild(field('多大', size))
+    advanced.appendChild(field(tr('editor.module.size'), size))
 
-    advanced.appendChild(field('怎么显示', (() => {
+    advanced.appendChild(field(tr('editor.module.show'), (() => {
       const wrap = document.createElement('div')
       wrap.className = 'chips'
       const bold = document.createElement('label')
@@ -316,7 +321,7 @@
       b.checked = !!mod.style.bold
       b.onchange = () => { mod.style.bold = b.checked; markDirty(); renderAll() }
       bold.appendChild(b)
-      bold.appendChild(document.createTextNode('加粗'))
+      bold.appendChild(document.createTextNode(tr('editor.module.bold')))
       const italic = document.createElement('label')
       italic.className = 'field'
       const it = document.createElement('input')
@@ -324,19 +329,19 @@
       it.checked = !!mod.style.italic
       it.onchange = () => { mod.style.italic = it.checked; markDirty(); renderAll() }
       italic.appendChild(it)
-      italic.appendChild(document.createTextNode('斜体'))
+      italic.appendChild(document.createTextNode(tr('editor.module.italic')))
       wrap.appendChild(bold)
       wrap.appendChild(italic)
       return wrap
     })()))
 
-    advanced.appendChild(field('字颜色', colorInput(mod.style.color, (value) => {
+    advanced.appendChild(field(tr('editor.module.color'), colorInput(mod.style.color, (value) => {
       mod.style.color = value
       markDirty()
       renderAll()
     })))
 
-    advanced.appendChild(field('垫个底色', (() => {
+    advanced.appendChild(field(tr('editor.module.background'), (() => {
       const wrap = document.createElement('div')
       wrap.className = 'chips'
       wrap.appendChild(colorInput(mod.style.bg || '#ffffff', (value) => {
@@ -346,7 +351,7 @@
       }))
       const clear = document.createElement('button')
       clear.className = 'clear'
-      clear.textContent = '不要了'
+      clear.textContent = tr('editor.module.clear')
       clear.onclick = () => { mod.style.bg = ''; markDirty(); renderAll() }
       wrap.appendChild(clear)
       return wrap
@@ -361,9 +366,9 @@
       b.onclick = fn
       ops.appendChild(b)
     }
-    op('往前', () => moveModule(sel.ri, sel.ci, sel.ri, sel.ci - 1))
-    op('往后', () => moveModule(sel.ri, sel.ci, sel.ri, sel.ci + 1))
-    op('删除', () => {
+    op(tr('editor.module.moveBefore'), () => moveModule(sel.ri, sel.ci, sel.ri, sel.ci - 1))
+    op(tr('editor.module.moveAfter'), () => moveModule(sel.ri, sel.ci, sel.ri, sel.ci + 1))
+    op(tr('editor.module.delete'), () => {
       card.rows[sel.ri].splice(sel.ci, 1)
       state.sel = null
       markDirty()
@@ -400,7 +405,7 @@
     if (!rows.length) {
       const hint = document.createElement('div')
       hint.className = 'lib-empty'
-      hint.textContent = '这张卡还空着'
+      hint.textContent = tr('editor.card.empty')
       box.appendChild(hint)
       return
     }
@@ -420,9 +425,9 @@
       const actions = document.createElement('div')
       actions.className = 'actions'
       const a = document.createElement('button')
-      a.textContent = '喝过了'
+      a.textContent = tr('editor.preview.drank')
       const b = document.createElement('button')
-      b.textContent = '待会儿'
+      b.textContent = tr('editor.preview.later')
       actions.appendChild(a)
       actions.appendChild(b)
       box.appendChild(actions)
@@ -440,7 +445,7 @@
   function addRow() {
     const card = currentCard()
     if (!card) return
-    if (card.rows.length >= 6) { status('最多 6 行啦'); return }
+    if (card.rows.length >= 6) { status(tr('editor.status.maxRows')); return }
     card.rows.push([])
     state.sel = { ri: card.rows.length - 1, ci: -1 }
     markDirty()
@@ -454,17 +459,17 @@
     state.settings = next
     state.dirty = false
     $('saveBtn').disabled = true
-    status('记住啦，点一下桌宠就能看到效果')
+    status(tr('editor.status.saved'))
   }
 
   function reset() {
-    if (!confirm('要变回默认的气泡吗？还没保存的改动会丢掉哦。')) return
+    if (!confirm(tr('editor.confirm.reset'))) return
     state.layout = model.defaultLayout()
     state.cardId = state.layout.cards[0].id
     state.sel = null
     markDirty()
     renderAll()
-    status('变回默认啦（别忘了点保存）')
+    status(tr('editor.status.reset'))
   }
 
   // ---------------------------------------------------------------- presets
@@ -478,7 +483,7 @@
     if (kind === 'simple') {
       const simple = {
         weather: [[mk('weather.icon'), mk('weather.temp'), mk('weather.text')], [mk('weather.tip')]],
-        water: [[text('今天第 '), mk('water.cups'), text(' 杯啦')]],
+        water: [[text(tr('editor.sample.cupsPrefix')), mk('water.cups'), text(tr('editor.sample.cupsSuffix'))]],
         random: [[mk('random')]],
       }
       return simple[cardId] || rows.slice(0, 1)
@@ -486,7 +491,7 @@
     if (kind === 'rich') {
       const extra = {
         weather: [[mk('weather.feels'), mk('weather.uv')], [mk('weather.sun')], [mk('weather.hourly')], [mk('weather.tomorrow')], [mk('weather.days')], [mk('air.quality'), mk('air.pm')]],
-        water: [[text('下次大概 '), mk('water.next')]],
+        water: [[text(tr('editor.sample.nextPrefix')), mk('water.next')]],
         random: [[mk('name'), text(' · '), mk('time')]],
       }
       return rows.concat(extra[cardId] || [])
@@ -501,8 +506,8 @@
     state.sel = null
     markDirty()
     renderAll()
-    const label = { simple: '简洁', standard: '标准', rich: '详细' }[kind] || kind
-    status('换成「' + label + '」啦，看看下面的预览')
+    const label = { simple: tr('editor.preset.simple'), standard: tr('editor.preset.standard'), rich: tr('editor.preset.rich') }[kind] || kind
+    status(tr('editor.status.preset', { name: label }))
   }
 
   // ------------------------------------------------------------------- boot
@@ -513,16 +518,16 @@
       state.layout = model.normalizeLayout(initial.settings.bubble && initial.settings.bubble.layout)
       state.cardId = state.layout.cards[0] ? state.layout.cards[0].id : 'weather'
     } catch (err) {
-      status('没读到设置，稍后再试')
+      status(tr('editor.status.noState'))
     }
     $('addRowBtn').onclick = addRow
     document.querySelectorAll('[data-preset]').forEach((btn) => {
       btn.onclick = () => applyPreset(btn.dataset.preset)
     })
-    $('saveBtn').onclick = () => save().catch(() => status('没保存成功，再试一次？'))
+    $('saveBtn').onclick = () => save().catch(() => status(tr('editor.status.saveFailed')))
     $('resetBtn').onclick = reset
     $('closeBtn').onclick = () => {
-      if (state.dirty && !confirm('还有改动没保存，真的要关掉吗？')) return
+      if (state.dirty && !confirm(tr('editor.confirm.close'))) return
       window.close()
     }
     window.addEventListener('beforeunload', (ev) => {
@@ -534,4 +539,4 @@
   }
 
   boot()
-})()
+})()  

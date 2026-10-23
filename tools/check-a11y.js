@@ -93,7 +93,8 @@ const cutoutHtml = read('app/cutout.html')
 {
   const missing = buttons(cutoutHtml).filter((b) => {
     const name = stripTags(b)
-    return !name && !attr(b, 'aria-label')
+    // 文案搬进语言包后，按钮可能只剩 data-i18n*（运行时才填字），也算有名字
+    return !name && !attr(b, 'aria-label') && !attr(b, 'data-i18n') && !attr(b, 'data-i18n-aria-label')
   })
   check('所有按钮都有可访问名称', missing.length === 0, missing.length ? missing.length + ' 个缺少名称' : '')
 }

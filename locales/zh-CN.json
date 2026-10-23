@@ -590,7 +590,27 @@
     },
     "module": {
       "chip": "（{label}）",
-      "text": "写好的文字"
+      "text": "写好的文字",
+      "other": "（{label}）",
+      "heading": "这一块",
+      "empty": "先点一块内容，右边就能改它写什么、长什么样",
+      "type": "这一块是什么",
+      "weather": "天气",
+      "water": "喝水",
+      "time": "时间",
+      "rest": "其他",
+      "textLabel": "写什么",
+      "style": "再调调样式",
+      "size": "多大",
+      "show": "怎么显示",
+      "bold": "加粗",
+      "italic": "斜体",
+      "color": "字颜色",
+      "background": "垫个底色",
+      "clear": "不要了",
+      "moveBefore": "往前",
+      "moveAfter": "往后",
+      "delete": "删除"
     },
     "op": {
       "backward": "往后",
@@ -608,7 +628,7 @@
       "standard": "标准"
     },
     "preview": {
-      "empty": "这张卡还空着",
+      "drank": "喝过了",
       "later": "待会儿"
     },
     "resetBtn": "变回默认",
@@ -617,7 +637,8 @@
       "delete": "删掉这一行",
       "down": "整行往下",
       "empty": "这一行空着，点右边的 ＋ 加点内容",
-      "up": "整行往上"
+      "up": "整行往上",
+      "remove": "删掉这一行"
     },
     "sample": {
       "city": "北京",
@@ -625,7 +646,12 @@
       "name": "小芳桌宠",
       "phrase": "记得喝口水呀～",
       "text": "写点什么",
-      "weather": "晴"
+      "weather": "晴",
+      "sky": "晴",
+      "waterTip": "慢慢喝，别急呀",
+      "cupsPrefix": "今天第 ",
+      "cupsSuffix": " 杯啦",
+      "nextPrefix": "下次大概 "
     },
     "saveBtn": "保存",
     "tab": {
@@ -639,7 +665,28 @@
       "preset": "换成「{label}」啦，看看下面的预览",
       "reset": "变回默认啦（别忘了点保存）",
       "saved": "记住啦，点一下桌宠就能看到效果"
-    }
+    },
+    "title": "气泡布置",
+    "reset": "变回默认",
+    "save": "保存",
+    "close": "关闭",
+    "presetsAria": "一键排版",
+    "presetsLabel": "先挑一个：",
+    "card": {
+      "moveUp": "往前挪一张（点击顺序也会跟着换）",
+      "moveDown": "往后挪一张（点击顺序也会跟着换）",
+      "empty": "这张卡还空着"
+    },
+    "status": {
+      "reorder": "顺序换好啦，之后点我就按这个顺序出卡",
+      "maxRows": "最多 6 行啦",
+      "saved": "记住啦，点一下桌宠就能看到效果",
+      "reset": "变回默认啦（别忘了点保存）",
+      "preset": "换成「{name}」啦，看看下面的预览",
+      "noState": "没读到设置，稍后再试",
+      "saveFailed": "没保存成功，再试一次？"
+    },
+    "previewLabel": "预览"
   },
   "onboard": {
     "hello": "你好，我是 ",

@@ -2,31 +2,31 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <title>气泡布置</title>
+  <title data-i18n="editor.title">气泡布置</title>
   <link rel="stylesheet" href="tokens.css">
   <link rel="stylesheet" href="editor.css">
 </head>
 <body>
   <header>
-    <h1>气泡布置</h1>
+    <h1 data-i18n="editor.title">气泡布置</h1>
     <div id="tabs" class="tabs"></div>
     <span class="spacer"></span>
-    <button id="resetBtn" type="button">变回默认</button>
-    <button id="saveBtn" class="primary" type="button">保存</button>
-    <button id="closeBtn" type="button">关闭</button>
+    <button id="resetBtn" type="button" data-i18n="editor.reset">变回默认</button>
+    <button id="saveBtn" class="primary" type="button" data-i18n="editor.save">保存</button>
+    <button id="closeBtn" type="button" data-i18n="editor.close">关闭</button>
   </header>
 
   <div class="body">
     <section class="canvas">
-      <div class="presets" role="group" aria-label="一键排版">
-        <span class="presets-label">先挑一个：</span>
-        <button type="button" data-preset="simple">简洁</button>
-        <button type="button" data-preset="standard">标准</button>
-        <button type="button" data-preset="rich">详细</button>
+      <div class="presets" role="group" aria-label="一键排版" data-i18n-aria-label="editor.presetsAria">
+        <span class="presets-label" data-i18n="editor.presetsLabel">先挑一个：</span>
+        <button type="button" data-preset="simple" data-i18n="editor.preset.simple">简洁</button>
+        <button type="button" data-preset="standard" data-i18n="editor.preset.standard">标准</button>
+        <button type="button" data-preset="rich" data-i18n="editor.preset.rich">详细</button>
       </div>
-      <p class="tip">点一块内容，右边就能改它写什么、长什么样；行的左边 ↑ ↓ 可以换顺序。</p>
+      <p class="tip" data-i18n="editor.tip">点一块内容，右边就能改它写什么、长什么样；行的左边 ↑ ↓ 可以换顺序。</p>
       <div id="rows" class="rows"></div>
-      <button id="addRowBtn" class="dashed" type="button">+ 再加一行</button>
+      <button id="addRowBtn" class="dashed" type="button" data-i18n="editor.addRow">+ 再加一行</button>
     </section>
 
     <aside class="side">
@@ -35,12 +35,13 @@
   </div>
 
   <section class="preview">
-    <div class="preview-label">预览</div>
+    <div class="preview-label" data-i18n="editor.previewLabel">预览</div>
     <div id="preview" class="bubble-preview"></div>
   </section>
 
   <div id="status" class="status"></div>
 
+  <script src="i18n.js"></script>
   <script src="bubble-model.js"></script>
   <script src="editor.js"></script>
 </body>
