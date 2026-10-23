@@ -518,8 +518,11 @@
       hideBubble()
       playSound('water')
     }
-    const later = el('button', '', '待会儿')
-    later.onclick = hideBubble
+    const later = el('button', '', '稍后 10 分钟')
+    later.onclick = () => {
+      api.waterSnooze(10)
+      hideBubble()
+    }
     actions.appendChild(done)
     actions.appendChild(later)
     return actions

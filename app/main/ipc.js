@@ -7,6 +7,8 @@
  * 也不用起 Electron。
  */
 
+const { registerWaterIpc } = require('./water-ipc.js')
+
 /**
  * @param {object} deps
  * @param {object} deps.ipcMain
@@ -41,6 +43,7 @@ function registerIpc(deps) {
   } = deps
   const { roleList, soundList, roleUrl, broadcastSettings, broadcastRoles, sendMirror, applySettingsSideEffects } = lists
   const MAX_IMAGE_BYTES = cutoutService.MAX_IMAGE_BYTES
+  const log = deps.log || (() => {})
 
   // Visible-vs-reserved are two different questions. `pet:bubble` answers "is a
   // card up" (drives the state machine), `pet:reserve` only resizes the strip.
@@ -309,7 +312,7 @@ function registerIpc(deps) {
     if (!petWin || !delta) return
     // Opt-in diagnostic: count how many window moves a drag actually performs
     // (the renderer coalesces them to one per animation frame).
-    if (process.env.DESKPET_TRACE_DRAG === '1') deps.log && deps.log('pet-drag', Math.round(Number(delta.dx) || 0), Math.round(Number(delta.dy) || 0))
+    if (process.env.DESKPET_TRACE_DRAG === '1') log('pet-drag', Math.round(Number(delta.dx) || 0), Math.round(Number(delta.dy) || 0))
     const s = store.readSettings()
     const b = petWin.getBounds()
     const size = clamp(Number(s.size) || 220, 80, 480)
@@ -389,13 +392,7 @@ function registerIpc(deps) {
   ipcMain.on('pet:open-editor', () => actions.openEditor())
   ipcMain.on('onboard:open', () => actions.openOnboard(true))
   ipcMain.on('onboard:dismiss', () => actions.dismissOnboard())
-  ipcMain.on('pet:water-done', () => {
-    const s = store.readSettings()
-    const today = new Date()
-    const key = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate()
-    const cups = s.water.today && s.water.today.date === key ? Number(s.water.today.cups) + 1 : 1
-    store.writeSettings({ water: { lastDrinkAt: Date.now(), today: { date: key, cups } } })
-  })
+  registerWaterIpc({ ipcMain, store, path, fs, shell, clamp, log })
 
   ipcMain.on('app:quit', () => { setQuitting(true); app.quit() })
   ipcMain.handle('app:open-data-dir', () => shell.openPath(store.dir))
