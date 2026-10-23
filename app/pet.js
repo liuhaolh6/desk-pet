@@ -627,7 +627,7 @@
       applySettings(initial.settings)
       try { state.sounds = await api.listSounds() } catch (err) {}
     } catch (err) {
-      console.error('[desk-pet] 初始化失败', err)
+      console.error('[desk-pet] boot failed', err)
     }
 
     api.onSettings((settings) => {

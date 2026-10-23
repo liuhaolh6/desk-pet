@@ -16,7 +16,7 @@ const REAL_ANSWERS = ['NO_PERSON', 'OVER_SEGMENTED', 'MODEL_MISSING', 'MODEL_LOA
 
 function decodeImageDataUrl(dataUrl) {
   if (typeof dataUrl !== 'string') {
-    const err = new Error('没收到图片数据')
+    const err = new Error('no image data')
     err.code = 'NO_DATA'
     throw err
   }
@@ -33,7 +33,7 @@ function cutoutErrorMessage(code) {
   if (code === 'OVER_SEGMENTED') return tr('cutout.err.tooMuch')
   if (code === 'MODEL_MISSING' || code === 'MODEL_LOAD_FAILED') return tr('cutout.err.modelMissing')
   if (code === 'BAD_OUTPUT_SHAPE' || code === 'NO_OUTPUT') return tr('cutout.err.noResult')
-  return '这次没抠成'
+  return tr('cutout.err.noResult')
 }
 
 /**

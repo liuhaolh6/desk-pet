@@ -400,3 +400,19 @@ WMO 码表、AQI 分级、三天标签、建议句都写成中文字面量，共
   断 `DOWNLOAD` / `INSTALL` 这两种措辞——**测行为，不测文案**。
 
 基线 **24 → 18**。
+
+### 阶段三-P：内联中文清零（已完成）
+
+基线 **18 → 0**。这一段没有多少"翻译工作"，主要是把散落在数据层的默认值搬进语言包：
+
+- `lib/store.js` 的 `name: '小芳'`、`weather.label: '自动定位'`、`roles: [{ name: '我' }]` 变成空串，
+  由 `app/main.js` 的 `seedDefaults(store, i18n)` 在语言确定后补齐；只在值为空时补，用户改过就不动。
+  这样"数据层不存中文"这条规则才真成立——否则切了语言，用户数据里还是旧语言的字符串。
+- 24 条内置短语搬进 `bubble.phrasesSeed`（数组，两份语言包各 24 条）。`flatten()` 只走字符串，
+  所以 `i18n.js` 加了 `T()` 直接按点分路径取值，数组也能取到。
+- `app/editor.html` 的 `aria-label="一键排版"` 是"有 data-i18n 却还留着旧中文"的重复；只留 `data-i18n-aria-label`。
+- 开发者向的文案（`lib/cutout.js` 的模型错误、`[desk-pet] 初始化失败`）统一改英文——它们只出现在日志里，
+  对维护者有意义，不该进翻译预算，也不该在英文用户的日志里突然冒出中文。
+
+验证（`en-US` 全新数据目录，端口 9290）：`getState()` → `name "Xiaofang"`、`weather.label "Auto-detect"`、
+`roles[0].name "Me"`、`phrasesSeed` 24 条英文；引导卡标题 `Hi, I'm Xiaofang`、按钮 `Got it` / `Pick a city first`。

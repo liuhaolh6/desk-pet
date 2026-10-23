@@ -172,6 +172,8 @@ app.whenReady().then(() => {
   i18n = createMainI18n({ requested: (store.readSettings().locale || ''), system: app.getLocale(), log })
   // preload 在窗口加载时同步取字典，所以通道必须先于 createWindows 注册。
   registerI18nIpc({ ipcMain, i18n })
+
+  seedDefaults(store, i18n)
   privacy = createPrivacy({ dir: store.dir, fs, path, log, t })
   catalog = createCatalog({ fs, store, assets: ASSETS, BrowserWindow, trayHost })
   windows = createWindows({
@@ -283,3 +285,14 @@ app.on('before-quit', () => {
   try { globalShortcut.unregisterAll() } catch (err) {}
 })
 app.on('window-all-closed', () => { /* keep running in the tray */ })
+
+// P2-6 阶段三-P：语言确定后，把"用户数据里的默认值"补齐（只补空的，不覆盖用户改过的）。
+function seedDefaults(store, i18n) {
+  const tr = (k) => i18n.t(k)
+  const cfg = store.readSettings()
+  const patch = {}
+  if (!cfg.name) patch.name = tr('defaults.name')
+  if (cfg.weather && !cfg.weather.label) patch.weather = Object.assign({}, cfg.weather, { label: tr('defaults.cityAuto') })
+  if (!Array.isArray(cfg.roles) || !cfg.roles.length) patch.roles = [{ id: 'default', name: tr('defaults.roleName'), builtin: true, createdAt: 0 }]
+  if (Object.keys(patch).length) { try { store.writeSettings(patch) } catch (err) { /* 默认值补不上不影响启动 */ } }
+}

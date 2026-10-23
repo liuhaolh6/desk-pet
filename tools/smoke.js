@@ -51,7 +51,7 @@ const store = createStore(dir)
 // ---------------------------------------------------------------- store
 {
   const s = store.readSettings()
-  assert.equal(s.name, '小芳')
+  assert.equal(s.name, '', '名字留空，由语言包的 defaults.name 在首启种下')
   assert.equal(s.size, 220)
   assert.equal(s.mode, 'normal')
   assert.equal(s.anchor, undefined, 'desktop build has no anchor field')
@@ -1244,11 +1244,11 @@ const PAD = 54
 
   // Defaults are a public, read-only contract now.
   const snapshot = store.defaults()
-  assert.equal(snapshot.name, '小芳')
+  assert.equal(snapshot.name, '', '名字是空串，等语言包种下')
   assert.deepEqual(snapshot.weather.recent, [], '最近城市默认空')
   snapshot.name = '被改坏了'
   snapshot.weather.recent.push('深圳')
-  assert.equal(store.defaults().name, '小芳', 'defaults() 每次给一份新副本')
+  assert.equal(store.defaults().name, '', 'defaults() 每次给一份新副本')
   assert.deepEqual(store.defaults().weather.recent, [], '副本里改数组不影响默认值')
   assert.ok(/DEFAULT_SETTINGS\.weather\.recent/.test(fs.readFileSync(path.join(root, 'lib', 'store.js'), 'utf8')) ||
     /recent: \[\]/.test(fs.readFileSync(path.join(root, 'lib', 'store.js'), 'utf8')), '默认设置里带 recent')

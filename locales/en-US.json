@@ -22,7 +22,8 @@
   "nudge": {
     "lateNight": "It's late — tomorrow can have some of tonight's work.",
     "longUse": "You've been sitting for almost an hour. Stand up, stretch, sip some water.",
-    "away": "Been a while. I'm still here."
+    "away": "Been a while. I'm still here.",
+    "demo": "Just a quick try — can I pop up a bubble?"
   },
   "water": {
     "notifyTitle": "DeskPet",
@@ -1274,5 +1275,12 @@
     "willInstall": "I'll install it",
     "goDownload": "Click me to download",
     "newVersion": "Version {version} is out (you have {current}) — {tail}"
+  },
+  "defaults": {
+    "name": "Xiaofang",
+    "cityAuto": "Auto-detect",
+    "roleName": "Me",
+    "newRole": "New character",
+    "newSound": "Sound"
   }
 }

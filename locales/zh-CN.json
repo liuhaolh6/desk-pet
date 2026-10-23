@@ -22,7 +22,8 @@
   "nudge": {
     "lateNight": "都这个点啦，今天的活儿留一点给明天也没关系～",
     "longUse": "坐了快一个钟头了，起来走两步、喝口水吧",
-    "away": "好久没见你啦，我还在呀"
+    "away": "好久没见你啦，我还在呀",
+    "demo": "试一下，看看我能不能冒个泡"
   },
   "water": {
     "notifyTitle": "桌宠",
@@ -1274,5 +1275,12 @@
     "willInstall": "我这就装上",
     "goDownload": "点我去下载",
     "newVersion": "有新版 {version} 了（现在是 {current}），{tail}"
+  },
+  "defaults": {
+    "name": "小芳",
+    "cityAuto": "自动定位",
+    "roleName": "我",
+    "newRole": "新角色",
+    "newSound": "音效"
   }
 }

@@ -128,7 +128,7 @@ function registerNudgeIpc({ ipcMain, nudges, getPet }) {
         if (pet) {
           pet.webContents.send('pet:nudge', {
             kind: (out.decision && out.decision.kind) || 'manual',
-            text: opts.text || '试一下，看看我能不能冒个泡',
+            text: opts.text || tr('nudge.demo'),
           })
         }
       } catch (err) {}
