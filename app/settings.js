@@ -103,6 +103,11 @@
     $('interval').value = String((settings.water && settings.water.intervalMinutes) || 60)
     setIfIdle('quietFrom', settings.water ? settings.water.quietFrom : 23)
     setIfIdle('quietTo', settings.water ? settings.water.quietTo : 8)
+    const nudge = settings.nudge || {}
+    $('nudgeEnabled').checked = nudge.enabled !== false
+    $('nudgeLongUse').checked = nudge.longUse !== false
+    $('nudgeLateNight').checked = nudge.lateNight !== false
+    $('nudgeAway').checked = nudge.away !== false
     setIfIdle('cupMl', (settings.water && settings.water.cupMl) || 200)
     setIfIdle('autoHide', settings.bubble ? settings.bubble.autoHideSeconds : 20)
     setIfIdle('cooldown', settings.bubble ? settings.bubble.cooldownMinutes : 30)
@@ -197,6 +202,10 @@
     $('quietTo').addEventListener('change', (ev) => {
       save({ water: { quietTo: clamp(Number(ev.target.value) || 0, 0, 23) } }, true)
     })
+    $('nudgeEnabled').addEventListener('change', (ev) => save({ nudge: { enabled: ev.target.checked } }, true))
+    $('nudgeLongUse').addEventListener('change', (ev) => save({ nudge: { longUse: ev.target.checked } }, true))
+    $('nudgeLateNight').addEventListener('change', (ev) => save({ nudge: { lateNight: ev.target.checked } }, true))
+    $('nudgeAway').addEventListener('change', (ev) => save({ nudge: { away: ev.target.checked } }, true))
     $('cupMl').addEventListener('change', (ev) => {
       const cupMl = clamp(Number(ev.target.value) || 200, 50, 1000)
       ev.target.value = String(cupMl)
@@ -502,6 +511,10 @@
     { panel: 'reminder', id: 'mode', label: '唠叨程度', hint: '提醒频率', keys: '唠叨 提醒 频率 少说 多说' },
     { panel: 'reminder', id: 'interval', label: '多久提醒喝水', hint: '喝水间隔分钟', keys: '喝水 几杯 间隔 提醒' },
     { panel: 'reminder', id: 'quietFrom', label: '安静时间（开始）', hint: '这个点以后不吵你', keys: '安静 免打扰 别吵 睡觉' },
+    { panel: 'reminder', id: 'nudgeEnabled', label: '主动说话（总开关）', hint: '让它偶尔主动冒一句', keys: '主动 说话 搭话 提醒 唠叨 nudge' },
+    { panel: 'reminder', id: 'nudgeLongUse', label: '坐太久了起来走走', hint: '连着用满 50 分钟提醒', keys: '久坐 站起来 休息 腰 眼睛' },
+    { panel: 'reminder', id: 'nudgeLateNight', label: '深夜还在忙', hint: '23 点后劝你睡觉', keys: '深夜 熬夜 睡觉 早睡 晚' },
+    { panel: 'reminder', id: 'nudgeAway', label: '好久没见你', hint: '两小时没互动打个招呼', keys: '好久 离开 回来 招呼' },
     { panel: 'reminder', id: 'quietTo', label: '安静时间（结束）', hint: '这个点以后恢复提醒', keys: '安静 免打扰 起床' },
     { panel: 'reminder', id: 'waterTimeline', label: '今天的喝水时间轴', hint: '几点喝了一杯', keys: '喝水 记录 时间轴 今天 几杯' },
     { panel: 'reminder', id: 'cupMl', label: '一杯多少毫升', hint: '导出 CSV 用', keys: '毫升 一杯 容量 导出' },
