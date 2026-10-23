@@ -416,3 +416,17 @@ WMO 码表、AQI 分级、三天标签、建议句都写成中文字面量，共
 
 验证（`en-US` 全新数据目录，端口 9290）：`getState()` → `name "Xiaofang"`、`weather.label "Auto-detect"`、
 `roles[0].name "Me"`、`phrasesSeed` 24 条英文；引导卡标题 `Hi, I'm Xiaofang`、按钮 `Got it` / `Pick a city first`。
+
+### 阶段五：日期与数字本地化（已完成）
+
+- 语言包加 `meta.timeStyle`（zh `24h`、en `12h`）与 `date.am`/`date.pm`。
+- `lib/i18n.js` 新增 `formatClock(ts, style, t)`：12 小时制返回 `2:05 PM`，24 小时制返回 `14:05`，
+  正午/午夜都是 `12` 不是 `0`（单测覆盖）。
+- 两个显示点：气泡的 `time`/`weather.updated`（`app/bubble-model.js` 的 `fmtTime` 改吃 `meta.timeStyle`）、
+  喝水记录的今日时间轴（`lib/water-log.js` 的 `styleTime`）。
+- **存储与导出不跟着变**：`dayKey`/`clockOf` 与 CSV 永远是 24 小时制。理由是导出文件是数据契约，
+  用户拿它做表格或给别人看，不该因为界面切成英文就变成 `2:05 PM`。
+- 数字分组暂不做：目前显示的数字（温度、步数、毫升）都在三位以内，加千分位只会让 `1024 ml` 变丑。
+
+验证：`npm run unit` 166 通过（新增 2 例：formatClock 的 12/24 小时与正午/午夜边界、summarize 的时间轴 + CSV 保持 24h）；
+`node tools/smoke.js` 67 项；en 数据目录实测气泡时间显示 `2:05 PM` 风格。

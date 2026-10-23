@@ -140,3 +140,13 @@ test('toCsv：ml 缺失时回落到 cupMl', () => {
   const csv = wl.toCsv([{ at: noon(2026, 3, 9, 9, 0) }], 300)
   assert.equal(csv.split('\r\n')[1], '2026-3-9,09:00,300')
 })
+
+test('summarize: 今日时间轴跟随语言习惯（12h 带 AM/PM，CSV 仍 24h）', () => {
+  const at = new Date(2026, 9, 23, 15, 4).getTime()
+  const log = [{ at, ml: 200 }]
+  const zh = (k) => ({ 'meta.timeStyle': '24h' }[k] || k)
+  const en = (k) => ({ 'meta.timeStyle': '12h', 'date.am': 'AM', 'date.pm': 'PM' }[k] || k)
+  assert.equal(wl.summarize(log, at, {}, zh).today.items[0].time, '15:04')
+  assert.equal(wl.summarize(log, at, {}, en).today.items[0].time, '3:04 PM')
+  assert.match(wl.toCsv(log), /,15:04,/, '导出保持 24 小时制，不受界面语言影响')
+})

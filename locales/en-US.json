@@ -1269,7 +1269,9 @@
       "4": "Thursday",
       "5": "Friday",
       "6": "Saturday"
-    }
+    },
+    "am": "AM",
+    "pm": "PM"
   },
   "update": {
     "willInstall": "I'll install it",
@@ -1282,5 +1284,8 @@
     "roleName": "Me",
     "newRole": "New character",
     "newSound": "Sound"
+  },
+  "meta": {
+    "timeStyle": "12h"
   }
 }

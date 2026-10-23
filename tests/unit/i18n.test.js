@@ -168,3 +168,18 @@ test('applyStatic：把 data-i18n* 写进文本节点与属性，并改 html[lan
   assert.strictEqual(rich.innerHTML, '<b>Hi</b>')
   assert.strictEqual(html.lang, 'en-US')
 })
+
+test('formatClock: 24 小时制语言用 HH:mm，12 小时制带 AM/PM', () => {
+  const zh = { 'meta.timeStyle': '24h' }
+  const en = { 'meta.timeStyle': '12h', 'date.am': 'AM', 'date.pm': 'PM' }
+  const tz = (k) => zh[k] || k
+  const te = (k) => en[k] || k
+  const noon = new Date(2026, 9, 23, 12, 5).getTime()
+  const arvo = new Date(2026, 9, 23, 14, 5).getTime()
+  const dawn = new Date(2026, 9, 23, 0, 7).getTime()
+  assert.equal(i18n.formatClock(arvo, '24h', tz), '14:05')
+  assert.equal(i18n.formatClock(arvo, '12h', te), '2:05 PM')
+  assert.equal(i18n.formatClock(noon, '12h', te), '12:05 PM', '正午是 12 不是 0')
+  assert.equal(i18n.formatClock(dawn, '12h', te), '12:07 AM', '午夜是 12 不是 0')
+  assert.equal(i18n.formatClock(0, '24h', tz), '', '无时间戳给空串')
+})

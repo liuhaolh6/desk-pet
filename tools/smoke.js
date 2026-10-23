@@ -11,6 +11,7 @@ const fs = require('node:fs')
 const readSrc = (file) => fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n')
 const os = require('node:os')
 const path = require('node:path')
+const { formatClock } = require('../lib/i18n')
 
 const { createStore, merge, DEFAULT_SETTINGS, DEFAULT_ROLES } = require('../lib/store')
 const { describe, WMO_ICON, advice } = require('../lib/weather')
@@ -1507,8 +1508,8 @@ const PAD = 54
   const traySrc = fs.readFileSync(path.join(root, 'app', 'main', 'tray.js'), 'utf8')
   const mainP26 = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
   const preloadP26 = fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')
-  const zh = JSON.parse(fs.readFileSync(path.join(root, 'locales', 'zh-CN.json'), 'utf8'))
-  const en = JSON.parse(fs.readFileSync(path.join(root, 'locales', 'en-US.json'), 'utf8'))
+  const zh = JSON.parse(fs.readFileSync(path.join(path.join(__dirname, '..'), 'locales', 'zh-CN.json'), 'utf8'))
+  const en = JSON.parse(fs.readFileSync(path.join(path.join(__dirname, '..'), 'locales', 'en-US.json'), 'utf8'))
 
   assert.ok(/function createMainI18n/.test(i18nMain) && /function registerI18nIpc/.test(i18nMain), '主进程 i18n：建字典 + 注册通道')
   assert.ok(/fallbackDict/.test(i18nLib) && /matchLocale/.test(i18nLib), 'lib/i18n：缺键回退 zh-CN、语言匹配')
@@ -1590,6 +1591,21 @@ const PAD = 54
     assert.ok(enH.onboard && enH.onboard[key] !== undefined, 'en 有 onboard.' + key)
   }
   ok('P2-6 阶段三-H：引导卡走语言包')
+}
+
+// ---------------------------------------------------------- P2-6 阶段五：日期与时间
+{
+  // 语言包自带时间制式；渲染层与主进程都按它格式化，存储与导出保持 24 小时制。
+  const zh = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'locales', 'zh-CN.json'), 'utf8'))
+  const en = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'locales', 'en-US.json'), 'utf8'))
+  assert.equal(zh.meta.timeStyle, '24h')
+  assert.equal(en.meta.timeStyle, '12h')
+  assert.ok(en.date.am && en.date.pm, 'en 有 AM/PM 文案')
+  const ts = new Date(2026, 9, 23, 14, 5).getTime()
+  assert.equal(formatClock(ts, zh.meta.timeStyle, (k) => k), '14:05')
+  assert.equal(formatClock(ts, en.meta.timeStyle, (k) => (k === 'date.pm' ? 'PM' : k)), '2:05 PM')
+  assert.match(fs.readFileSync(path.join(path.join(__dirname, '..'), 'app', 'bubble-model.js'), 'utf8'), /tr\('meta\.timeStyle'\)/, '渲染层也按语言制式显示')
+  ok('阶段五：时间按语言习惯显示')
 }
 
 console.log('\n' + pass + ' checks passed')

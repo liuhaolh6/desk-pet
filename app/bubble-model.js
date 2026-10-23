@@ -201,10 +201,15 @@
   }
 
   // -------------------------------------------------------------- resolved values
-  function fmtTime(ts) {
+  // P2-6 阶段五：12 小时制语言显示 AM/PM，24 小时制照旧；存储永远是 24 小时制。
+  function fmtTime(ts, tr0) {
+    const tr = typeof tr0 === 'function' ? tr0 : (k) => k
     if (!ts) return ''
     const d = new Date(ts)
-    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
+    const mm = String(d.getMinutes()).padStart(2, '0')
+    if (tr('meta.timeStyle') !== '12h') return String(d.getHours()).padStart(2, '0') + ':' + mm
+    const hour12 = d.getHours() % 12 || 12
+    return hour12 + ':' + mm + ' ' + tr(d.getHours() < 12 ? 'date.am' : 'date.pm')
   }
 
   function pickRandom(list, t) {
@@ -223,7 +228,7 @@
     switch (type) {
       case 'random': return pickRandom(ctx && ctx.phrases, t)
       case 'name': return (ctx && ctx.name) || t('bubble.name.fallback')
-      case 'time': return fmtTime(Date.now())
+      case 'time': return fmtTime(Date.now(), t)
       case 'date': {
         const d = new Date()
         const week = t('bubble.weekday.' + ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][d.getDay()])
@@ -274,7 +279,7 @@
         return 'PM2.5 ' + num(w.air.pm25)
       }
       case 'weather.tip': return ok ? (w.advice || '') : ''
-      case 'weather.updated': return ok ? t('bubble.weather.updated', { time: fmtTime(w.updatedAt) }) : ''
+      case 'weather.updated': return ok ? t('bubble.weather.updated', { time: fmtTime(w.updatedAt, t) }) : ''
       case 'weather.hint': return ok && w.stale ? t('bubble.weather.stale') : ''
       case 'water.cups': return String((ctx && ctx.cups) || 0)
       case 'water.progress': {
