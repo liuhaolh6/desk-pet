@@ -198,7 +198,7 @@ app.whenReady().then(() => {
     path, fs, log, rootDir: __dirname,
   })
   weatherPump = createWeatherPump({
-    store, fetchWeather, advice, clamp, log,
+    store, fetchWeather, advice, clamp, log, t,
     getWindows: () => BrowserWindow.getAllWindows(),
   })
   reminders = createReminders({

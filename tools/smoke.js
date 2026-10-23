@@ -13,7 +13,10 @@ const os = require('node:os')
 const path = require('node:path')
 
 const { createStore, merge, DEFAULT_SETTINGS, DEFAULT_ROLES } = require('../lib/store')
-const { describe, WMO, advice } = require('../lib/weather')
+const { describe, WMO_ICON, advice } = require('../lib/weather')
+const { createI18n: createSmokeI18n } = require('../lib/i18n')
+// 烟测校验中文文案，所以显式拿 zh-CN 字典当翻译器
+const smokeT = createSmokeI18n({ locale: 'zh-CN', dict: require('../locales/zh-CN.json') }).t
 const bubble = require('../app/bubble-model')
 const soundModel = require('../app/sound-model')
 const placement = require('../lib/placement')
@@ -91,26 +94,26 @@ const store = createStore(dir)
 
 // ---------------------------------------------------------------- weather
 {
-  assert.equal(describe(0).text, '晴')
-  assert.equal(describe(61).text, '小雨')
-  assert.equal(describe(999).text, '未知天气')
-  assert.ok(Object.keys(WMO).length > 20)
+  assert.equal(describe(0, smokeT).text, '晴')
+  assert.equal(describe(61, smokeT).text, '小雨')
+  assert.equal(describe(999, smokeT).text, '未知天气')
+  assert.ok(Object.keys(WMO_ICON).length > 20)
   ok('WMO 天气码映射')
 }
 
 {
   // 贴心提醒（0.6.0）：按体感/降水/紫外线/风给一句温柔建议，缺数据时也不报错。
-  assert.match(advice({ temp: 22, feels: 22, precip: 0 }), /舒服|刚刚好/)
-  assert.match(advice({ temp: 8, feels: 8, precip: 0 }), /外套|凉/)
-  assert.match(advice({ temp: 1, feels: -3, precip: 0 }), /冷|围巾/)
-  assert.match(advice({ temp: 30, feels: 34, precip: 0 }), /热|喝水/)
-  assert.match(advice({ temp: 25, feels: 25, precip: 80 }), /伞/)
-  assert.match(advice({ temp: 25, feels: 25, code: 95 }), /伞/)
-  assert.match(advice({ temp: -2, feels: -6, code: 73 }), /雪/)
-  assert.match(advice({ temp: 26, feels: 27, uv: 10 }), /防晒/)
-  assert.match(advice({ temp: 26, feels: 27, wind: 45 }), /风/)
-  assert.equal(advice({ temp: null }), '')
-  assert.equal(advice(null), '')
+  assert.match(advice({ temp: 22, feels: 22, precip: 0 }, smokeT), /舒服|刚刚好/)
+  assert.match(advice({ temp: 8, feels: 8, precip: 0 }, smokeT), /外套|凉/)
+  assert.match(advice({ temp: 1, feels: -3, precip: 0 }, smokeT), /冷|围巾/)
+  assert.match(advice({ temp: 30, feels: 34, precip: 0 }, smokeT), /热|喝水/)
+  assert.match(advice({ temp: 25, feels: 25, precip: 80 }, smokeT), /伞/)
+  assert.match(advice({ temp: 25, feels: 25, code: 95 }, smokeT), /伞/)
+  assert.match(advice({ temp: -2, feels: -6, code: 73 }, smokeT), /雪/)
+  assert.match(advice({ temp: 26, feels: 27, uv: 10 }, smokeT), /防晒/)
+  assert.match(advice({ temp: 26, feels: 27, wind: 45 }, smokeT), /风/)
+  assert.equal(advice({ temp: null }, smokeT), '')
+  assert.equal(advice(null, smokeT), '')
   ok('天气贴心提醒推导')
 }
 

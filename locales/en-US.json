@@ -67,7 +67,84 @@
     "geoUnavailable": "This computer won't share its location — type a city name instead",
     "locating": "Finding you…",
     "located": "Found you",
-    "geoFailed": "Couldn't get a fix — type a city name instead"
+    "geoFailed": "Couldn't get a fix — type a city name instead",
+    "code": {
+      "0": "Clear",
+      "1": "Mostly clear",
+      "2": "Partly cloudy",
+      "3": "Overcast",
+      "45": "Fog",
+      "48": "Freezing fog",
+      "51": "Light drizzle",
+      "53": "Drizzle",
+      "55": "Heavy drizzle",
+      "56": "Freezing drizzle",
+      "57": "Heavy freezing drizzle",
+      "61": "Light rain",
+      "63": "Rain",
+      "65": "Heavy rain",
+      "66": "Freezing rain",
+      "67": "Heavy freezing rain",
+      "71": "Light snow",
+      "73": "Snow",
+      "75": "Heavy snow",
+      "77": "Snow grains",
+      "80": "Light showers",
+      "81": "Showers",
+      "82": "Violent showers",
+      "85": "Light snow showers",
+      "86": "Heavy snow showers",
+      "95": "Thunderstorm",
+      "96": "Thunderstorm with hail",
+      "99": "Severe thunderstorm with hail",
+      "unknown": "Unknown weather"
+    },
+    "aqi": {
+      "excellent": {
+        "name": "Excellent",
+        "tip": "Air is clean — open a window for a bit"
+      },
+      "good": {
+        "name": "Good",
+        "tip": "Nice air — a good time for a walk"
+      },
+      "moderate": {
+        "name": "Moderate",
+        "tip": "If you are sensitive, keep outdoor time short"
+      },
+      "poor": {
+        "name": "Poor",
+        "tip": "Close the windows; wash your face when you get home"
+      },
+      "veryPoor": {
+        "name": "Very poor",
+        "tip": "Stay indoors if you can; wear a mask outside"
+      },
+      "awful": {
+        "name": "Awful",
+        "tip": "Keep the windows shut; avoid going out"
+      }
+    },
+    "day": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "dayAfter": "The day after"
+    },
+    "advice": {
+      "snow": "It's snowing — slippery out, take it slow",
+      "rain": "Don't forget an umbrella — don't get soaked",
+      "cold": "Really cold — scarf and gloves today",
+      "chilly": "A bit chilly — grab a jacket",
+      "sun": "Strong sun — don't skip the sunscreen",
+      "hot": "Hot out — drink water, stay out of the sun",
+      "wind": "Very windy — hold on to your hat",
+      "nice": "Lovely out today — perfect for a walk",
+      "mild": "Temperature is just right — take care of yourself"
+    },
+    "error": {
+      "missingCoords": "Missing coordinates"
+    },
+    "noLocationMessage": "You haven't told me your city yet"
   },
   "pet": {
     "title": "Desk pet",

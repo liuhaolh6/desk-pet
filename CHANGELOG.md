@@ -7,6 +7,9 @@
 ## [Unreleased]
 
 ### 新增
+- **多语言：天气文案进语言包（ROADMAP P2-6 阶段三-D）**：`lib/weather.js` 的 54 处中文（WMO 码表、AQI 分级、
+  三天标签、九种建议句）改走字典键；`describe/advice/aqiGrade/parseDays/fetchWeather/fetchAirQuality` 显式接收 `t`，
+  不传时退回键名（开发期能一眼看出漏翻）。基线 **448 → 393**。
 - **多语言：`settings.js` 清零（ROADMAP P2-6 阶段三-C）**：`app/settings.js` 的 151 处内联中文降到 **0**。
   搜索索引改成只写 `[面板, 控件 id]`（37 对），文案与关键词全从 `settings.find.<id>.*` 取；托盘/快捷键/更新/
   语言状态直接复用语言包里已有的 `other.*` 键；新增 14 条城市搜索与定位的键（`settings.status.*`）。

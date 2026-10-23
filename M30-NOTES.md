@@ -229,3 +229,35 @@ app/editor.js 54 · lib/weather.js 54          共 30 个文件 / 880 处
 
 基线 **599 → 448**（`tools/i18n-baseline.json` 已更新）。剩下最大三块：
 `app/bubble-model.js` 99、`app/editor.js` 54、`lib/weather.js` 54、`app/cutout.js` 52（+ `cutout.html` 42）。
+
+## 12. 阶段三-D：`lib/weather.js` 也搬进语言包
+
+`lib/weather.js` 是纯 Node 的取数与文案模块（主进程、单测、烟测都用它）。它原来把
+WMO 码表、AQI 分级、三天标签、建议句都写成中文字面量，共 **54 处**。
+
+做法是**显式注入翻译器**，不做模块级全局状态：
+
+1. `WMO` 从 `[文案, 图标]` 变成 `WMO_ICON`（只剩图标），文案走 `weather.code.<码>` /
+   `weather.code.unknown`；`describe(code, t)`。
+2. `AQI_LEVELS` 从 `{max, text, tip}` 变成 `{max, key}`，文案走
+   `weather.aqi.<key>.name/.tip`；`aqiGrade(value, t)`。
+3. `parseDays(daily, t)` 的三天标签走 `weather.day.today|tomorrow|dayAfter`（标点/语序交给语言包）。
+4. `advice(weather, t)` 的九种情况一律 `weather.advice.*`（雪/雨/冷/凉/晒/热/风/舒服/兜底）。
+5. `fetchWeather({…, t})` / `fetchAirQuality(lat, lon, t)` 把 `t` 透传下去；`weather.error.missingCoords`
+   接替“缺少经纬度”的硬编码。
+6. **没传 `t` 时退回键名**（`weather.code.61`），开发期一眼看出漏翻，不静默退化成中文。
+
+调用链只改了三处：`createWeatherPump` 多收一个 `t`（`main.js` 把现成的 `t` 传进去），
+`tests/unit/weather.test.js` 与 `tools/smoke.js` 各自用 `createI18n({ dict: zh-CN })` 造一个翻译器。
+单测里注意 **`node:test` 的回调第一个参数就叫 `t`（TestContext）**，所以测试里的翻译器命名为 `tr`，
+否则会被 TestContext 遮住（这个坑花了一轮才发现）。
+
+双语文案抽查（`describe` / `advice` / `aqiGrade` / `parseDays`）：
+
+| 语言 | 天气码 | 建议 | AQI | 三天 |
+|---|---|---|---|---|
+| zh-CN | 小雨 / 雷阵雨 / 未知天气 | 热热的，多喝水、少在太阳下站着 | 良 - 空气不错，出去走走正好 | 今天 晴 / 明天 阴 / 后天 小雨 |
+| en-US | Light rain / Thunderstorm / Unknown weather | Hot out — drink water, stay out of the sun | Good - Nice air — a good time for a walk | Today Clear / Tomorrow Overcast / The day after Light rain |
+
+基线 **448 → 393**。还没搬的：`app/bubble-model.js` 99、`app/editor.js` 54、`app/cutout.js` 52、
+`app/cutout.html` 42、`lib/store.js` 29（默认聊天气泡的设置项文案）。

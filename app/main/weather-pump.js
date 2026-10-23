@@ -15,10 +15,11 @@
  * @param {Function} deps.getWindows  () => BrowserWindow[]
  * @param {Function} deps.clamp       numeric clamp
  * @param {Function} [deps.log]
+ * @param {Function} deps.t           translator (keys live in locales/*.json)
  * @param {Function} [deps.now]       Date.now, injectable for tests
  */
 function createWeatherPump(deps) {
-  const { store, fetchWeather, advice, getWindows, clamp, log, now = Date.now } = deps
+  const { store, fetchWeather, advice, getWindows, clamp, log, t = (key) => key, now = Date.now } = deps
   let current = null
   let timer = null
 
@@ -32,19 +33,19 @@ function createWeatherPump(deps) {
     const s = store.readSettings()
     const w = s.weather || {}
     if (w.lat == null || w.lon == null) {
-      current = { ok: false, error: 'NO_LOCATION', message: '还没告诉我你在哪座城市呢' }
+      current = { ok: false, error: 'NO_LOCATION', message: t('weather.noLocationMessage') }
       send()
       return current
     }
     try {
-      current = await fetchWeather({ lat: w.lat, lon: w.lon, city: w.city, label: w.label })
+      current = await fetchWeather({ lat: w.lat, lon: w.lon, city: w.city, label: w.label, t })
       store.writeWeatherCache({ key: w.lat + ',' + w.lon, at: now(), value: current })
     } catch (err) {
       const cache = store.readWeatherCache()
       if (cache && cache.value) {
         current = Object.assign({}, cache.value, { stale: true, error: String(err.message || err) })
         // Older caches predate the advice line / hourly strip: fill what we can.
-        if (!current.advice) current.advice = advice(current)
+        if (!current.advice) current.advice = advice(current, t)
         if (!Array.isArray(current.hourly)) current.hourly = []
       } else current = { ok: false, error: 'FETCH_FAILED', message: String(err.message || err) }
       if (log) log('weather refresh failed (' + reason + ')', String(err && err.message || err))
