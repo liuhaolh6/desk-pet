@@ -54,7 +54,7 @@
 | 角色 | 内置照片形象、导入 PNG、多角色切换/删除 | ✅ | 角色图走 `pet-role://` 协议 |
 | 角色 | 照片抠图（离线 U2Net 44MB，蒙版/擦除/旋转/翻转/回退） | ⚠️ | CPU 推理 0.9–1.3s；复杂背景/发丝仍可能残留 |
 | 设置 | 7 个分类面板、即时保存、角色图库、音效库 | ✅ | 无"恢复默认/撤销" |
-| 系统集成 | 托盘菜单、开机自启、单实例 | ⚠️ | 本机 Win11 26200 通知区不显示托盘图标：Electron **39.8.5 与 44.9 都复现**，同机 WinForms `NotifyIcon` 与应用自带的 DSH 托盘正常 → 判定为 Electron 与该系统通知区的兼容问题（§6.1 5.10）；已用 `Ctrl+Alt+P` + 悬浮菜单兜底 |
+| 系统集成 | 托盘菜单、开机自启、单实例 | ⚠️ | 本机 `D:\project` 子树里的 exe 一律注册不上托盘（`Shell_NotifyIcon` 返回 `ERROR_ACCESS_DENIED(5)`，换到 `D:\`、`%TEMP%`、`D:\DeskPetTest` 就正常）→ 不是产品缺陷（§6.1 5.10）；`Ctrl+Alt+P` + 悬浮菜单兜底仍在 |
 | 打包 | portable exe、图标/版本信息、便携数据目录 | ✅ | 未签名；无安装器、无自动更新 |
 | 无障碍 | 4 窗口 + 7 面板 + 编辑器全标签页的自动化审计 | ✅ | 屏幕阅读器与真实高对比度主题**未验证** |
 
@@ -220,11 +220,16 @@ Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
    `Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine='cmd.exe /c xxx.cmd'}`
    返回 `ReturnValue=0` 才算启动；`cmd /c start ""` 和 `Start-Process explorer.exe <cmd>`
    在本机都是**静默不启动**（进程数 0、日志不增）。
-5.10 **Win11 26200 的托盘问题结案（0.6.6）**：本机 Electron 39.8.5 与 44.9 **都不进通知区**（dev、打包、
-   用 WMI 脱离 DSH 进程树启动都一样；PNG 与 ICO 图标都试过；重启 explorer 无效），而同机
-   WinForms `NotifyIcon` 与应用自带的 DSH（Electron 打包版）托盘都正常 → 判定为 Electron 托盘实现
-   与该 Windows 版本通知区之间的兼容问题，应用侧无解，只能兜底：`Ctrl+Alt+P` + 桌宠悬浮菜单 +
-   设置页如实说明（0.6.6 起文案不再说"托盘没问题"）。
+5.10 **"托盘不显示"结案（0.6.6）：是本机 `D:\project` 这个目录的问题，不是产品缺陷**。
+   裸 P/Invoke 探针（`CreateWindowEx` + `LoadImage` + `Shell_NotifyIcon` + `GetRect`，脚本在 `.tmp/cstray/`）
+   在同一台机器上：`D:\project\.tmp\cstray\trayprobe.exe` → `NIM_ADD=False err=5`（`ERROR_ACCESS_DENIED`）；
+   同一个 exe 复制到 `%TEMP%`、`C:\Users\Public`、`D:\`、`D:\agent`、`D:\DeskPetTest` → `NIM_ADD=True err=0`。
+   目录矩阵：`D:\project`、`D:\project\.tmp`、`D:\project\deskpet`、`D:\project\zz2` 全失败，
+   `D:\project2`、`D:\zz\project`、`D:\project_new` 全成功 → 只跟**这个目录对象**有关，与名字、cwd 无关；
+   把 `D:\project` 的 DACL 原样复刻到 `D:\ACLtest3` 也能成功 → 也不是 DACL。**Electron 不看 `NIM_ADD`
+   的返回值**，所以表现成"托盘静默消失"。0.6.6 打包版复制到 `D:\DeskPetTest\app` 启动后，通知区里
+   能看到 `[小芳 · 桌宠]`（截图 `.tmp/overflow-now.png`）。→ **开发/验证一律在 `D:\project` 之外运行**；
+   兜底（`Ctrl+Alt+P` + 悬浮菜单 + 设置页状态）继续保留。
 
 ### 6.2 打包与分发
 6. **32 位 NSIS 打大包会崩**（`Internal compiler error #12345`）：用 64 位 `makensis` +

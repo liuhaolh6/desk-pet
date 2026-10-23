@@ -90,5 +90,5 @@ Windows 桌面宠物（Electron），独立于 DSH。目标：默认好看、开
 - [x] M12.4 P1-8/P1-9（可行部分）：token IPC、无障碍基础、CI/模型资产基线
 - [x] M12.5 无障碍审计（可自动化 82 项全过，见 `A11Y-AUDIT.md`）
 - [ ] NVDA/VoiceOver 与真实高对比度主题实测 / 推送 origin / 打 tag / CI 实跑 / 10 张 golden set
-- [ ] 托盘图标在 Windows 通知区可见（本机未显示，待签名 / 干净机器复验）
+- [x] 托盘图标在 Windows 通知区可见（0.6.6 查清：只要 exe 不在 `D:\project` 子树里就正常，见 `M17-NOTES.md` §8.1）
 - [ ] 发布 exe 带有效 Authenticode 签名（SignPath Foundation，审核中）

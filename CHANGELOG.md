@@ -32,6 +32,12 @@
 - 溢出判定改为量渲染矩形（居中安全区两端都会溢出），上一次「长文案从不截断」的排查结论作废——
   真正原因是 `bubble-model.js` 把单个模块截到 200 字，单模块 500 字测试其实只渲染了 200 字。
 
+### 文档
+- **托盘“不显示”结案**：裸 P/Invoke 探针实测，本机 `D:\project` 子树里的 exe 调 `Shell_NotifyIcon`
+  一律返回 `ERROR_ACCESS_DENIED(5)`，同一 exe 换到 `D:\`、`%TEMP%`、`D:\DeskPetTest` 即成功；
+  打包版在目录外启动后通知区可见 `[小芳 · 桌宠]` → **不是产品缺陷**，开发/验证需在项目目录外运行
+  （细节见 `M17-NOTES.md` §8.1、`HANDOFF.md` §6.1 5.10）。
+
 ### 打包
 - 重新出包 `DeskPet-0.6.6-portable.exe`（Electron 44.9.0 / x64，未签名，见 HANDOFF §6.2），
   并实测 `dist\win-unpacked\DeskPet.exe` 冷启动。

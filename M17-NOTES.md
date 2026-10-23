@@ -132,22 +132,33 @@
 
 ## 8. 收尾（同日补做）：托盘点、真按键、重新打包
 
-### 8.1 托盘根因：查到「不是我们能修的」这一步
-- **结论**：本机（Win11 26200.9711）上 **Electron 39.8.5 与 44.9 的 `Tray` 都不进通知区**；同机
-  **WinForms `NotifyIcon`** 与应用自带的 **DSH（Electron 打包版）** 托盘都正常 → 判定为 Electron 托盘实现
-  与该 Windows 版本通知区之间的兼容问题，应用侧无解。
-- **排除过程**（都可复现）：
-  1. dev 实例（44.9）→ `tray.getBounds()` 全 0、UIA 通知区里没有 → 打包版 0.6.4（44.9）同样没有；
-  2. 最小 Electron 探针：`electron@39.8.5` 与 44.9 都是 `bounds={"x":0,"y":0,"width":0,"height":0}`，
-     PNG 与 ICO（直接借 DSH 的 `tray.ico`）都试过；
-  3. 用 WMI `Win32_Process.Create` 让应用**脱离 DSH 进程树**启动（父进程变 WmiPrvSE）→ 仍然没有；
-  4. 重启 `explorer.exe` 重建通知区 → 仍然没有；
-  5. 对照：PowerShell + WinForms `NotifyIcon`（`SystemIcons.Application`、ASCII tooltip）→ **出现**；
-     DSH 自己的托盘 → **在**。
-- **正确检测法**（别用 `getBounds()`，折叠时也是 0）：UIA 找 `Shell_TrayWnd` → 「显示隐藏的图标」按钮 →
-  `InvokePattern` → `EnumWindows` 找类名含 `Overflow` → 遍历子 `Button.Name`（`.tmp/check-overflow.ps1`）。
-- 相关背景：super-productivity#8470 记录过「未签名 + 固定 exe 路径的 GUID → `NIM_ADD` 静默失败」；
-  本项目**没传 GUID**，已排除这类 GUID 缓存问题。
+### 8.1 托盘「不显示」的真相：不是产品缺陷，是本机 `D:\project` 目录的特性
+- **结论**：本机（Win11 26200.9711）上，**exe 只要放在 `D:\project` 这个目录树里，`Shell_NotifyIcon(NIM_ADD)`
+  就返回 `ERROR_ACCESS_DENIED(5)`**；同一个 exe 换到 `D:\`、`D:\agent`、`C:\Users\Public`、`%TEMP%`、
+  `D:\DeskPetTest` 就 `NIM_ADD=True err=0`。**Electron 不看返回值**，所以表现成“托盘静默消失”。
+  产品本身没问题：0.6.6 打包版从 `D:\DeskPetTest\app` 启动后，通知区溢出层里能看到 `[小芳 · 桌宠]`
+  （截图 `.tmp/overflow-now.png`，粉发头像在第一格）。
+- **实验链**（脚本在 `.tmp/`，都可复现）：
+  1. 裸 P/Invoke 探针 `trayprobe.cs`（`CreateWindowEx` + `LoadImage`(ICO) + `Shell_NotifyIcon` + `GetRect`，
+     结果写 `probe-result.txt`）：`D:\project\.tmp\cstray\trayprobe.exe` → `NIM_ADD=False err=5`；
+     同一个 exe 复制到 `%TEMP%` → `NIM_ADD=True err=0`。
+  2. 目录矩阵（同一个 exe 只改位置）：`D:\` ✅、`D:\project` ❌、`D:\project\.tmp` ❌、
+     `D:\project\deskpet` ❌、`C:\Users\Public` ✅、`%TEMP%` ✅、`D:\agent` ✅。
+  3. 换名字/位置：`D:\project2` ✅、`D:\zz\project` ✅、`D:\project_new` ✅、`D:\project\zz2` ❌
+     → 只跟“这个目录对象”有关，与名字无关。
+  4. 排除 ACL：把 `D:\project` 的 DACL 原样 `Set-Acl` 复刻到 `D:\ACLtest3` → `NIM_ADD=True`；
+     只加 `Everyone Deny DeleteSubdirectoriesAndFiles` 的 `D:\ACLtest2` → 也 True。→ **不是 DACL**。
+  5. 排除 cwd：exe 在 `D:\DeskPetTest`、工作目录指 `D:\project` → 成功。
+  6. 排除签名：同一个 exe 未签名与自签名（`CN=DeskPet Tray Probe`）都试过，结果随目录变、不随签名变。
+  7. `D:\project` 上确实有沙箱留下的 `Everyone Deny DeleteSubdirectoriesAndFiles` 和一个
+     `S-1-4-425126737-478641074` 能力 SID，但复刻复现不了 → 不是它们（具体机制本机无权限进一步查 SACL/过滤器）。
+- **对开发的影响**：**开发/验证一律在 `D:\project` 之外跑**（复制到 `D:\DeskPetTest` 或 `%TEMP%`）；
+  产品侧无需改代码，`Ctrl+Alt+P` + 悬浮菜单 + 设置页状态这些兜底仍然保留（用户在异常环境下也有出口）。
+- **正确检测法**（别用 `getBounds()`，折叠时也是 0）：UIA 找 `Shell_TrayWnd` → 「显示隐藏的图标」按钮
+  （要找 `ControlType.Button`，同名的 ToolTip/Text 会先命中且没有 `InvokePattern`）→ `InvokePattern` →
+  `EnumWindows` 找类名含 `Overflow` → 遍历子 `Button.Name`（`.tmp/list-overflow.ps1`）。
+- 顺带结论：`getBounds()` 全 0 **不能**作为“托盘不可用”的判据；`Tray` 不会抛错是因为 `NIM_ADD`
+  返回 `FALSE` 被 Electron 丢弃。
 
 ### 8.2 `Ctrl+Alt+P` 真人按键（已验）
 `keybd_event` 发系统级 Ctrl+Alt+P（不是 CDP 页面注入），配合 UIA 读桌宠窗口 `IsWindowVisible`：
@@ -174,4 +185,5 @@
 
 - 真机上的**屏幕阅读器**（NVDA/讲述人）与高对比度主题仍未验证，只有自动化审计（86 项 + 键盘 6 项）。
 - portable 包在本机被安全软件拦住，**没在干净机器上验过**；上架/签名仍未做。
-- 托盘问题只能等 Electron 上游或 Windows 修；应用侧只剩兜底（`Ctrl+Alt+P`、悬浮菜单、设置页状态）。
+- 托盘“不显示”已确认是本机 `D:\project` 目录特性（见 8.1），打包产物在目录外正常；产品侧无需再追。
+- 之前若干轮（M6、M10、M17 §8.1 旧版）把它归因为“Electron 与 Win11 通知区兼容问题”，**已纠正**。
