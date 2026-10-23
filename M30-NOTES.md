@@ -338,3 +338,13 @@ WMO 码表、AQI 分级、三天标签、建议句都写成中文字面量，共
   于是界面上直接把键名当文案显示。修为嵌套对象，并补了 en 面板实测（`Clicking the character` / `Water drop`）。
 
 基线 **103 → 92**。
+
+### 阶段三-K：诊断导出（已完成）
+
+- `app/main/diagnostics.js` 16 处 → 0：标题、分节名（应用/托盘与快捷键/屏幕/天气缓存/设置/两个日志尾巴）、
+  字段名与冒号分隔符都进字典（`diag.*`）；英文用 `: `，中文用全角`：`。
+- `createDiagnostics` 收 `t`，内部 `tr(key) = t('diag.' + key)`，缺翻译器退短键名。
+- 脱敏标记从 `[已脱敏]` 改成固定英文 `[redacted]`——它是数据契约的一部分，不该随语言变。
+- 验证：en 数据目录 `exportDiagnostics()` 产物头部 = `# Desk Pet diagnostics` / `Generated:` / `## App` / `Version: 0.6.9`。
+
+基线 **92 → 76**。

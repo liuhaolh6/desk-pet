@@ -13,9 +13,10 @@ const os = require('node:os')
 const path = require('node:path')
 const { screen, shell } = require('electron')
 
-const REDACTED = '[已脱敏]'
+const REDACTED = '[redacted]'
 
-function createDiagnostics({ version, getStore, logger, getWeather, getTrayStatus, getShortcutReport, log }) {
+function createDiagnostics({ version, getStore, logger, getWeather, getTrayStatus, getShortcutReport, log, t }) {
+  const tr = (key) => (typeof t === 'function' ? t('diag.' + key) : key)
   function sanitizedSettings() {
     const s = JSON.parse(JSON.stringify(getStore().readSettings()))
     if (s.weather) {
@@ -49,34 +50,34 @@ function createDiagnostics({ version, getStore, logger, getWeather, getTrayStatu
     } catch (err) {}
     const weatherLine = weather
       ? JSON.stringify({ ok: weather.ok, temp: weather.temp, code: weather.code, updatedAt: weather.updatedAt })
-      : '（还没取过天气）'
+      : tr('noWeather')
     return [
-      '# 桌宠诊断信息',
-      '生成时间：' + new Date().toISOString(),
+      tr('title'),
+      tr('generatedAt') + tr('sep') + new Date().toISOString(),
       '',
-      '## 应用',
-      '版本：' + version,
-      'Electron：' + process.versions.electron + ' / Chromium ' + process.versions.chrome + ' / Node ' + process.versions.node,
-      '系统：' + process.platform + ' ' + process.arch + ' ' + os.release(),
-      '数据目录：' + store.dir,
-      '日志文件：' + (logger.filePath() || '（还没定下来）'),
+      tr('app'),
+      tr('version') + tr('sep') + version,
+      tr('electron') + tr('sep') + process.versions.electron + ' / Chromium ' + process.versions.chrome + ' / Node ' + process.versions.node,
+      tr('system') + tr('sep') + process.platform + ' ' + process.arch + ' ' + os.release(),
+      tr('dataDir') + tr('sep') + store.dir,
+      tr('logFile') + tr('sep') + (logger.filePath() || tr('logFilePending')),
       '',
-      '## 托盘与快捷键',
+      tr('tray'),
       JSON.stringify({ tray: getTrayStatus(), shortcut: getShortcutReport() }, null, 2),
       '',
-      '## 屏幕',
+      tr('screen'),
       JSON.stringify(displays, null, 2),
       '',
-      '## 天气缓存（不含坐标）',
+      tr('weather'),
       weatherLine,
       '',
-      '## 设置（坐标与自定义短语已脱敏）',
+      tr('settings'),
       JSON.stringify(sanitizedSettings(), null, 2),
       '',
-      '## app.log 末尾 200 行',
+      tr('appLog'),
       logger.tail(logger.filePath(), 200, 256 * 1024),
       '',
-      '## cutout-trace.jsonl 末尾 60 行',
+      tr('cutoutTrace'),
       logger.tail(path.join(store.dir, 'cutout-trace.jsonl'), 60, 128 * 1024),
       '',
     ].join('\n')

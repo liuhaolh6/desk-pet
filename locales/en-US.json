@@ -1176,5 +1176,24 @@
     "noPhotoShort": "Haven't got the photo yet",
     "audioTooLarge": "That clip is over 8MB — try a shorter one",
     "noData": "Didn't receive the image data"
+  },
+  "diag": {
+    "noWeather": "(no weather fetched yet)",
+    "title": "# Desk Pet diagnostics",
+    "generatedAt": "Generated",
+    "app": "## App",
+    "version": "Version",
+    "electron": "Electron",
+    "system": "System",
+    "dataDir": "Data directory",
+    "logFile": "Log file",
+    "logFilePending": "(not decided yet)",
+    "tray": "## Tray and shortcut",
+    "screen": "## Screen",
+    "weather": "## Weather cache (no coordinates)",
+    "settings": "## Settings (coordinates and custom phrases redacted)",
+    "appLog": "## Last 200 lines of app.log",
+    "cutoutTrace": "## Last 60 lines of cutout-trace.jsonl",
+    "sep": ": "
   }
 }

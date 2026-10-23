@@ -91,7 +91,7 @@ const trayHost = createTrayHost({
     quit: () => { quitting = true; app.quit() },
   },
 })
-const diagnostics = createDiagnostics({
+const diagnostics = createDiagnostics({ t: (key, vars) => t(key, vars),
   version: VERSION,
   getStore: () => store,
   logger,

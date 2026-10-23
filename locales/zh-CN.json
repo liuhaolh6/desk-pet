@@ -1176,5 +1176,24 @@
     "noPhotoShort": "还没拿到照片",
     "audioTooLarge": "音频超过 8MB 啦，换一段短一点的吧",
     "noData": "没收到图片数据"
+  },
+  "diag": {
+    "noWeather": "（还没取过天气）",
+    "title": "# 桌宠诊断信息",
+    "generatedAt": "生成时间",
+    "app": "## 应用",
+    "version": "版本",
+    "electron": "Electron",
+    "system": "系统",
+    "dataDir": "数据目录",
+    "logFile": "日志文件",
+    "logFilePending": "（还没定下来）",
+    "tray": "## 托盘与快捷键",
+    "screen": "## 屏幕",
+    "weather": "## 天气缓存（不含坐标）",
+    "settings": "## 设置（坐标与自定义短语已脱敏）",
+    "appLog": "## app.log 末尾 200 行",
+    "cutoutTrace": "## cutout-trace.jsonl 末尾 60 行",
+    "sep": "："
   }
 }
