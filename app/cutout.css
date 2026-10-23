@@ -351,3 +351,20 @@ button:disabled {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* 高对比度：舞台边缘与"回退模式"提示原本靠内阴影，阴影在强制色下会被移除。 */
+@media (forced-colors: active) {
+  .stage,
+  .stage-card {
+    border: 1px solid CanvasText;
+  }
+
+  .stage.is-fallback {
+    forced-color-adjust: none;
+    box-shadow: inset 0 0 0 2px CanvasText;
+  }
+
+  .stage-tools button {
+    border: 1px solid ButtonText;
+  }
+}

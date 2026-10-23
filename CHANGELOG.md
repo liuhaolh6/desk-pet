@@ -9,6 +9,15 @@
 - 计划中的工作与现有不足的完整清单见 [`ROADMAP.md`](ROADMAP.md)（成熟度评分、P0–P3 方向、未来展望）；
   机制细节与踩坑记录见 [`HANDOFF.md`](HANDOFF.md)。
 
+### 无障碍
+- **真机 a11y（ROADMAP P1-8）**：把"只在代码里保证"的三件事搬到真窗口上验。200% 缩放（`--force-device-scale-factor=2`，
+  `devicePixelRatio === 2`）下四个窗口横向溢出都是 0，截图进 `docs/a11y-shots/`；高对比度用 `--force-high-contrast` 起，
+  媒体查询命中后钉住系统色——设置页当前分类改成 `outline: 2px Highlight`，四个 CSS 都补了 `forced-colors` 分支，
+  云朵框显式 `forced-color-adjust: none` + `Canvas/CanvasText`，避免深色高对比主题下变成"黑底黑字"。
+  本机没装 NVDA，于是新增 `tools/a11y-tree.js` 直接走 CDP `Accessibility.getFullAXTree`：四个窗口 83 个可交互节点、
+  **没有名字的 0 个**，NVDA 的手工朗读清单写进 `A11Y-AUDIT.md` §7.3；另有 `tools/a11y-real.js` 一键重拍截图 + 量溢出。
+  验证：check-a11y 84 → **95** 项（新增 forced-colors 分支与系统色断言）、audit 86/0、keyboard 6/6、a11y-tree 4/4、A11Y-AUDIT 新增 §7。见 [`M25-NOTES.md`](M25-NOTES.md)。
+
 ### 气泡时机
 - **主动说话（ROADMAP P1-7）**：以前它只在被点/到点提醒时开口，电脑前坐一整天也不会主动说一句话。现在按三条本地规则
   自己冒泡：连续用满 50 分钟（且最近 1 分钟还在动）、23 点后还在用、两小时没有任何互动。决策在 `lib/nudges.js` 里是纯函数
