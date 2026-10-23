@@ -76,7 +76,7 @@ async function main() {
   console.log(`e2e: ${cases.length} 个用例，端口 ${port}`)
 
   try {
-    const stub = await startGeocodeStub()
+    stub = await startGeocodeStub()
     app = await launch({ port, env: { DESKPET_GEOCODE_BASE: stub.base } })
     const target = await waitForTarget(port, 'pet.html')
     const pet = await connect(target)
@@ -102,8 +102,9 @@ async function main() {
         console.log(`FAIL ${item.name} (${Date.now() - started}ms)`)
         console.log(`     - ${err.message}`)
       }
-      // 每个用例之间回到初始态
-      await pet.evaluate('document.getElementById("bubble").classList.remove("show")').catch(() => {})
+      // 每个用例之间回到初始态。P2-4 之后气泡住在 overlay 窗口里，
+      // 桌宠窗口这边只剩 hideBubbleCard 这一个开关可用。
+      await pet.evaluate('(() => { try { window.deskPet.hideBubbleCard() } catch (err) {} })()').catch(() => {})
       await sleep(400)
     }
 
