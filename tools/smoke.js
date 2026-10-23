@@ -735,12 +735,14 @@ const PAD = 54
   // 0.6.2: the bubble always sits above the pet; when the pet is too close to
   // the top it is pushed down so the bubble keeps its full size. The window is
   // only re-bounded when something actually changed.
-  assert.ok(/const side = 'above'/.test(mainJs), '气泡固定出现在桌宠上方（不再翻到下面）')
-  assert.ok(/const minTop = work\.y \+ reserve/.test(mainJs), '上方空间不够时把桌宠下移，保留气泡大小')
-  assert.ok(/const changed = side !== bubbleSide/.test(mainJs) && /if \(changed\) \{/.test(mainJs), '尺寸未变时不调用 setBounds')
-  assert.ok(/const floorTop = Math\.min\(maxTop, display\.workArea\.y \+ extraBubbleHeight\)/.test(mainJs), '拖拽也不能把桌宠拖进气泡预留区')
-  assert.ok(/updatePetInteractive/.test(mainJs) && /pet:rects/.test(mainJs), '命中判定放在主进程轮询（渲染层 mousemove 会漏首个事件）')
-  assert.ok(/petWin\.setIgnoreMouseEvents\(!inside/.test(mainJs), '命中时恢复可交互')
+  const layoutJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'window-layout.js'), 'utf8')
+  assert.ok(/const side = 'above'/.test(layoutJs), '气泡固定出现在桌宠上方（不再翻到下面）')
+  assert.ok(/const minTop = work\.y \+ wantReserve/.test(layoutJs), '上方空间不够时把桌宠下移，保留气泡大小')
+  assert.ok(/const changed = side !== bubbleSide/.test(layoutJs) && /if \(changed\) \{/.test(layoutJs), '尺寸未变时不调用 setBounds')
+  assert.ok(/const floorTop = Math\.min\(maxTop, display\.workArea\.y \+ layout\.reserve\)/.test(mainJs), '拖拽也不能把桌宠拖进气泡预留区')
+  assert.ok(/bubbleHidden/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')) && /pet:bubble-hidden/.test(mainJs), '收起气泡只退出状态、不缩窗口')
+  assert.ok(/function updateInteractive/.test(layoutJs) && /pet:rects/.test(mainJs), '命中判定放在主进程轮询（渲染层 mousemove 会漏首个事件）')
+  assert.ok(/setIgnoreMouseEvents\(!inside/.test(layoutJs), '命中时恢复可交互')
   assert.ok(/showTouchUi/.test(petJs), '触摸需要无 hover 的菜单入口')
   assert.ok(/\.pet-wrap\.touch-ui \.menu-btn/.test(petCss), 'touch-ui 下菜单按钮可见可点')
   assert.ok(/lastTouchAt/.test(petJs), '触摸后短时间忽略兼容鼠标事件')
@@ -767,8 +769,9 @@ const PAD = 54
   const petJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.js'), 'utf8')
   const petCss = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.css'), 'utf8')
   assert.ok(!/Math\.max\(display\.workArea\.y,/.test(mainJs), '气泡加高不得把窗口顶部 clamp 到工作区（会顶动桌宠）')
-  assert.ok(/windowBoundsForPet\(pet\.x, petTop, size, reserve\)/.test(mainJs), '有空间时桌宠屏幕矩形不变，只改窗口高度')
-  assert.ok(/const minTop = work\.y \+ reserve/.test(mainJs), '空间不够时桌宠下移，气泡始终在上方')
+  const layoutJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'window-layout.js'), 'utf8')
+  assert.ok(/windowBoundsForPet\(pet\.x, petTop, size, wantReserve\)/.test(layoutJs), '有空间时桌宠屏幕矩形不变，只改窗口高度')
+  assert.ok(/const minTop = work\.y \+ wantReserve/.test(layoutJs), '空间不够时桌宠下移，气泡始终在上方')
   assert.ok(/ipcMain\.handle\('pet:bubble'/.test(mainJs), 'pet:bubble 回传授予的空间与侧别')
   assert.ok(/applyBubbleRoom/.test(petJs), '渲染层按授予的空间/侧别定位气泡')
   assert.ok(/aspect-ratio:\s*1026/.test(petCss), '气泡框保持固定比例')
@@ -795,6 +798,10 @@ const PAD = 54
   assert.ok(!/Math\.max\(0\.45,/.test(petJs), '旧的 0.45 下限已移除')
   assert.ok(/function overflowAmount/.test(petJs) && /firstElementChild/.test(petJs), '溢出用渲染矩形实测（居中安全区两端溢出的内容也要算）')
   assert.ok(/keepRatio/.test(petJs) && /over\.h \/ h/.test(petJs), '截断按实际超出比例整体收缩，而不是每次只剪 10%')
+  assert.ok(
+    /if \(clickTimer\) \{[\s\S]{0,60}clearTimeout\(clickTimer\)/.test(petJs),
+    '真拖动开始时取消待触发的单击计时（否则 dragging 里会冒出 bubble-show）',
+  )
   assert.ok(/function clampBubbleText/.test(petJs) && /dataset\.full/.test(petJs), '到下限后逐字截断，并将全文存在 data-full 供重渲染还原')
   assert.ok(/span\.title = full/.test(petJs) && /setAttribute\('aria-label', full\)/.test(petJs), '截断后的全文仍留在 title / aria-label')
   assert.ok(/clampBubbleText\(\)[\s\S]{0,40}\}/.test(petJs), '每次排版都先还原再截断（换卡不叠加省略）')
@@ -803,7 +810,7 @@ const PAD = 54
   assert.ok(/wireBubbleClick/.test(petJs) && /bubble\.addEventListener\('click'/.test(petJs), '点击气泡收起')
   assert.ok(/band\(0\.05/.test(petJs) && /bubble-bshape/.test(petJs), '气泡命中区跟随绘制出的云朵，而不是矩形框')
   assert.ok(/setIgnoreMouseEvents\(true, \{ forward: true \}\)/.test(mainJs), '固定预留区默认鼠标穿透')
-  assert.ok(/sendRects/.test(petJs) && /pet:rects/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')) && /updatePetInteractive/.test(mainJs), '渲染层上报命中区、主进程轮询光标决定可交互')
+  assert.ok(/sendRects/.test(petJs) && /pet:rects/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')) && /function updateInteractive/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'window-layout.js'), 'utf8')), '渲染层上报命中区、主进程轮询光标决定可交互')
 
   for (const key of ['water.progress', 'water.interval', 'water.quiet', 'water.last', 'water.tip']) {
     assert.ok(modelJs.includes("key: '" + key + "'"), '新增喝水模块 ' + key)
@@ -896,7 +903,7 @@ const PAD = 54
   const root = path.join(__dirname, '..')
   const modDir = path.join(root, 'app', 'main')
   const mods = fs.readdirSync(modDir).filter((f) => f.endsWith('.js')).sort()
-  assert.deepEqual(mods, ['diagnostics.js', 'geometry.js', 'log.js', 'tray.js'], 'app/main/ 下的模块名单')
+  assert.deepEqual(mods, ['diagnostics.js', 'geometry.js', 'log.js', 'tray.js', 'window-layout.js'], 'app/main/ 下的模块名单')
   const mainJs = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
   for (const name of mods) {
     const file = path.join(modDir, name)
@@ -984,6 +991,88 @@ const PAD = 54
   assert.ok(/winState\.is\('dragging'\)/.test(mainJs2), '点击穿透读状态机的 dragging')
   assert.ok(/setMenu: \(open\) => ipcRenderer\.send\('pet:menu'/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')), 'preload 爆出 setMenu')
   ok('P1-2 状态机：全矩阵转移、非法计数、菜单/拖动/抠图序列与接线')
+}
+
+{
+  // P1-1 stage 2: window layout module — pure hit test plus a fake-window run
+ // of the reserve maths (same numbers the real window produces).
+  const layoutMod = require(path.join(__dirname, '..', 'app', 'main', 'window-layout.js'))
+  const bounds = { x: 100, y: 200, width: 328, height: 400 }
+  assert.equal(layoutMod.hitTest({ x: 150, y: 250 }, bounds, [{ x: 40, y: 40, w: 100, h: 100 }]), true, '命中矩形内')
+  assert.equal(layoutMod.hitTest({ x: 139, y: 250 }, bounds, [{ x: 40, y: 40, w: 100, h: 100 }]), false, '矩形左边界外 1px')
+  assert.equal(layoutMod.hitTest({ x: 240, y: 340 }, bounds, [{ x: 40, y: 40, w: 100, h: 100 }]), true, '含右下边界')
+  assert.equal(layoutMod.hitTest({ x: 250, y: 250 }, bounds, [{ x: 40, y: 40, w: 100, h: 100 }, { x: 150, y: 0, w: 10, h: 10 }]), false, '多个矩形都不中')
+  assert.equal(layoutMod.hitTest({ x: 0, y: 0 }, bounds, []), false, '没有矩形时不命中')
+
+  const placementLib = require(path.join(__dirname, '..', 'lib', 'placement'))
+  let winBounds = { x: 146, y: 120, width: 328, height: 400 }
+  const win = {
+    getBounds: () => ({ ...winBounds }),
+    setBounds: (b) => { winBounds = { ...b } },
+    setBackgroundColor: () => {},
+    setIgnoreMouseEvents: () => {},
+    isDestroyed: () => false,
+  }
+  const work = { x: 0, y: 0, width: 1920, height: 1040 }
+  const fakeScreen = {
+    getPrimaryDisplay: () => ({ id: 1, workArea: work }),
+    getAllDisplays: () => [{ id: 1, workArea: work }],
+    getCursorScreenPoint: () => ({ x: 0, y: 0 }),
+    getDisplayNearestPoint: () => ({ id: 1, workArea: work }),
+    getDisplayMatching: () => ({ id: 1, workArea: work }),
+  }
+  const lay = layoutMod.createWindowLayout({
+    screen: fakeScreen,
+    placement: placementLib,
+    readSettings: () => ({ size: 220 }),
+    log: () => {},
+    winState: { is: (s) => s === 'idle' },
+    getWindow: () => win,
+    onMirror: () => {},
+  })
+  lay.begin({ x: 200, y: 300, reserve: 180 })
+  assert.deepEqual(lay.petScreenRect(220), { x: 200, top: 300, bottom: 520 }, '有 petPos 时直接用记录的位置')
+  assert.deepEqual(lay.windowBoundsForPet(200, 300, 220, 180), { x: 146, y: 120, width: 328, height: 400 }, '窗口 = 桌宠 - 左右留白 / 向上预留')
+  assert.equal(lay.mirrorSide(), 'none', '居中不贴边')
+
+  const grown = lay.applyBubbleHeight(170)
+  assert.deepEqual(grown, { reserve: 170, side: 'above' }, '气泡固定在上方')
+  assert.equal(winBounds.height, 220 + 170, '窗口高 = 桌宠 + 预留')
+  assert.equal(winBounds.y, 300 - 170, '向上长，桌宠不动')
+  assert.deepEqual(lay.petPos, { x: 200, y: 300 }, '桌宠不该被顶走')
+
+  const shrunk = lay.applyBubbleHeight(0)
+  assert.equal(shrunk.reserve, 0, '收气泡时预留归零')
+  assert.equal(winBounds.height, 220, '窗口收回到桌宠高度')
+
+  lay.applyBubbleHeight(20)
+  assert.equal(lay.reserve, 0, '小于 40px 的残留视为无气泡')
+
+  // Near the top edge the pet is pushed down instead of the bubble flipping.
+  lay.begin({ x: 200, y: 20, reserve: 0 })
+  winBounds = { x: 146, y: 20, width: 328, height: 220 }
+  lay.applyBubbleHeight(180)
+  assert.equal(lay.petPos.y, 180, '贴近顶部时桌宠下移到预留线')
+  assert.equal(winBounds.y, 0, '窗口顶部仍在工作区内')
+
+  // Click-through: dragging is interactive without waiting for the cursor poll.
+  const dragLay = layoutMod.createWindowLayout({
+    screen: fakeScreen, placement: placementLib, readSettings: () => ({ size: 220 }), log: () => {},
+    winState: { is: (s) => s === 'dragging' }, getWindow: () => win, onMirror: () => {},
+  })
+  dragLay.updateInteractive()
+  assert.equal(dragLay.interactive, true, '拖动中始终可交互')
+
+  const mainJs3 = fs.readFileSync(path.join(__dirname, '..', 'app', 'main.js'), 'utf8')
+  assert.ok(/createWindowLayout\(/.test(mainJs3), 'main.js 接入 window-layout')
+  assert.ok(/ipcMain\.handle\('pet:reserve'/.test(mainJs3), '预留与可见性分开：pet:reserve 只负责 strip')
+  assert.ok(/let bubbleVisible = false/.test(mainJs3), '可见性去重，重复的 bubble-show 不再重复转移')
+  const preloadReserve = fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')
+  assert.ok(/setReserve: \(height\) => ipcRenderer\.invoke\('pet:reserve'/.test(preloadReserve), 'preload 暴露 setReserve')
+  const petJsStage2 = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.js'), 'utf8')
+  assert.ok(/async function reserveSpace/.test(petJsStage2) && /async function showBubbleFrame/.test(petJsStage2), '保留量/可见性拆成两个函数')
+  assert.ok(!/let petPos/.test(mainJs3) && !/function applyBubbleHeight/.test(mainJs3), '旧的布局状态与函数已移出 main.js')
+  ok('P1-1 阶段 2：命中纯函数、预留增长/收缩、贴边下推、拖动可交互')
 }
 
 console.log('\n' + pass + ' checks passed')

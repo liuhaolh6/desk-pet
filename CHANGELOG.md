@@ -15,6 +15,12 @@
   （`app:status` 字段形状、托盘菜单项、诊断导出文件格式均同 0.6.6）。smoke 新增模块契约与几何纯函数断言（54 项）。
   细节与剩余阶段见 [`M18-NOTES.md`](M18-NOTES.md)。
 
+- **主进程拆模块（阶段 2）**（ROADMAP P1-1）：新增 `app/main/window-layout.js`（250 行，零 Electron 依赖）——
+  把 `hitRects/petInteractive/updateInteractive/getDisplays/resolveWindowPosition/applyBubbleHeight` 抽成
+  `hitTest()` 纯函数 + `createWindowLayout()`，`app/main.js` 1284 → **1148 行**。顺带修掉一个真实竞态：
+  窗口 resize 后的"重新量预留"会冒充 `bubble-show`，导致拖动中状态机非法转移、状态卡在 `bubble`；
+  现在 `pet:bubble` 只管可见性、`pet:reserve` 只管预留（见 M18-NOTES §5）。
+
 - **显式窗口状态机**（ROADMAP P1-2 / L7）：新增 `app/window-state.js`（纯 Node，127 行）——
   `idle / bubble / menu / dragging / cutout` 五态 + 转移表 + 非法事件计数（不抛异常，留给诊断用），
   取代原来的 `petDragging` 散子与 `540ms/50ms` 时序约定；`app:status` 多了 `window: { state, illegal, lastIllegal }`。

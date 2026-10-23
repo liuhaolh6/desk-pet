@@ -177,15 +177,30 @@
     requestAnimationFrame(reportHitRects)
   }
 
-  async function resizeForBubble(height) {
+  async function reserveSpace(height) {
     const extra = Math.max(0, Math.round(height))
+    let res = { reserve: extra, side: 'above' }
+    try {
+      const granted = await api.setReserve(extra)
+      if (granted && typeof granted === 'object') res = granted
+    } catch (err) {}
+    applyBubbleRoom(res)
+    return res
+  }
+
+  async function showBubbleFrame(height, stale) {
+    const extra = Math.max(0, Math.round(height))
+    // A drag can start between `showBubble()` and this call; the reservation is
+    // per pet size (0.6.1), so when the card is already stale we skip the IPC
+    // instead of telling the main process "a bubble is visible" mid-drag.
+    if (stale && stale()) return { reserve: extra, side: 'above' }
     if (window.DESKPET_TRACE_BUBBLE && extra !== state.lastReserve) {
       state.lastReserve = extra
       console.log('bubble-resize', extra)
     }
     let res = { reserve: extra, side: 'above' }
     try {
-      const granted = await api.setBubble(extra > 0, extra)
+      const granted = await api.setBubble(true, extra)
       if (granted && typeof granted === 'object') res = granted
     } catch (err) {}
     applyBubbleRoom(res)
@@ -335,8 +350,8 @@
   async function syncBubbleSpace() {
     syncBubbleMetrics()
     fitBubbleText()
-    if (state.menuOpen) return resizeForBubble(Math.max(bubbleReserve(), measureMenu()))
-    return resizeForBubble(bubbleReserve())
+    if (state.menuOpen) return reserveSpace(Math.max(bubbleReserve(), measureMenu()))
+    return reserveSpace(bubbleReserve())
   }
 
   async function showBubble(node) {
@@ -355,7 +370,7 @@
     fitBubbleText()
     const reserve = bubbleReserve()
     if (window.DESKPET_TRACE_BUBBLE) console.log('bubble-reserve', reserve, 'w=' + bubble.offsetWidth, 'h=' + bubble.offsetHeight, 'inner=' + window.innerWidth)
-    await resizeForBubble(reserve)
+    await showBubbleFrame(reserve, () => state.bubbleToken !== token)
     if (state.bubbleToken !== token) return
     void bubble.offsetHeight
     state.showTimer = setTimeout(() => {
@@ -378,6 +393,8 @@
     bubble.classList.remove('show')
     // 0.6.4: no shrink here. Resizing the transparent window is what produced
     // the flicker; the strip is click-through instead (main-process hit poll).
+    // P1-2: the machine still has to leave `bubble` — tell it without resizing.
+    try { api.bubbleHidden() } catch (err) {}
     scheduleRectReport()
   }
 
@@ -552,7 +569,7 @@
     void petMenu.offsetHeight
     // 0.6.2: reserve max(bubble strip, menu) so opening/closing the menu never
     // shrinks the transparent window (one less flash source).
-    resizeForBubble(Math.max(bubbleReserve(), measureMenu()))
+    reserveSpace(Math.max(bubbleReserve(), measureMenu()))
     clearTimeout(state.menuShowTimer)
     state.menuShowTimer = setTimeout(() => {
       if (!state.menuOpen) return
@@ -573,7 +590,7 @@
     const finish = () => {
       if (state.menuOpen) return
       petMenu.hidden = true
-      if (!bubble.classList.contains('show')) resizeForBubble(bubbleReserve())
+      if (!bubble.classList.contains('show')) reserveSpace(bubbleReserve())
     }
     if (immediate) finish()
     else setTimeout(finish, 180)
@@ -653,6 +670,11 @@
   let suppressClickUntil = 0
 
   function wirePet() {
+    // Pending single-click timer. A real drag cancels it: otherwise a click that
+    // was pressed just before the drag fires `advance()` mid-drag and the main
+    // process sees `bubble-show` while the window is in `dragging` (illegal).
+    let clickTimer = 0
+
     // Coalesce drag updates to one per animation frame: one IPC + one window
     // move per frame instead of one per pointer event (which stutters).
     let dragAccX = 0
@@ -691,6 +713,10 @@
       if (!d.moved && Math.abs(dx) + Math.abs(dy) < 4) return
       if (!d.moved) {
         d.moved = true
+        if (clickTimer) {
+          clearTimeout(clickTimer)
+          clickTimer = 0
+        }
         // Drop the bubble only once a real drag starts. Hiding it on every
         // pointerdown used to reset the click queue before `advance()` ran.
         if (bubble.classList.contains('show')) hideBubble()
@@ -734,7 +760,6 @@
 
     // Single click advances the card queue. Settings live in the hover menu;
     // there is intentionally no double-click shortcut or pet right-click menu.
-    let clickTimer = 0
     pet.addEventListener('click', () => {
       if (petWrap.classList.contains('dragging')) return
       if (Date.now() < suppressClickUntil) return
@@ -757,7 +782,7 @@
     // resize the transparent window again.
     syncBubbleMetrics()
     fitBubbleText()
-    resizeForBubble(bubbleReserve()).catch(() => {})
+    reserveSpace(bubbleReserve()).catch(() => {})
     window.addEventListener('resize', () => { syncBubbleSpace().catch(() => {}) })
     reportHitRects()
     window.addEventListener('resize', scheduleRectReport)
@@ -789,7 +814,7 @@
         const id = state.currentCard
         const card = id ? cardById(id) : null
         if (card) renderCard(card, id, { playSound: false, markWeather: false })
-        else resizeForBubble(measureBubble())
+        else reserveSpace(measureBubble())
       }
     })
     // Role list can change without a settings write (import/cutout/delete).
