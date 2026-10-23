@@ -1,6 +1,6 @@
 name: Release
 
-# 推送 v* tag 时构建 Windows portable 产物，并创建（或补传）GitHub Release。
+# 推送 v* tag 时构建 Windows portable + 安装版（NSIS）产物，并创建（或补传）GitHub Release。
 # 用 Actions 自带的 GITHUB_TOKEN，不需要额外 secret；签名流程见 sign-release.yml。
 #
 # 注意：electron-builder 默认下载的 NSIS 是 32 位 makensis，对 ~170MB 的 portable
@@ -120,20 +120,29 @@ jobs:
           npm run dist 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\build.log"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      # P2-1：安装版（NSIS）。和 portable 用同一份 app，装到 %LOCALAPPDATA%\Programs\DeskPet，
+      # 卸载不删 %APPDATA%\desk-pet 里的数据。
+      - name: Build installer
+        shell: pwsh
+        run: |
+          npm run dist:installer 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\build-installer.log" -Append
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Checksums
         shell: bash
         run: |
           cd dist
-          sha256sum DeskPet-*-portable.exe > SHA256SUMS.txt
+          sha256sum DeskPet-*-portable.exe DeskPet-*-setup.exe > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
       - name: Verify artifact version
         shell: pwsh
         run: |
-          $exe = Get-ChildItem dist\DeskPet-*-portable.exe | Select-Object -First 1
           $expected = (Get-Content package.json | ConvertFrom-Json).version
-          if ($exe.Name -notlike "*$expected*") { throw "artifact $($exe.Name) does not match package version $expected" }
-          Write-Host "artifact: $($exe.Name) $($exe.Length) bytes"
+          foreach ($exe in @(Get-ChildItem dist\DeskPet-*-portable.exe, dist\DeskPet-*-setup.exe)) {
+            if ($exe.Name -notlike "*$expected*") { throw "artifact $($exe.Name) does not match package version $expected" }
+            Write-Host "artifact: $($exe.Name) $($exe.Length) bytes"
+          }
 
       - name: Create or update release
         shell: bash
@@ -142,9 +151,9 @@ jobs:
         run: |
           tag="${{ inputs.tag || github.ref_name }}"
           if gh release view "$tag" >/dev/null 2>&1; then
-            gh release upload "$tag" dist/DeskPet-*-portable.exe dist/SHA256SUMS.txt --clobber
+            gh release upload "$tag" dist/DeskPet-*-portable.exe dist/DeskPet-*-setup.exe dist/SHA256SUMS.txt --clobber
           else
-            gh release create "$tag" dist/DeskPet-*-portable.exe dist/SHA256SUMS.txt \
+            gh release create "$tag" dist/DeskPet-*-portable.exe dist/DeskPet-*-setup.exe dist/SHA256SUMS.txt \
               --title "$tag" --generate-notes
           fi
 
@@ -178,6 +187,8 @@ jobs:
           $tail = @()
           if (Test-Path $ciLog) { $tail += '--- npm ci (tail) ---'; $tail += (Get-Content $ciLog -Tail 30) }
           if (Test-Path $log) { $tail += '--- npm run dist (tail) ---'; $tail += (Get-Content $log -Tail 60) }
+          $setupLog = Join-Path $env:RUNNER_TEMP 'build-installer.log'
+          if (Test-Path $setupLog) { $tail += '--- npm run dist:installer (tail) ---'; $tail += (Get-Content $setupLog -Tail 60) }
           if ($tail.Count -eq 0) { $tail = @('no logs captured') }
           $fence = '```'
           $lines = @(

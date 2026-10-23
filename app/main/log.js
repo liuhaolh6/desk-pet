@@ -9,6 +9,7 @@
 'use strict'
 
 const fs = require('node:fs')
+const os = require('node:os')
 const path = require('node:path')
 
 function createLogger() {
@@ -17,7 +18,10 @@ function createLogger() {
 
   function breadcrumb(text) {
     try {
-      const target = path.join(path.dirname(process.execPath), 'desk-pet-boot.log')
+      // 开发时写在仓库根（exe 旁边）好找；打包后 exe 在安装目录里，写进去会让用户的
+      // Programs 目录多出一个陌生日志，所以退回系统临时目录（诊断时让用户发 %TEMP%\desk-pet-boot.log）。
+      const dir = process.defaultApp ? path.dirname(process.execPath) : os.tmpdir()
+      const target = path.join(dir, 'desk-pet-boot.log')
       let size = 0
       try { size = fs.statSync(target).size } catch (err) {}
       if (size > 32 * 1024) fs.writeFileSync(target, '')

@@ -12,6 +12,33 @@ const os = require('node:os')
 const fs = require('node:fs')
 
 /**
+ * The data folder order, as a pure function so the installer/portable/dev
+ * differences are testable without touching disk.
+ *
+ * Installed builds (NSIS) keep state in %APPDATA%\\desk-pet so that uninstalling
+ * the app does not delete the user's character, phrases and water log; the
+ * folder next to the exe is only a fallback for antivirus-blocked profiles.
+ * Portable builds still keep everything next to the exe so the folder can be
+ * moved (or put on a USB stick) with its state.
+ */
+function dataDirCandidates({ envDir, portableDir, exeDir, installed, roaming, tmp }) {
+  const candidates = []
+  if (envDir) candidates.push(path.resolve(envDir))
+  if (portableDir) candidates.push(path.join(portableDir, 'desk-pet-data'))
+  if (!installed && exeDir) candidates.push(path.join(exeDir, 'desk-pet-data'))
+  if (roaming) candidates.push(path.join(roaming, 'desk-pet'))
+  if (installed && exeDir) candidates.push(path.join(exeDir, 'desk-pet-data'))
+  if (tmp) candidates.push(path.join(tmp, 'desk-pet'))
+  return candidates
+}
+
+/** NSIS installs an uninstaller next to the exe; that is the cheapest reliable marker. */
+function isInstalledBuild(exeDir) {
+  if (!exeDir) return false
+  try { return fs.existsSync(path.join(exeDir, 'Uninstall DeskPet.exe')) } catch (err) { return false }
+}
+
+/**
  * @param {object} deps
  * @param {object} deps.app
  * @param {object} deps.logger  createLogger() 的返回值（需要 setFile）
@@ -27,24 +54,19 @@ function bootDataDir(deps) {
   log('pickDataDir start')
 
   function candidateDirs() {
-    const candidates = []
-    if (process.env.DESKPET_DATA_DIR) candidates.push(path.resolve(process.env.DESKPET_DATA_DIR))
-    // Portable build: keep settings next to the exe so the folder can be moved or
-    // copied (including to a USB stick) without losing state.
-    if (portableDir) candidates.push(path.join(portableDir, 'desk-pet-data'))
-    // Unpacked build: also allow the data folder next to the exe. This keeps the
-    // app usable when antivirus blocks writes to the user profile.
-    try { candidates.push(path.join(path.dirname(process.execPath), 'desk-pet-data')) } catch (err) {}
-    // Do NOT use app.getPath('userData') here: in restricted environments it can
-    // crash the process natively before we get a chance to fall back.
-    if (process.platform === 'win32') {
-      const roaming = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming')
-      candidates.push(path.join(roaming, 'desk-pet'))
-    } else {
-      candidates.push(path.join(os.homedir(), '.desk-pet'))
-    }
-    candidates.push(path.join(os.tmpdir(), 'desk-pet'))
-    return candidates
+    let exeDir = ''
+    try { exeDir = path.dirname(process.execPath) } catch (err) {}
+    const roaming = process.platform === 'win32'
+      ? process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming')
+      : path.join(os.homedir(), '.config')
+    return dataDirCandidates({
+      envDir: process.env.DESKPET_DATA_DIR || '',
+      portableDir,
+      exeDir,
+      installed: isInstalledBuild(exeDir),
+      roaming,
+      tmp: os.tmpdir(),
+    })
   }
 
   const candidates = candidateDirs()
@@ -79,4 +101,4 @@ function bootDataDir(deps) {
   return { dir, hasLock }
 }
 
-module.exports = { bootDataDir }
+module.exports = { bootDataDir, dataDirCandidates, isInstalledBuild }

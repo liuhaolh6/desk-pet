@@ -946,7 +946,8 @@ const PAD = 54
   assert.equal(geo.clamp(10, 80, 480), 80, 'clamp 下限')
   const log = require(path.join(__dirname, '..', 'app', 'main', 'log.js'))
   assert.equal(typeof log.createLogger, 'function', 'logger 工厂可导入')
-  ok('P1-1 模块：geometry 纯函数与 logger 工厂可直接 require')
+  assert.match(mainSource(), /process\.defaultApp \? path\.dirname\(process\.execPath\) : os\.tmpdir\(\)/, '打包后启动日志写临时目录，不污染安装目录')
+  ok('P1-1 模块：geometry 纯函数与 logger 工厂可直接 require；打包版 breadcrumb 落 %TEMP%')
 }
 
 {
