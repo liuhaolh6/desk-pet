@@ -882,7 +882,7 @@ const PAD = 54
   assert.ok(/ipcMain\.handle\('app:status'/.test(mainJs) && /getAppStatus: \(\) => ipcRenderer\.invoke\('app:status'\)/.test(preloadJs), '渲染层能读到托盘与快捷键状态')
   assert.ok(/id="trayStatus"/.test(settingsHtml) && /id="shortcutStatus"/.test(settingsHtml), '设置 → 其他 有托盘/快捷键两行说明')
   assert.ok(/renderAppStatus/.test(settingsJs) && /api\.getAppStatus\(\)/.test(settingsJs), '设置页打开时填入真实状态')
-  assert.ok(/托盘这次没显示出来/.test(settingsJs) && /浮出菜单/.test(settingsJs), '托盘失效时说明桌宠的悬浮菜单仍可用')
+  assert.ok(/other\.trayFailed/.test(settingsJs) && /other\.trayOk/.test(settingsJs), '托盘失效时说明桌宠的悬浮菜单仍可用')
   assert.ok(/data-action="settings"/.test(petHtml) && /data-action="quit"/.test(petHtml), '桌宠悬浮菜单确实带设置和退出')
   ok('托盘兜底：Ctrl+Alt+P 显示/隐藏、托盘失败可恢复、设置页说明状态')
 }
@@ -1263,7 +1263,7 @@ const PAD = 54
 
   // Every indexed target must still exist in the page.
   const ids = new Set(Array.from(settingsHtml.matchAll(/id="([A-Za-z0-9_-]+)"/g)).map((m) => m[1]))
-  const indexed = Array.from(settingsJs.matchAll(/\{ panel: '([a-z]+)', id: '([A-Za-z0-9_-]+)'/g))
+  const indexed = Array.from(settingsJs.matchAll(/\['([a-z]+)', '([A-Za-z0-9_-]+)'\]/g))
   assert.ok(indexed.length >= 20, '搜索索引覆盖主要设置项（' + indexed.length + ' 项）')
   const missing = indexed.filter((m) => !ids.has(m[2])).map((m) => m[2])
   assert.deepEqual(missing, [], '索引里的控件都还在页面上')
@@ -1287,7 +1287,7 @@ const PAD = 54
   }
   assert.ok(!/panel === 'role'/.test(patchBody), '角色页是图片，不提供恢复默认')
   assert.ok(/save\(patch, true,/.test(settingsJs), '恢复后立即写盘')
-  assert.ok(/if \(!panelResetPatch\(panel\)\) \{ setStatus\('这一页没有可以恢复的默认值'/.test(settingsJs), '没有默认值时明确告知')
+  assert.ok(/if \(!panelResetPatch\(panel\)\) \{ setStatus\(t\('settings\.resetUnavailable'\)/.test(settingsJs), '没有默认值时明确告知')
 
   // One-line hints on every field.
   const panelChunks = settingsHtml.split('<section class="panel').slice(1)

@@ -794,6 +794,22 @@
         "desc": "Close the pet",
         "keywords": "quit exit close"
       }
+    },
+    "weatherAutoLabel": "Auto-locate",
+    "geoCityName": "My location",
+    "geoCityLabel": "Use my location",
+    "status": {
+      "cityEmpty": "Type a city name first",
+      "searching": "Looking it up…",
+      "searchError": "Not found ({error}) — pinyin works too",
+      "searchNone": "No such city — try another spelling (e.g. “Hengyang”)",
+      "searchFound": "Found {count} place(s) — click one below",
+      "searchFailed": "Search failed",
+      "citySaved": "Saved: {city} — updating the weather…",
+      "geoUnavailable": "Location is off on this machine — type the city name",
+      "locating": "Finding you…",
+      "located": "Found you",
+      "geoFailed": "Couldn't locate you — type the city name"
     }
   },
   "role": {

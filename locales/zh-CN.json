@@ -794,6 +794,22 @@
         "desc": "关掉桌宠",
         "keywords": "退出 关闭 结束"
       }
+    },
+    "weatherAutoLabel": "自动定位",
+    "geoCityName": "我找到的位置",
+    "geoCityLabel": "用我的位置",
+    "status": {
+      "cityEmpty": "先写下城市名呀",
+      "searching": "我找找看…",
+      "searchError": "没找到（{error}），也可以直接写拼音试试",
+      "searchNone": "没找到这座城市，换个写法试试（比如「衡阳」）",
+      "searchFound": "找到 {count} 个地方，点下面那一行就用它",
+      "searchFailed": "搜索失败",
+      "citySaved": "记住啦：{city}，正在换天气…",
+      "geoUnavailable": "这台电脑不让定位，手动写下城市名吧",
+      "locating": "看看你在哪…",
+      "located": "找到啦",
+      "geoFailed": "没定上位，手动写下城市名吧"
     }
   },
   "role": {

@@ -7,6 +7,10 @@
 ## [Unreleased]
 
 ### 新增
+- **多语言：`settings.js` 清零（ROADMAP P2-6 阶段三-C）**：`app/settings.js` 的 151 处内联中文降到 **0**。
+  搜索索引改成只写 `[面板, 控件 id]`（37 对），文案与关键词全从 `settings.find.<id>.*` 取；托盘/快捷键/更新/
+  语言状态直接复用语言包里已有的 `other.*` 键；新增 14 条城市搜索与定位的键（`settings.status.*`）。
+  真窗口复验：zh 下四段说明成句、en 下正文残留中文 **0**；基线 **599 → 448**。
 - **多语言：设置页整页（ROADMAP P2-6 阶段三-B）**：`settings.html` 里最后 173 处中文全部变成 `data-i18n*` 标记，
   面板标题/说明、搜索框、恢复默认确认层、七个面板的字段与提示都走字典；设置页的搜索索引也本地化了——
   `FIND_INDEX` 仍是中文手写表（zh 兜底），加载后用 `settings.find.<id>.label/.desc/.keywords` 覆盖，

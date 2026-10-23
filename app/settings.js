@@ -610,58 +610,60 @@
   // A hand-written index beats scraping the DOM: it can carry the words
   // people actually type ("音量/响度/大声"), and smoke can check that every
   // target id still exists in settings.html.
-  const FIND_INDEX = [
-    { panel: 'appearance', id: 'name', label: '它叫什么', hint: '改名字', keys: '名字 称呼 改名 昵称' },
-    { panel: 'appearance', id: 'size', label: '多大一只', hint: '窗口大小', keys: '大小 尺寸 变大 变小 缩放' },
-    { panel: 'appearance', id: 'alwaysOnTop', label: '一直看得见', hint: '不被别的窗口盖住', keys: '置顶 最前面 挡住' },
-    { panel: 'appearance', id: 'autostart', label: '开机就出现', hint: '登录后自动启动', keys: '开机 自启 启动 登录' },
-    { panel: 'appearance', id: 'snapEnabled', label: '靠边停好', hint: '拖到屏幕边缘吸住', keys: '吸附 吸住 边缘 贴边' },
-    { panel: 'appearance', id: 'snapGap', label: '离边多远开始吸', hint: '吸附距离（px）', keys: '吸附 距离 像素' },
-    { panel: 'role', id: 'importBtn', label: '换一张图当样子', hint: '选自己的图片', keys: '角色 形象 图片 换装 皮肤' },
-    { panel: 'role', id: 'cutoutBtn', label: '用照片做个我', hint: '抠图做新角色', keys: '抠图 照片 去背 剪影' },
-    { panel: 'role', id: 'resetPosBtn', label: '回到右下角', hint: '重置桌宠位置', keys: '位置 归位 右下角 跑丢' },
-    { panel: 'bubble', id: 'autoHide', label: '气泡留多久', hint: '停留秒数', keys: '气泡 停留 几秒 消失' },
-    { panel: 'bubble', id: 'cooldown', label: '两次天气之间', hint: '天气气泡间隔', keys: '天气 间隔 频率 多久' },
-    { panel: 'bubble', id: 'phrases', label: '想对我说的话', hint: '每行一句台词', keys: '台词 说话 句子 文案 语录' },
-    { panel: 'bubble', id: 'editorBtn', label: '气泡长什么样', hint: '排版与样式', keys: '气泡 样式 排版 布局 外观' },
-    { panel: 'reminder', id: 'mode', label: '唠叨程度', hint: '提醒频率', keys: '唠叨 提醒 频率 少说 多说' },
-    { panel: 'reminder', id: 'interval', label: '多久提醒喝水', hint: '喝水间隔分钟', keys: '喝水 几杯 间隔 提醒' },
-    { panel: 'reminder', id: 'quietFrom', label: '安静时间（开始）', hint: '这个点以后不吵你', keys: '安静 免打扰 别吵 睡觉' },
-    { panel: 'reminder', id: 'nudgeEnabled', label: '主动说话（总开关）', hint: '让它偶尔主动冒一句', keys: '主动 说话 搭话 提醒 唠叨 nudge' },
-    { panel: 'reminder', id: 'nudgeLongUse', label: '坐太久了起来走走', hint: '连着用满 50 分钟提醒', keys: '久坐 站起来 休息 腰 眼睛' },
-    { panel: 'reminder', id: 'nudgeLateNight', label: '深夜还在忙', hint: '23 点后劝你睡觉', keys: '深夜 熬夜 睡觉 早睡 晚' },
-    { panel: 'reminder', id: 'nudgeAway', label: '好久没见你', hint: '两小时没互动打个招呼', keys: '好久 离开 回来 招呼' },
-    { panel: 'reminder', id: 'quietTo', label: '安静时间（结束）', hint: '这个点以后恢复提醒', keys: '安静 免打扰 起床' },
-    { panel: 'reminder', id: 'waterTimeline', label: '今天的喝水时间轴', hint: '几点喝了一杯', keys: '喝水 记录 时间轴 今天 几杯' },
-    { panel: 'reminder', id: 'cupMl', label: '一杯多少毫升', hint: '导出 CSV 用', keys: '毫升 一杯 容量 导出' },
-    { panel: 'reminder', id: 'exportWaterBtn', label: '导出喝水记录', hint: '生成 CSV', keys: '导出 csv 表格 记录 备份' },
-    { panel: 'weather', id: 'city', label: '你在哪座城市', hint: '搜城市名', keys: '城市 定位 地点 在哪 天气' },
-    { panel: 'weather', id: 'locateBtn', label: '用我的位置', hint: '自动定位', keys: '定位 位置 gps 自动' },
-    { panel: 'weather', id: 'refreshMinutes', label: '多久看一眼天气', hint: '刷新间隔', keys: '天气 刷新 间隔 更新' },
-    { panel: 'sound', id: 'sound', label: '让我出声', hint: '总开关', keys: '声音 静音 出声 音效' },
-    { panel: 'sound', id: 'soundVolume', label: '音量', hint: '响度', keys: '音量 响度 大声 小声' },
-    { panel: 'sound', id: 'soundEvents', label: '什么时候响', hint: '各事件音效', keys: '声音 事件 点击 提醒' },
-    { panel: 'sound', id: 'soundImportBtn', label: '添加一段音频', hint: '自定义音效', keys: '音效 音频 自定义 导入' },
-    { panel: 'other', id: 'diagBtn', label: '导出诊断信息', hint: '日志与状态，坐标打码', keys: '诊断 日志 报错 反馈 导出' },
-    { panel: 'other', id: 'updateBtn', label: '检查更新', hint: '有新版本时提示，不会偷偷装', keys: '更新 升级 版本 新版 update' },
-    { panel: 'other', id: 'privacyCleanBtn', label: '清理日志和缓存', hint: '数据与隐私，照片和设置不会动', keys: '隐私 清理 数据 缓存 日志 删除 privacy' },
-    { panel: 'other', id: 'onboardBtn', label: '再看一次欢迎引导', hint: '重新走一遍引导', keys: '引导 欢迎 新手 教程' },
-    { panel: 'other', id: 'openDirBtn', label: '东西放哪', hint: '打开数据文件夹', keys: '数据 文件夹 备份 目录' },
-    { panel: 'other', id: 'quitBtn', label: '先退出啦', hint: '关掉桌宠', keys: '退出 关闭 结束' },
+  // 索引只留「面板 + 控件 id」，文案与关键词全部来自语言包（settings.find.<id>.*），
+  // 这样 en 下按 city/volume 搜得到，zh 下按「城市」「音量」也搜得到，代码里不再留中文。
+  const FIND_SLOTS = [
+  ['appearance', 'name'],
+  ['appearance', 'size'],
+  ['appearance', 'alwaysOnTop'],
+  ['appearance', 'autostart'],
+  ['appearance', 'snapEnabled'],
+  ['appearance', 'snapGap'],
+  ['role', 'importBtn'],
+  ['role', 'cutoutBtn'],
+  ['role', 'resetPosBtn'],
+  ['bubble', 'autoHide'],
+  ['bubble', 'cooldown'],
+  ['bubble', 'phrases'],
+  ['bubble', 'editorBtn'],
+  ['reminder', 'mode'],
+  ['reminder', 'interval'],
+  ['reminder', 'quietFrom'],
+  ['reminder', 'nudgeEnabled'],
+  ['reminder', 'nudgeLongUse'],
+  ['reminder', 'nudgeLateNight'],
+  ['reminder', 'nudgeAway'],
+  ['reminder', 'quietTo'],
+  ['reminder', 'waterTimeline'],
+  ['reminder', 'cupMl'],
+  ['reminder', 'exportWaterBtn'],
+  ['weather', 'city'],
+  ['weather', 'locateBtn'],
+  ['weather', 'refreshMinutes'],
+  ['sound', 'sound'],
+  ['sound', 'soundVolume'],
+  ['sound', 'soundEvents'],
+  ['sound', 'soundImportBtn'],
+  ['other', 'diagBtn'],
+  ['other', 'updateBtn'],
+  ['other', 'privacyCleanBtn'],
+  ['other', 'onboardBtn'],
+  ['other', 'openDirBtn'],
+  ['other', 'quitBtn'],
   ]
+  const FIND_INDEX = FIND_SLOTS.map(([panel, id]) => ({
+    panel: panel,
+    id: id,
+    label: t('settings.find.' + id + '.label'),
+    hint: t('settings.find.' + id + '.desc'),
+    keys: t('settings.find.' + id + '.keywords')
+  }))
 
   const PANEL_TITLE = {}
   document.querySelectorAll('.nav-item').forEach((btn) => {
     PANEL_TITLE[btn.dataset.panel] = btn.dataset.title || btn.textContent.trim()
   })
 
-  // 语言包里给了 settings.find.<id>.label / .desc / .keywords，就地覆盖中文默认值：
-  // 英文界面下用户按自己看到的词（city / volume）也能搜到。
-  FIND_INDEX.forEach((entry) => {
-    entry.label = tOr('settings.find.' + entry.id + '.label', entry.label)
-    entry.hint = tOr('settings.find.' + entry.id + '.desc', entry.hint)
-    entry.keys = entry.keys + ' ' + tOr('settings.find.' + entry.id + '.keywords', '')
-  })
 
   const reduceMotion = () => {
     try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches } catch (err) { return false }
@@ -803,7 +805,7 @@
           lat: null,
           lon: null,
           city: '',
-          label: '自动定位',
+          label: t('settings.weatherAutoLabel'),
           refreshMinutes: d.weather.refreshMinutes,
           recent: [],
         },
@@ -832,7 +834,7 @@
     if (!btn || !box) return
     btn.addEventListener('click', () => {
       const panel = currentPanel()
-      if (!panelResetPatch(panel)) { setStatus('这一页没有可以恢复的默认值', 2600); return }
+      if (!panelResetPatch(panel)) { setStatus(t('settings.resetUnavailable'), 2600); return }
       $('resetPanelName').textContent = PANEL_TITLE[panel] || panel
       const willShow = box.hidden
       box.hidden = !willShow
@@ -887,37 +889,48 @@
     box.hidden = false
   }
 
+  /** 定位拿到的城市用同一个哨兵值，界面文案走字典。 */
+  const geoCityName = () => t('settings.geoCityName')
+
   /** Moves a freshly picked city to the front of the recent list. */
   function noteRecentCity(name) {
     const clean = String(name || '').trim()
-    if (!clean || clean === '我找到的位置') return
+    if (!clean || clean === geoCityName()) return
     const weather = (state.settings && state.settings.weather) || {}
     const list = [clean].concat((weather.recent || []).filter((item) => item !== clean)).slice(0, 5)
-    save({ weather: { recent: list } }, true, '记住啦')
+    save({ weather: { recent: list } }, true, t('settings.saved'))
   }
 
   function search(query) {
     const q = String(query || '').trim()
-    if (!q) { setStatus('先写下城市名呀', 4000); $('city').focus(); return }
-    setStatus('我找找看…', 0)
+    if (!q) { setStatus(t('settings.status.cityEmpty'), 4000); $('city').focus(); return }
+    setStatus(t('settings.status.searching'), 0)
     api.geocode(q).then((data) => {
       const box = $('results')
       box.innerHTML = ''
       if (!data || !data.list || !data.list.length) {
         box.hidden = true
-        setStatus(data && data.error
-          ? '没找到（' + data.error + '），也可以直接写拼音试试'
-          : '没找到这座城市，换个写法试试（比如「衡阳」）', 6000)
+        setStatus(
+          data && data.error
+            ? t('settings.status.searchError', { error: data.error })
+            : t('settings.status.searchNone'),
+          6000
+        )
         return
       }
       box.hidden = false
-      setStatus('找到 ' + data.list.length + ' 个地方，点下面那一行就用它', 6000)
+      setStatus(t('settings.status.searchFound', { count: data.list.length }), 6000)
       data.list.forEach((item) => {
         const row = document.createElement('div')
         row.textContent = item.name + (item.admin ? ' · ' + item.admin : '') + (item.country ? ' · ' + item.country : '')
         row.onclick = () => {
-          save({ weather: { lat: item.lat, lon: item.lon, city: item.name, label: item.admin || item.country } }, true,
-            '记住啦：' + item.name + (item.admin ? ' · ' + item.admin : '') + '，正在换天气…')
+          save(
+            { weather: { lat: item.lat, lon: item.lon, city: item.name, label: item.admin || item.country } },
+            true,
+            t('settings.status.citySaved', {
+              city: item.name + (item.admin ? ' · ' + item.admin : '')
+            })
+          )
           $('city').value = item.name
           noteRecentCity(item.name)
           box.hidden = true
@@ -926,27 +939,27 @@
         }
         box.appendChild(row)
       })
-    }).catch(() => setStatus('搜索失败'))
+    }).catch(() => setStatus(t('settings.status.searchFailed')))
   }
 
   function locate() {
-    if (!navigator.geolocation) { setStatus('这台电脑不让定位，手动写下城市名吧'); return }
-    setStatus('看看你在哪…')
+    if (!navigator.geolocation) { setStatus(t('settings.status.geoUnavailable')); return }
+    setStatus(t('settings.status.locating'))
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         save({
           weather: {
             lat: pos.coords.latitude,
             lon: pos.coords.longitude,
-            city: '我找到的位置',
-            label: '用我的位置',
+            city: geoCityName(),
+            label: t('settings.geoCityLabel'),
           },
         }, true)
-        $('city').value = '我找到的位置'
-        setStatus('找到啦')
+        $('city').value = geoCityName()
+        setStatus(t('settings.status.located'))
         api.refreshWeather()
       },
-      () => setStatus('没定上位，手动写下城市名吧'),
+      () => setStatus(t('settings.status.geoFailed')),
       { timeout: 8000 },
     )
   }
@@ -959,10 +972,14 @@
     if (!now) return
     try {
       const info = await api.getI18n()
-      const names = { 'zh-CN': '简体中文', 'en-US': 'English' }
-      now.textContent = (names[info.locale] || info.locale) + '（可用：' + (info.available || []).join(' / ') + '，共 ' + (info.keys || 0) + ' 条）'
+      const names = { 'zh-CN': t('other.localeZh'), 'en-US': 'English' }
+      now.textContent = t('other.localeStatus', {
+        locale: names[info.locale] || info.locale,
+        available: (info.available || []).join(' / '),
+        count: info.keys || 0
+      })
     } catch (err) {
-      now.textContent = '读不到'
+      now.textContent = t('other.localeUnreadable')
     }
   }
 
@@ -974,14 +991,14 @@
       const tray = info.tray || {}
       const key = info.shortcut || {}
       trayEl.textContent = tray.ok
-        ? '托盘图标已经交给系统了：右键有设置和退出，单击能显示或隐藏。要是右下角没看到它，那是被折叠了，用 Ctrl+Alt+P 或鼠标悬停照样能叫出来。'
-        : '托盘这次没显示出来' + (tray.reason ? '（' + tray.reason + '）' : '') + '：把鼠标放到桌宠身上就会浮出菜单，设置和退出都在里面。'
+        ? t('other.trayOk')
+        : t(tray.reason ? 'other.trayFailedWithReason' : 'other.trayFailed', { reason: tray.reason || '' })
       keyEl.textContent = key.ok
-        ? 'Ctrl+Alt+P 可以用：按一下显示桌宠，再按一下收起来。'
-        : 'Ctrl+Alt+P 没注册上' + (key.reason ? '（' + key.reason + '）' : '') + '：把鼠标放到桌宠上仍然能叫出菜单。'
+        ? t('other.shortcutOk')
+        : t(key.reason ? 'other.shortcutFailedWithReason' : 'other.shortcutFailed', { reason: key.reason || '' })
     } catch (err) {
-      trayEl.textContent = '没读到托盘状态，不过把鼠标放到桌宠身上仍然能打开设置和退出。'
-      keyEl.textContent = '没读到快捷键状态。'
+      trayEl.textContent = t('other.trayUnreadable')
+      keyEl.textContent = t('other.shortcutUnreadable')
     }
   }
 
@@ -990,10 +1007,10 @@
     if (!hint) return
     try {
       const info = await api.getUpdateStatus()
-      const last = info && info.lastCheckAt ? new Date(info.lastCheckAt).toLocaleString() : '还没查过'
-      hint.textContent = '当前 ' + ((info && info.version) || '') + ' · 上次检查：' + last + '。有新版会在这里和气泡里说一声。'
+      const last = info && info.lastCheckAt ? new Date(info.lastCheckAt).toLocaleString() : t('other.updateNever')
+      hint.textContent = t('other.updateStatus', { version: (info && info.version) || '', last: last })
     } catch (err) {
-      hint.textContent = '读不到更新信息，不影响使用。'
+      hint.textContent = t('other.updateUnreadable')
     }
   }
 
@@ -1016,7 +1033,7 @@
       renderLocaleStatus()
       renderUpdateStatus()
     } catch (err) {
-      setStatus('没读到设置，稍后再试')
+      setStatus(t('settings.loadFailed'))
     }
     api.onSettings((settings) => fill(settings))
     api.onRoles((roles) => {

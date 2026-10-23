@@ -204,3 +204,28 @@ app/editor.js 54 · lib/weather.js 54          共 30 个文件 / 880 处
 
 剩余的活（阶段三-C 起）：`app/settings.js` 151 处、`app/bubble-model.js` 99 处、
 `app/editor.js` 54 处、`lib/weather.js` 54 处、`app/cutout.js` 52 处。
+
+## 11. 阶段三-C：`settings.js` 的清零
+
+这一批只动一个文件：`app/settings.js` 从 **151 处**内联中文降到 **0**。
+
+1. **索引彻底键驱动**：`FIND_SLOTS` 只留 `[面板, 控件 id]` 37 对，`label/hint/keys` 全部来自
+   `settings.find.<id>.label/.desc/.keywords`。中文不再当“兜底”留在代码里——留着就永远数不清还剩多少。
+   代价是 `smoke` 里“索引项必须对得上页面 id”的那条断言改了抓取格式（`['panel','id']`）。
+2. **状态/提示走已有键**：托盘与快捷键的四段说明、更新状态、语言状态、恢复默认失败、设置读取失败，
+   语言包里本来就有对应键（`other.trayOk`、`other.shortcutFailedWithReason`、`other.updateStatus`…），
+   这次只是把代码接上去，少写 14 条重复文案。
+3. **新加的 14 条键**：城市搜索与定位那组（`settings.status.cityEmpty/searching/searchError/searchNone/
+   searchFound/searchFailed/citySaved/geoUnavailable/locating/located/geoFailed`）以及
+   `settings.geoCityName`、`settings.geoCityLabel`、`settings.weatherAutoLabel`。
+   “我找到的位置”这个哨兵值也走字典（`geoCityName()`），不再在代码里硬编码中文。
+
+真窗口复验（同一数据目录，切换 `locale` 后重启）：
+
+| 语言 | 状态行 | 托盘说明 | 更新行 | 空城市提示 | 正文中文 |
+|---|---|---|---|---|---|
+| zh-CN | 不用点保存就行 | 托盘图标已经交给系统了…（长句完整） | 当前 0.6.9 · 上次检查：还没查过… | 先写下城市名呀 | 178（就是这些中文本身） |
+| en-US | No save button needed | The tray icon is with the system… | Current 0.6.9 · last checked: Never checked… | Type a city name first | **0** |
+
+基线 **599 → 448**（`tools/i18n-baseline.json` 已更新）。剩下最大三块：
+`app/bubble-model.js` 99、`app/editor.js` 54、`lib/weather.js` 54、`app/cutout.js` 52（+ `cutout.html` 42）。
