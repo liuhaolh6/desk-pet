@@ -34,12 +34,14 @@ const { registerWaterIpc } = require('./water-ipc.js')
  * @param {object} deps.actions     openSettings/openEditor/openCutout/openOnboard/dismissOnboard
  * @param {object} deps.lists       { roleList, soundList, roleUrl, broadcastSettings, broadcastRoles, sendMirror, applySettingsSideEffects }
  * @param {object} deps.nudges     createNudgePump 的实例（P1-7）
+ * @param {object} deps.updater    createUpdater 的实例（P2-3）
+ * @param {object} deps.privacy    createPrivacy 的实例（P2-4）
  * @param {Function} deps.setQuitting
  */
 function registerIpc(deps) {
   const {
     ipcMain, dialog, shell, app, nativeImage, path, fs,
-    store, version, weatherPump, layout, winState, trayHost, diagnostics, cutoutService, cutout, nudges,
+    store, version, weatherPump, layout, winState, trayHost, diagnostics, cutoutService, cutout, nudges, updater, privacy,
     placement, clamp, winPad, windows, actions, lists, setQuitting,
   } = deps
   const { roleList, soundList, roleUrl, broadcastSettings, broadcastRoles, sendMirror, applySettingsSideEffects } = lists
@@ -75,6 +77,11 @@ function registerIpc(deps) {
 
   // P1-4: “恢复这页默认”需要知道每个键的出厂值；只读、不带任何用户数据。
   ipcMain.handle('settings:defaults', () => store.defaults())
+
+  // P2-3: 更新检查。`force` 由用户点“检查更新”触发，绕过 24h 节流。
+  ipcMain.handle('update:check', (ev, opts) => (updater ? updater.check({ force: !!(opts && opts.force) }) : { kind: 'none', reason: 'no-updater' }))
+  ipcMain.handle('update:status', () => (updater ? updater.status() : { version, lastError: 'no-updater' }))
+  ipcMain.handle('update:open', (ev, url) => (updater ? updater.openDownload(url) : false))
 
   ipcMain.handle('settings:set', (ev, patch) => {
     const prev = store.readSettings()
@@ -412,6 +419,8 @@ function registerIpc(deps) {
   ipcMain.on('app:quit', () => { setQuitting(true); app.quit() })
   ipcMain.handle('app:open-data-dir', () => shell.openPath(store.dir))
   ipcMain.handle('app:diagnostics', () => diagnostics.export())
+  ipcMain.handle('privacy:summary', () => privacy.summary())
+  ipcMain.handle('privacy:cleanup', () => privacy.cleanup())
 
   return { bubbleVisible: () => bubbleVisible }
 }

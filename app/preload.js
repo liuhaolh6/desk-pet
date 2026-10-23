@@ -27,6 +27,13 @@ contextBridge.exposeInMainWorld('deskPet', {
   getState: () => ipcRenderer.invoke('state:get'),
   getAppStatus: () => ipcRenderer.invoke('app:status'),
   exportDiagnostics: () => ipcRenderer.invoke('app:diagnostics'),
+  // P2-3：更新检查（force=true 由用户点按钮触发）
+  // P2-4: what is on disk + wipe the rebuildable junk (never settings/photos).
+  privacySummary: () => ipcRenderer.invoke('privacy:summary'),
+  privacyCleanup: () => ipcRenderer.invoke('privacy:cleanup'),
+  checkUpdate: (force) => ipcRenderer.invoke('update:check', { force: !!force }),
+  getUpdateStatus: () => ipcRenderer.invoke('update:status'),
+  openUpdate: (url) => ipcRenderer.invoke('update:open', url),
   setSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
   getDefaults: () => ipcRenderer.invoke('settings:defaults'),
 

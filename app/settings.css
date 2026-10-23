@@ -300,6 +300,18 @@ h3 {
 
 .field-body.stack { gap: 2px; }
 
+/* 音量滑杆在窄窗口里会被“音量”标签和百分比挤成 7px（a11y 审计量到的
+   24×24 下限就是它）。给它一个下限，并允许这一行换行，别把控件压没。 */
+.control-line { flex-wrap: wrap; }
+.control-line input[type="range"] { min-width: 96px; }
+
+/* P2-4：这一项是整段说明，挤在 116px 的标签列右边会读不动，改成整行 */
+.field.wide {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+.field.wide .field-label { padding-top: 0; }
+
 .field-hint {
   margin: 0;
   color: var(--muted);
@@ -1059,3 +1071,32 @@ button:disabled {
     outline: 2px solid Highlight;
   }
 }
+/* P2-4 数据与隐私：一段可展开的“存了什么”，尺寸由脚本填 */
+.privacy-box {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--card) 60%, transparent);
+}
+.privacy-box summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink-soft);
+  list-style: none;
+}
+.privacy-box summary::-webkit-details-marker { display: none; }
+.privacy-box summary::before { content: "▸ "; color: var(--ink-faint); }
+.privacy-box[open] summary::before { content: "▾ "; }
+.privacy-list {
+  margin: 10px 0 8px;
+  padding-left: 18px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+.privacy-list code {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 12px;
+  color: var(--ink);
+}
+.privacy-size { color: var(--ink-faint); }

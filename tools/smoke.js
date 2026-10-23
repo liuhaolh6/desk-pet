@@ -7,6 +7,8 @@
 
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
+// 仓库里有 CRLF 文件（settings.js / settings.html），正则断言前统一换成 LF。
+const readSrc = (file) => fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n')
 const os = require('node:os')
 const path = require('node:path')
 
@@ -834,8 +836,8 @@ const PAD = 54
   const js = fs.readFileSync(path.join(root, 'app', 'onboard.js'), 'utf8')
   const mainJs = mainSource()
   const preloadJs = fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')
-  const settingsHtml = fs.readFileSync(path.join(root, 'app', 'settings.html'), 'utf8')
-  const settingsJs = fs.readFileSync(path.join(root, 'app', 'settings.js'), 'utf8')
+  const settingsHtml = readSrc(path.join(root, 'app', 'settings.html'))
+  const settingsJs = readSrc(path.join(root, 'app', 'settings.js'))
 
   assert.equal(DEFAULT_SETTINGS.onboarded, false, '全新安装默认还没看过引导')
   assert.ok(/ipcMain\.on\('onboard:open'/.test(mainJs) && /ipcMain\.on\('onboard:dismiss'/.test(mainJs), '主进程处理打开/关掉欢迎引导')
@@ -860,8 +862,8 @@ const PAD = 54
   const root = path.join(__dirname, '..')
   const mainJs = mainSource()
   const preloadJs = fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')
-  const settingsHtml = fs.readFileSync(path.join(root, 'app', 'settings.html'), 'utf8')
-  const settingsJs = fs.readFileSync(path.join(root, 'app', 'settings.js'), 'utf8')
+  const settingsHtml = readSrc(path.join(root, 'app', 'settings.html'))
+  const settingsJs = readSrc(path.join(root, 'app', 'settings.js'))
   const petHtml = fs.readFileSync(path.join(root, 'app', 'pet.html'), 'utf8')
 
   assert.ok(/globalShortcut/.test(mainJs), '主进程引入 globalShortcut')
@@ -883,8 +885,8 @@ const PAD = 54
   const root = path.join(__dirname, '..')
   const mainJs = mainSource()
   const preloadJs = fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')
-  const settingsHtml = fs.readFileSync(path.join(root, 'app', 'settings.html'), 'utf8')
-  const settingsJs = fs.readFileSync(path.join(root, 'app', 'settings.js'), 'utf8')
+  const settingsHtml = readSrc(path.join(root, 'app', 'settings.html'))
+  const settingsJs = readSrc(path.join(root, 'app', 'settings.js'))
 
   assert.ok(/function build\(\)/.test(mainJs) && /createDiagnostics/.test(mainJs) && /ipcMain\.handle\('app:diagnostics'/.test(mainJs), '主进程提供诊断导出')
   assert.ok(/s\.weather\.lat = REDACTED/.test(mainJs) && /s\.weather\.lon = REDACTED/.test(mainJs) && /s\.weather\.city = REDACTED/.test(mainJs), '城市与坐标打码')
@@ -903,7 +905,52 @@ const PAD = 54
   const root = path.join(__dirname, '..')
   const modDir = path.join(root, 'app', 'main')
   const mods = fs.readdirSync(modDir).filter((f) => f.endsWith('.js')).sort()
-  assert.deepEqual(mods, ['boot.js', 'catalog.js', 'cutout-service.js', 'diagnostics.js', 'fullscreen.js', 'geometry.js', 'ipc.js', 'log.js', 'nudge-pump.js', 'reminder.js', 'tray.js', 'water-ipc.js', 'weather-pump.js', 'window-layout.js', 'windows.js'], 'app/main/ 下的模块名单')
+  // P2-3: 更新检查——纯逻辑单测在 tests/unit/update-check.test.js，这里只验接线。
+  {
+    const repo = path.join(__dirname, '..')
+    const updateCheck = require('../lib/update-check.js')
+    assert.equal(typeof updateCheck.decideUpdate, 'function', 'lib/update-check 导出 decideUpdate')
+    assert.equal(updateCheck.decideUpdate({ current: '0.6.8', feed: { version: '0.6.9', url: 'https://x/y' } }).kind, 'available', '有新版时给出 available')
+    assert.equal(updateCheck.decideUpdate({ current: '0.6.8', feed: { version: '0.6.8' } }).reason, 'up-to-date', '同版本不提示')
+    const updaterSrc = fs.readFileSync(path.join(repo, 'app/main/updater.js'), 'utf8')
+    assert.match(updaterSrc, /createUpdater/, 'app/main/updater.js 导出 createUpdater')
+    assert.match(updaterSrc, /CHECK_INTERVAL_MS/, '更新检查有 24h 节流常量')
+    const ipcSrc = fs.readFileSync(path.join(repo, 'app/main/ipc.js'), 'utf8')
+    assert.match(ipcSrc, /ipcMain\.handle\('update:check'/, 'ipc 注册 update:check')
+    assert.match(ipcSrc, /ipcMain\.handle\('update:open'/, 'ipc 注册 update:open')
+    const settingsHtml = readSrc(path.join(repo, 'app/settings.html'))
+    assert.match(settingsHtml, /id="updateBtn"/, '设置页有“检查更新”按钮')
+    const preloadSrc = fs.readFileSync(path.join(repo, 'app/preload.js'), 'utf8')
+    assert.match(preloadSrc, /checkUpdate: \(force\) => ipcRenderer\.invoke\('update:check'/, 'preload 暴露 checkUpdate')
+    assert.equal(DEFAULT_SETTINGS.update.checkOnBoot, true, '默认开机检查更新')
+    assert.equal(DEFAULT_SETTINGS.update.installUpdates, false, '未签名发布下默认不静默安装')
+  }
+
+  // P2-4: 隐私透明——清单来自真实目录，清理只动日志/轨迹/缓存。
+  {
+    const repo = path.join(__dirname, '..')
+    const { createPrivacy, NETWORK_ENDPOINTS, CACHE_DIRS } = require('../app/main/privacy.js')
+    assert.equal(typeof createPrivacy, 'function', 'app/main/privacy.js 导出 createPrivacy')
+    assert.ok(NETWORK_ENDPOINTS.some((e) => e.host === 'api.open-meteo.com'), '网络清单里有天气接口')
+    assert.ok(NETWORK_ENDPOINTS.some((e) => e.host === 'geocoding-api.open-meteo.com'), '网络清单里有城市搜索接口')
+    assert.ok(NETWORK_ENDPOINTS.some((e) => e.host === 'raw.githubusercontent.com'), '网络清单里有新版号地址')
+    assert.ok(CACHE_DIRS.includes('Cache'), '缓存目录清单包含 Cache')
+    // 行为（真删文件、保留设置和照片）在 tests/unit/privacy.test.js 里跑，
+    // 这里只保证模块和接线没有断。
+    const ipcSrc = fs.readFileSync(path.join(repo, 'app/main/ipc.js'), 'utf8')
+    assert.match(ipcSrc, /ipcMain\.handle\('privacy:summary'/, 'ipc 注册 privacy:summary')
+    assert.match(ipcSrc, /ipcMain\.handle\('privacy:cleanup'/, 'ipc 注册 privacy:cleanup')
+    const preloadSrc = fs.readFileSync(path.join(repo, 'app/preload.js'), 'utf8')
+    assert.match(preloadSrc, /privacySummary: \(\) => ipcRenderer\.invoke\('privacy:summary'\)/, 'preload 暴露 privacySummary')
+    const settingsHtml = readSrc(path.join(repo, 'app/settings.html'))
+    assert.match(settingsHtml, /id="privacyBox"/, '设置页有“数据与隐私”折叠块')
+    assert.match(settingsHtml, /id="privacyCleanBtn"/, '设置页有清理按钮')
+    const settingsJs = readSrc(path.join(repo, 'app/settings.js'))
+    assert.match(settingsJs, /privacyConfirmBtn/, '清理是两步确认')
+    assert.ok(fs.existsSync(path.join(repo, 'docs/PRIVACY.md')), 'docs/PRIVACY.md 存在')
+  }
+
+  assert.deepEqual(mods, ['boot.js', 'catalog.js', 'cutout-service.js', 'diagnostics.js', 'fullscreen.js', 'geometry.js', 'ipc.js', 'log.js', 'nudge-pump.js', 'privacy.js', 'reminder.js', 'tray.js', 'updater.js', 'water-ipc.js', 'weather-pump.js', 'window-layout.js', 'windows.js'], 'app/main/ 下的模块名单')
   const mainJs = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
   for (const name of mods) {
     const file = path.join(modDir, name)
@@ -1172,9 +1219,9 @@ const PAD = 54
 {
   // P1-4: settings usability — search, one-line hints, per-panel reset, recent cities.
   const root = path.join(__dirname, '..')
-  const settingsHtml = fs.readFileSync(path.join(root, 'app', 'settings.html'), 'utf8')
-  const settingsJs = fs.readFileSync(path.join(root, 'app', 'settings.js'), 'utf8')
-  const settingsCss = fs.readFileSync(path.join(root, 'app', 'settings.css'), 'utf8')
+  const settingsHtml = readSrc(path.join(root, 'app', 'settings.html'))
+  const settingsJs = readSrc(path.join(root, 'app', 'settings.js'))
+  const settingsCss = readSrc(path.join(root, 'app', 'settings.css'))
   const preloadJs = fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')
   const mainJs = mainSource()
 
@@ -1261,9 +1308,9 @@ const PAD = 54
   const root = path.join(__dirname, '..')
   const preloadJs = fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')
   const petJs = fs.readFileSync(path.join(root, 'app', 'pet.js'), 'utf8')
-  const settingsHtml = fs.readFileSync(path.join(root, 'app', 'settings.html'), 'utf8')
-  const settingsJs = fs.readFileSync(path.join(root, 'app', 'settings.js'), 'utf8')
-  const settingsCss = fs.readFileSync(path.join(root, 'app', 'settings.css'), 'utf8')
+  const settingsHtml = readSrc(path.join(root, 'app', 'settings.html'))
+  const settingsJs = readSrc(path.join(root, 'app', 'settings.js'))
+  const settingsCss = readSrc(path.join(root, 'app', 'settings.css'))
   const reminderJs = fs.readFileSync(path.join(root, 'app', 'main', 'reminder.js'), 'utf8')
   const ipcJs = fs.readFileSync(path.join(root, 'app', 'main', 'ipc.js'), 'utf8')
   const waterIpcJs = fs.readFileSync(path.join(root, 'app', 'main', 'water-ipc.js'), 'utf8')
@@ -1357,8 +1404,8 @@ const PAD = 54
   const ipcJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'ipc.js'), 'utf8')
   const preloadJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')
   const petJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.js'), 'utf8')
-  const settingsHtml = fs.readFileSync(path.join(__dirname, '..', 'app', 'settings.html'), 'utf8')
-  const settingsJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'settings.js'), 'utf8')
+  const settingsHtml = readSrc(path.join(__dirname, '..', 'app', 'settings.html'))
+  const settingsJs = readSrc(path.join(__dirname, '..', 'app', 'settings.js'))
   const mainJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main.js'), 'utf8')
   const pumpJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'nudge-pump.js'), 'utf8')
   const fgJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'fullscreen.js'), 'utf8')

@@ -30,6 +30,8 @@ const { createLogger } = require('./main/log')
 const { clamp, WIN_PAD } = require('./main/geometry')
 const { createTrayHost } = require('./main/tray')
 const { createDiagnostics } = require('./main/diagnostics')
+const { createPrivacy } = require('./main/privacy')
+const { createUpdater } = require('./main/updater')
 const { createWindowState } = require('./window-state')
 const { createWindowLayout } = require('./main/window-layout')
 const { createWeatherPump } = require('./main/weather-pump')
@@ -63,6 +65,7 @@ let weatherPump = null
 let reminders = null
 let nudges = null
 let cutoutService = null
+let privacy = null
 let quitting = false
 
 // P1-1: the tray + shortcut (P0-3) and the diagnostics export (P0-5) live in
@@ -92,6 +95,21 @@ const diagnostics = createDiagnostics({
 // P1-2: one explicit machine owns "what is the pet doing". Every IPC that used to
 // flip a local boolean now goes through it, so an impossible order (drag during
 // cutout, menu while dragging) is counted and logged instead of half-applied.
+// ROADMAP P2-3: 更新检查。只“提示 + 打开下载页”，静默安装要等 P2-2 的签名到位。
+const updater = createUpdater({
+  version: VERSION,
+  getSettings: () => store.readSettings(),
+  patchSettings: (patch) => store.writeSettings(patch),
+  isPackaged: () => app.isPackaged,
+  openExternal: (url) => shell.openExternal(url),
+  // windows 在 boot() 里才赋值；这里延后到真正通知时再取，避免启动顺序耦合。
+  notify: (msg) => {
+    const pet = windows && windows.pet && windows.pet()
+    if (pet && !pet.isDestroyed()) pet.webContents.send('pet:nudge', { kind: 'update', text: msg })
+  },
+  log,
+})
+
 const winState = createWindowState({
   log,
   onChange: ({ prev, next, event }) => {
@@ -139,6 +157,7 @@ app.whenReady().then(() => {
   log('ready')
   app.setAppUserModelId('com.deskpet.app')
   store = createStore(app.getPath('userData'))
+  privacy = createPrivacy({ dir: store.dir, fs, path, log })
   catalog = createCatalog({ fs, store, assets: ASSETS, BrowserWindow, trayHost })
   windows = createWindows({
     BrowserWindow, screen, app, store, layout, winState,
@@ -176,7 +195,7 @@ app.whenReady().then(() => {
   })
   registerIpc({
     ipcMain, dialog, shell, app, nativeImage, path, fs,
-    store, version: VERSION, weatherPump, layout, winState, trayHost, diagnostics,
+    store, version: VERSION, weatherPump, layout, winState, trayHost, diagnostics, updater, privacy,
     cutoutService, cutout, placement, clamp, winPad: WIN_PAD, log, nudges,
     windows: {
       pet: () => windows.pet(),
@@ -211,6 +230,8 @@ app.whenReady().then(() => {
   log('windows created pet=' + (windows.pet() ? 'yes' : 'no') + ' tray=' + (trayHost.ready() ? 'yes' : 'no') + ' shortcut=' + trayHost.shortcutReport().ok)
   weatherPump.refresh('boot')
   weatherPump.schedule()
+  // P2-3: 启动 12 秒后悄悄查一次更新，不阻塞任何初始化；24h 内重复启动不会重复请求。
+  if (updater) updater.checkOnBoot(12000)
   reminders.start()
   nudges.start()
 

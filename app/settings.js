@@ -105,6 +105,7 @@
     setIfIdle('quietTo', settings.water ? settings.water.quietTo : 8)
     const nudge = settings.nudge || {}
     $('nudgeEnabled').checked = nudge.enabled !== false
+    $('updateBootToggle').checked = !(state.settings.update && state.settings.update.checkOnBoot === false)
     $('nudgeLongUse').checked = nudge.longUse !== false
     $('nudgeLateNight').checked = nudge.lateNight !== false
     $('nudgeAway').checked = nudge.away !== false
@@ -292,6 +293,93 @@
         btn.disabled = false
       }
     })
+    // P2-3: 更新检查。自动检查只提示；静默安装要等签名版本，这里只给“去下载”。
+    $('updateBtn').addEventListener('click', async () => {
+      const btn = $('updateBtn')
+      const hint = $('updateStatus')
+      btn.disabled = true
+      hint.textContent = '正在问服务器…'
+      try {
+        const decision = await api.checkUpdate(true)
+        if (decision && decision.kind !== 'none' && decision.url) {
+          const info = await api.getUpdateStatus().catch(() => null)
+          hint.textContent = '有新版本 ' + decision.version + '（现在是 ' + ((info && info.version) || '') + '）'
+          btn.textContent = '去下载 ' + decision.version
+          btn.disabled = false
+          btn.onclick = () => api.openUpdate(decision.url)
+          setStatus('发现新版本 ' + decision.version)
+          return
+        }
+        const reasons = { 'up-to-date': '已经是最新版', throttled: '刚查过，过会儿再看', 'no-feed': '还没配更新地址（开发版正常）', skipped: '这个版本你之前跳过了', error: '连不上更新服务器，稍后再试' }
+        hint.textContent = reasons[decision && decision.reason] || '已经是最新版'
+        setStatus(hint.textContent)
+      } catch (err) {
+        hint.textContent = '检查失败：' + ((err && err.message) || String(err))
+      } finally {
+        btn.disabled = false
+      }
+    })
+    // P2-4: 数据与隐私。数字全部来自磁盘实测，清理只动日志/轨迹/缓存。
+    async function refreshPrivacy() {
+      let info = null
+      try { info = await api.privacySummary() } catch { info = null }
+      if (!info || !info.files) return
+      const size = (bytes) => {
+        if (!bytes) return '空'
+        if (bytes < 1024) return bytes + ' B'
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+        return (bytes / 1024 / 1024).toFixed(1) + ' MB'
+      }
+      $('privSettings').textContent = size(info.files.settings && info.files.settings.bytes)
+      const photos = info.files.photos || { count: 0, bytes: 0 }
+      $('privPhotos').textContent = photos.count + ' 张 · ' + size(photos.bytes)
+      const logs = (info.files.log && info.files.log.bytes) + (info.files.trace && info.files.trace.bytes)
+      $('privLogs').textContent = size(logs)
+      const caches = info.files.caches || { count: 0, bytes: 0 }
+      $('privCaches').textContent = caches.count ? size(caches.bytes) : '没有'
+      const cleanBtn = $('privacyCleanBtn')
+      cleanBtn.textContent = logs || caches.bytes ? '清理日志和缓存（' + size(info.junkBytes) + '）' : '暂时没有可清理的'
+      cleanBtn.disabled = !info.junkBytes
+      return info
+    }
+    function resetPrivacyConfirm() {
+      $('privacyConfirmBtn').hidden = true
+      $('privacyCancelBtn').hidden = true
+      $('privacyCleanBtn').hidden = false
+    }
+    $('privacyCleanBtn').addEventListener('click', () => {
+      $('privacyCleanBtn').hidden = true
+      $('privacyConfirmBtn').hidden = false
+      $('privacyCancelBtn').hidden = false
+      $('privacyStatus').textContent = '只删日志、抠图轨迹和浏览器缓存；设置、角色图和照片都留着。'
+    })
+    $('privacyCancelBtn').addEventListener('click', () => { resetPrivacyConfirm(); $('privacyStatus').textContent = '' })
+    $('privacyConfirmBtn').addEventListener('click', async () => {
+      const btn = $('privacyConfirmBtn')
+      btn.disabled = true
+      $('privacyStatus').textContent = '正在清理…'
+      try {
+        const result = await api.privacyCleanup()
+        resetPrivacyConfirm()
+        await refreshPrivacy()
+        $('privacyStatus').textContent = '清理完了，删掉 ' + result.removed + ' 项'
+        setStatus('日志和缓存已清理')
+      } catch (err) {
+        $('privacyStatus').textContent = '清理失败：' + ((err && err.message) || String(err))
+      } finally {
+        btn.disabled = false
+      }
+    })
+    $('privacyBox').addEventListener('toggle', () => { if ($('privacyBox').open) refreshPrivacy() })
+
+    const bootToggle = $('updateBootToggle')
+    if (bootToggle) {
+      bootToggle.checked = !(state.settings.update && state.settings.update.checkOnBoot === false)
+      bootToggle.addEventListener('change', () => {
+        save({ update: { checkOnBoot: !!bootToggle.checked } }, true, bootToggle.checked ? '下次启动会看一眼' : '启动时不再检查更新')
+      })
+    }
+
     $('quitBtn').addEventListener('click', () => api.quit())
   }
 
@@ -527,6 +615,8 @@
     { panel: 'sound', id: 'soundEvents', label: '什么时候响', hint: '各事件音效', keys: '声音 事件 点击 提醒' },
     { panel: 'sound', id: 'soundImportBtn', label: '添加一段音频', hint: '自定义音效', keys: '音效 音频 自定义 导入' },
     { panel: 'other', id: 'diagBtn', label: '导出诊断信息', hint: '日志与状态，坐标打码', keys: '诊断 日志 报错 反馈 导出' },
+    { panel: 'other', id: 'updateBtn', label: '检查更新', hint: '有新版本时提示，不会偷偷装', keys: '更新 升级 版本 新版 update' },
+    { panel: 'other', id: 'privacyCleanBtn', label: '清理日志和缓存', hint: '数据与隐私，照片和设置不会动', keys: '隐私 清理 数据 缓存 日志 删除 privacy' },
     { panel: 'other', id: 'onboardBtn', label: '再看一次欢迎引导', hint: '重新走一遍引导', keys: '引导 欢迎 新手 教程' },
     { panel: 'other', id: 'openDirBtn', label: '东西放哪', hint: '打开数据文件夹', keys: '数据 文件夹 备份 目录' },
     { panel: 'other', id: 'quitBtn', label: '先退出啦', hint: '关掉桌宠', keys: '退出 关闭 结束' },
@@ -846,6 +936,18 @@
     }
   }
 
+  async function renderUpdateStatus() {
+    const hint = $('updateStatus')
+    if (!hint) return
+    try {
+      const info = await api.getUpdateStatus()
+      const last = info && info.lastCheckAt ? new Date(info.lastCheckAt).toLocaleString() : '还没查过'
+      hint.textContent = '当前 ' + ((info && info.version) || '') + ' · 上次检查：' + last + '。有新版会在这里和气泡里说一声。'
+    } catch (err) {
+      hint.textContent = '读不到更新信息，不影响使用。'
+    }
+  }
+
   async function boot() {
     wireNav()
     wire()
@@ -859,6 +961,7 @@
       $('dataDir').title = state0.dataDir || ''
       fill(state0.settings)
       renderAppStatus()
+      renderUpdateStatus()
     } catch (err) {
       setStatus('没读到设置，稍后再试')
     }

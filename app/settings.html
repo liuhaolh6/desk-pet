@@ -356,6 +356,35 @@
                 <p id="diagStatus" class="field-hint">写一个 txt 到数据文件夹：版本、系统、托盘状态和日志尾巴。城市坐标会打码，也不会带上照片。</p>
               </div>
             </div>
+            <div class="field wide">
+              <span class="field-label">数据与隐私</span>
+              <div class="field-body">
+                <details id="privacyBox" class="privacy-box">
+                  <summary>这里存了什么、会往外面发什么</summary>
+                  <ul class="privacy-list">
+                    <li>设置（城市、昵称、偏好）：<code>settings.json</code> <span id="privSettings" class="privacy-size">…</span></li>
+                    <li>角色图和抠过的照片：<code>photos/</code> <span id="privPhotos" class="privacy-size">…</span></li>
+                    <li>日志和抠图轨迹：<code>app.log</code>、<code>cutout-trace.jsonl</code> <span id="privLogs" class="privacy-size">…</span></li>
+                    <li>浏览器缓存：<span id="privCaches" class="privacy-size">…</span></li>
+                  </ul>
+                  <p class="field-hint">联网只有四处：换城市时把城市名发给 open-meteo 换经纬度；之后只用经纬度取天气和空气质量；启动后读一次 GitHub 上的新版号（24 小时最多一次）；只有你点“去下载”才会打开浏览器。没有账号、没有埋点，照片不会上传。</p>
+                  <div class="control-line">
+                    <button id="privacyCleanBtn" type="button" class="danger-small">清理日志和缓存</button>
+                    <button id="privacyConfirmBtn" type="button" class="danger-small" hidden>真的清理</button>
+                    <button id="privacyCancelBtn" type="button" class="ghost-small" hidden>算了</button>
+                  </div>
+                  <p id="privacyStatus" class="field-hint"></p>
+                </details>
+              </div>
+            </div>
+            <div class="field">
+              <span class="field-label">更新</span>
+              <div class="field-body">
+                <button id="updateBtn" type="button">检查更新</button>
+                <p id="updateStatus" class="field-hint">有新版会在这里和气泡里说一声，点“去下载”打开发布页。</p>
+                <label class="check-row"><input id="updateBootToggle" type="checkbox"><span>启动时自动看一眼</span><em>之后每 24 小时最多一次，只读一个版本号</em></label>
+              </div>
+            </div>
             <div class="field">
               <span class="field-label">让它先休息</span>
               <div class="field-body">

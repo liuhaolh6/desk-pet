@@ -1,6 +1,6 @@
 # 交接文档（HANDOFF）
 
-> 版本 `0.6.7` · 最后更新 2026-10-23 · 给下一个接手的人（或下一个对话的我）。
+> 版本 `0.6.9` · 最后更新 2026-10-23 · 给下一个接手的人（或下一个对话的我）。
 > 目标：读完这一份就能**安全地改代码、跑验证、出包**，不必重新摸索。
 > 想先知道"这东西现在还差在哪、下一步做什么"，看 [`ROADMAP.md`](ROADMAP.md)。
 
@@ -13,11 +13,11 @@
 | 是什么 | Windows x64 桌面宠物（Electron 44 + 离线 ONNX 人像抠图），悬浮在桌面上，点击看天气 / 喝水 / 温馨话 |
 | 本地目录 | `D:\project\deskpet` |
 | 仓库 | `ssh://git@ssh.github.com:443/liuhaolh6/desk-pet.git`，分支 `main`，**当前是私有仓库** |
-| 版本 | `0.6.8`，**已出双包**：`dist\DeskPet-0.6.8-setup.exe`（165,558,348 B ≈ 157.9 MiB，安装器，未签名，SHA-256 `2d5dfe47…fff89c`）与 `dist\DeskPet-0.6.8-portable.exe`（153,882,861 B ≈ 146.8 MiB，便携版，SHA-256 `668ba228…e777a16`）；tag `v0.6.8` |
-| 最近提交 | 0.6.8 收尾 = 本提交；P2 进行中：P2-1 安装器（`nsis` 配置、`tools/clean-dist.js`、`boot-candidates` 单测）；P1 全部落地：`e2952ca` P1-9 e2e 入库 · `6c7a4fb` P1-8 真机 a11y · `94358ae` P1-7 主动说话 · `cdb3531` P1-6 天气增强 · `469d343` P1-5 喝水记录 · `b106382` P1-4 设置可用性 · `6342b75` P1-3 单测 · `01de0b2` P1-2 状态机 · `80332c7` P1-1 完成；0.6.6 收尾 = `e01c1cb`/`12176d2`/`5be8c4d`；再往前 `adbe033` 0.6.5 首次引导 |
+| 版本 | 代码 `0.6.9`（更新提示 + 数据与隐私）；**已出双包的是 `0.6.8`**：`dist\DeskPet-0.6.8-setup.exe`（165,558,348 B ≈ 157.9 MiB，安装器，未签名，SHA-256 `2d5dfe47…fff89c`）与 `dist\DeskPet-0.6.8-portable.exe`（153,882,861 B ≈ 146.8 MiB，便携版，SHA-256 `668ba228…e777a16`）；tag `v0.6.8` |
+| 最近提交 | 0.6.9 = 本提交（P2-3 更新提示 + P2-8 隐私文档）；`dba1115` P2-1 安装器 · `58f94b4` P2-2 签名准备；P1 全部落地：`e2952ca` P1-9 e2e 入库 · `6c7a4fb` P1-8 真机 a11y · `94358ae` P1-7 主动说话 · `cdb3531` P1-6 天气增强 · `469d343` P1-5 喝水记录 · `b106382` P1-4 设置可用性 · `6342b75` P1-3 单测 · `01de0b2` P1-2 状态机 · `80332c7` P1-1 完成；0.6.6 收尾 = `e01c1cb`/`12176d2`/`5be8c4d`；再往前 `adbe033` 0.6.5 首次引导 |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js`（`npm test` = smoke + `npm run unit`）；带窗口的再加 `npm run test:e2e` |
-| 自动化基线 | smoke **61 项** · unit **105 例** · check-a11y **95 项** · a11y-audit **86 项** · a11y-keyboard **6 项** · a11y-tree **4 窗口 / 0 无名** · e2e **3 用例**，全部通过 |
+| 自动化基线 | smoke **61 项** · unit **123 例** · check-a11y **95 项** · a11y-audit **86 项** · a11y-keyboard **6 项** · a11y-tree **4 窗口 / 0 无名** · e2e **3 用例**，全部通过 |
 | 最新产物 | 安装器 `dist/DeskPet-0.6.8-setup.exe` 165,558,348 字节，SHA-256 `2d5dfe47eb809af9e762b41b367d53da83c21d5634cfa31c9bfb0a82c9fff89c`；便携版 `dist/DeskPet-0.6.8-portable.exe` 153,882,861 字节，SHA-256 `668ba228f9f6c700a93fd1c48c0bfcabdefa910b21a74291c3c89ba62e777a16` |
 
 **能做什么**：换形象（照片抠图 / 导入 PNG）、点击看天气和喝水进度、按时提醒喝水、24 条内置温柔提示语、
@@ -104,6 +104,9 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `app/main/cutout-service.js`（新） | 232 | 抠图：解码、输入令牌、utilityProcess、进程内回退、`cutout-trace.jsonl` |
 | `app/main/window-layout.js`（新） | 250 | 窗口几何与命中：`hitTest` 纯函数 + `createWindowLayout()`（预留/可见性分离，见 M18-NOTES §5） |
 | `app/window-state.js`（新） | 126 | 五态机：转移表 + `transition/can/is/reset` + 非法计数与历史；纯 Node，smoke 直接 require |
+| `lib/update-check.js`（新） | 67 | 更新判断的纯函数：`compareVersions/isNewer/validUrl/decideUpdate`（`v` 前缀、预发布、24h 节流） |
+| `app/main/updater.js`（新） | 106 | 更新提示：读 feed（`settings.update.feedUrl` 或默认 raw），24h 一次，气泡 + 设置各说一句；`openDownload` 只放行 `https:` |
+| `app/main/privacy.js`（新） | 116 | 数据与隐私：`summary()` 现算各目录体积、`cleanup()` 只删日志/轨迹/Chromium 缓存（异步，设置与照片不碰） |
 | `app/main/water-ipc.js`（新） | 75 | 喝水四个通道：记一杯（写 log）、「稍后 10 分钟」、「今日/本周统计」、导出 CSV |
 | `lib/nudges.js`（新） | 86 | 主动说话的纯决策：`decide()`（久坐/深夜/久未互动/限流/勿扰）、`isNightHour`、`DEFAULTS` |
 | `app/main/nudge-pump.js`（新） | 102 | 说话泵：每分钟驱动 `decide()`，同一个气泡出口，全屏时跳过并记日志；`probe()` 可注入时间与状态 |
@@ -127,8 +130,9 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `lib/placement.js` | 185 | 多显示器归属、吸附、启动还原（纯函数） |
 | `lib/cutout*.js` + `lib/png.js` | 359/320/438/161 | 离线抠图：入口、数学、像素管线、PNG 编解码 |
 | `tools/smoke.js` | 1350 | `npm test` 的第一段：存储/角色/天气/气泡/几何/文案/引导/托盘/诊断/模块拆分/窗口状态机/天气泵/提醒/设置搜索与恢复默认/喝水记录 59 项断言 |
-| `tests/unit/*.test.js`（新） | 105 例 | `npm run unit`（`node:test`，零依赖）：`bubble-model` 19 · `placement` 16 · `weather` 24 · `cutout-math` 15 · `water-log` 15 · `nudges` 11 · `boot-candidates` 5（P1-3/P1-7/P2-1） |
+| `tests/unit/*.test.js`（新） | 123 例 | `npm run unit`（`node:test`，零依赖）：`bubble-model` 19 · `placement` 16 · `weather` 24 · `cutout-math` 15 · `water-log` 15 · `nudges` 11 · `boot-candidates` 5 · `update-check` 13 · `privacy` 5（P1-3/P1-7/P2-1/P2-3/P2-8） |
 | `docs/USER-GUIDE.md` | 123 | 用户手册：三分钟上手 + 9 条 FAQ（0.6.6 / ROADMAP P0-4） |
+| `docs/PRIVACY.md`（新） | 84 | 隐私说明：不发遥测、照片不外传、联网三处、数据目录、一键清理（P2-8） |
 
 ### 3.3 气泡几何契约（0.6.1 起，改之前先读 `M14-NOTES.md`）
 
@@ -198,7 +202,7 @@ token 表上限 3，窗口关闭即清空。
 |---|---|---|---|
 | 语法 | 49 个 JS 文件 | `npm run check` | ✅ |
 | `tools/smoke.js` | 存储/角色/天气码/`advice`/气泡模型/几何不变量/文案/首次引导/托盘兜底/诊断导出/主进程模块拆分/窗口状态机/预留-可见性分离/天气泵回退/提醒限流与勿扰/设置搜索与按页恢复默认/喝水记录与延后/主动说话 | `npm test` | ✅ 61 项 |
-| `tests/unit/` | 纯函数单测：气泡模型归一化/取值、多显示器放置与吸附、天气文案与 AQI、抠图数学、喝水记录、主动说话决策、便携数据目录候选 | `npm run unit` | ✅ 105 例 |
+| `tests/unit/` | 纯函数单测：气泡模型归一化/取值、多显示器放置与吸附、天气文案与 AQI、抠图数学、喝水记录、主动说话决策、便携数据目录候选、版本比较与更新决策、隐私清理边界 | `npm run unit` | ✅ 123 例 |
 | `tools/check-a11y.js` | 静态无障碍断言（对比度数学、24px、reduced-motion、forced-colors 分支、回流、aria、`lang`、引导卡、托盘/诊断行、搜索框与恢复默认确认层） | `node tools/check-a11y.js` | ✅ 95 项 |
 | `tools/a11y-audit.js` | 真实 DOM 审计（AX 名称、对比度、目标尺寸、焦点、320px 回流、forced-colors、reduced-motion） | `--port <调试端口>` | ✅ 86 项 / 0 失败 |
 | `tools/a11y-keyboard.js` | 键盘-only 抠图全流程 | `node tools/a11y-keyboard.js` | ✅ 6 项 |
