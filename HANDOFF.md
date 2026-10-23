@@ -104,7 +104,7 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `app/main/weather-pump.js`（新） | 81 | 天气取数/缓存回退/定时刷新，时钟可注入；`refresh/schedule/current` |
 | `app/main/reminder.js`（新） | 69 | 喝水提醒：勿扰/勿扰时段/`snoozeUntil` 延后/间隔/10 分钟限流，`tick()` 返回本次判定 |
 | `app/main/cutout-service.js`（新） | 232 | 抠图：解码、输入令牌、utilityProcess、进程内回退、`cutout-trace.jsonl` |
-| `app/main/window-layout.js`（新） | 250 | 窗口几何与命中：`hitTest` 纯函数 + `createWindowLayout()`（预留/可见性分离，见 M18-NOTES §5） |
+| `app/main/window-layout.js`（新） | 223 | 窗口几何与命中：`hitTest` 纯函数 + `createWindowLayout()`；P2-4 阶段二起不再预留气泡 strip（见 M28-NOTES §5） |
 | `app/window-state.js`（新） | 126 | 五态机：转移表 + `transition/can/is/reset` + 非法计数与历史；纯 Node，smoke 直接 require |
 | `lib/update-check.js`（新） | 67 | 更新判断的纯函数：`compareVersions/isNewer/validUrl/decideUpdate`（`v` 前缀、预发布、24h 节流） |
 | `app/main/updater.js`（新） | 106 | 更新提示：读 feed（`settings.update.feedUrl` 或默认 raw），24h 一次，气泡 + 设置各说一句；`openDownload` 只放行 `https:` |

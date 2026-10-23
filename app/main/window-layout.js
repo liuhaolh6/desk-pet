@@ -132,56 +132,28 @@ function createWindowLayout({ screen, placement, readSettings, log, winState, ge
    * otherwise grow downward (renderer puts the bubble below the pet). If neither
    * side can host the full height, reserve whatever the larger side has.
    *
-   * @param {number|null} height reserve to keep; `null` keeps the current one
-   *   (hiding a bubble no longer shrinks the window, and a pure re-measure must
-   *   not be mistaken for "a bubble is visible")
-   * @returns {{reserve:number, side:'above'|'below'}}
+   * @param {number|null} height ignored since P2-4 stage 2 (kept for IPC compat)
+   * @returns {{reserve:0, side:'above'}}
    */
   function applyBubbleHeight(height) {
+    // P2-4 stage 2: the bubble lives in its own window, so the pet window no
+    // longer reserves a strip. The handler stays registered (renderers still
+    // call it) but it must never resize or shift the pet.
+    void height
+    reserve = 0
+    bubbleSide = 'above'
     const win = getWindow()
-    if (!win) return { reserve, side: bubbleSide }
+    if (!win || win.isDestroyed()) return { reserve, side: bubbleSide }
+    // A window created before this change (or by an older build) may still carry
+    // a strip; shrink it back to pet size on the first call.
     const size = settingsSize()
-    const keep = height == null
-    const requested = keep ? reserve : clamp(Math.round(Number(height) || 0), 0, 420)
-    // Treat sub-card heights as "no bubble": they are invisible leftovers that
-    // otherwise leave a few pixels of reserved space (and shift drag maths).
-    const want = keep || requested >= 40 ? requested : 0
-
-    const b = win.getBounds()
     const pet = petScreenRect(size)
-    const display = screen.getDisplayNearestPoint({
-      x: b.x + Math.floor(b.width / 2),
-      y: pet.bottom - Math.floor(size / 2),
-    })
-    const work = display.workArea
-
-    // 0.6.2 (user decision): the bubble always sits ABOVE the pet. When the pet is
-    // too close to the top edge, move it down so a bubble-sized gap stays between
-    // the pet and the boundary - never flip the bubble below the pet.
-    const side = 'above'
-    const wantReserve = Math.max(0, Math.min(want, 420))
-    const minTop = work.y + wantReserve
-    const maxTop = work.y + Math.max(0, work.height - size)
-    const petTop = Math.min(Math.max(pet.top, minTop), maxTop)
-    const nextH = size + wantReserve
-    const bounds = windowBoundsForPet(pet.x, petTop, size, wantReserve)
-    const changed = side !== bubbleSide || wantReserve !== reserve ||
-      b.height !== nextH || b.y !== bounds.y || b.x !== bounds.x
-    bubbleSide = side
-    reserve = wantReserve
-    if (petTop !== pet.top) {
-      petPos = { x: pet.x, y: petTop }
-      onMirror()
-    }
-    if (changed) {
-      // Re-assert transparency right before the bounds change: the newly exposed
-      // strip can otherwise be composited with the window background for a frame.
-      if (process.env.DESKPET_OPAQUE !== '1') {
-        try { win.setBackgroundColor('#00000000') } catch (err) {}
-      }
+    const bounds = windowBoundsForPet(pet.x, pet.top, size, 0)
+    const b = win.getBounds()
+    if (b.x !== bounds.x || b.y !== bounds.y || b.width !== bounds.width || b.height !== bounds.height) {
       win.setBounds(bounds, false)
     }
-    return { reserve, side }
+    return { reserve, side: bubbleSide }
   }
 
   /** The renderer reports its interactive boxes; they change with the bubble. */

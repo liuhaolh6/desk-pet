@@ -12,7 +12,7 @@
  */
 
 const path = require('node:path')
-const { clamp, WIN_PAD, windowWidth, bubbleReserveFor } = require('./geometry')
+const { clamp, WIN_PAD, windowWidth } = require('./geometry')
 
 /**
  * @param {object} deps
@@ -59,21 +59,19 @@ function createWindows(deps) {
     const s = store.readSettings()
     const size = clamp(Number(s.size) || 220, 80, 480)
     const pos = layout.resolveWindowPosition(size)
-    // 0.6.4: the window is born with the bubble strip already reserved. The pet
-    // keeps its saved place (the strip grows upwards), clamped into the work area.
-    const reserve = bubbleReserveFor(windowWidth(size))
+    // P2-4 stage 2: no bubble strip any more - the window is exactly pet + pad.
     const nearest = screen.getDisplayNearestPoint({ x: pos.x + WIN_PAD + Math.floor(size / 2), y: pos.y })
     const work = nearest.workArea
-    const winY = Math.max(work.y, Math.min(pos.y - reserve, work.y + work.height - (size + reserve)))
+    const winY = Math.max(work.y, Math.min(pos.y, work.y + work.height - size))
     // The saved/window x already excludes the window padding.
-    layout.begin({ x: pos.x + WIN_PAD, y: winY + reserve, reserve })
+    layout.begin({ x: pos.x + WIN_PAD, y: winY, reserve: 0 })
 
     const opaque = process.env.DESKPET_OPAQUE === '1'
     petWin = new BrowserWindow({
       x: pos.x,
       y: winY,
       width: windowWidth(size),
-      height: size + reserve,
+      height: size,
       frame: false,
       transparent: !opaque,
       resizable: false,
@@ -128,14 +126,12 @@ function createWindows(deps) {
     const size = clamp(Number(next.size) || 220, 80, 480)
     const g = petWin.getBounds()
     if (windowWidth(size) !== g.width) {
-      // Keep the pet anchored the same way it already is: bottom-fixed above the
-      // bubble, top-fixed when the bubble is below.
+      // P2-4 stage 2: the window is pet-sized, so only the width changes.
       const prevSize = clamp(Number(prev && prev.size) || size, 80, 480)
       const pos = layout.petPos
       if (pos && prevSize !== size) pos.y = pos.y + prevSize - size
-      const reserve = layout.reserve
-      const y = pos ? pos.y - reserve : (g.y + g.height) - (size + reserve)
-      petWin.setBounds({ x: g.x, y, width: windowWidth(size), height: size + reserve })
+      const y = pos ? pos.y : g.y + g.height - size
+      petWin.setBounds({ x: g.x, y, width: windowWidth(size), height: size })
       sendMirror()
     }
     if (!prev || prev.alwaysOnTop !== next.alwaysOnTop) {

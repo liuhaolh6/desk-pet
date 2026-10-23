@@ -59,9 +59,37 @@ CDP 脚本 `D:\project\.tmp\cdp-p24.js`，7/7：
 门禁：`npm run check`（58 个 JS 文件）、`npm test`（smoke **62** 项）、`npm run unit`（**123** 例）、
 `node tools/check-a11y.js`（静态无障碍）全绿。
 
-## 5. 阶段二待做（下一步）
+## 5. 阶段二（已完成）：把预留 strip 删掉
 
-- 去掉 `app/pet.css` 的 `aspect-ratio` 预留与 `pet.js` 的 `bubbleReserve()`：桌宠窗口变回 `size + 2*pad`。
-- 悬停菜单也搬进 overlay（菜单需要可聚焦与键盘操作，得先想清楚它和气泡窗口的焦点关系）。
-- `window-layout.js` 的命中矩形只剩宠物本体，`updateInteractive()` 可以大幅简化。
-- 气泡可以真正“比宠物大”：`metrics()` 的宽度 clamp 不再受 `petWidth` 限制。
+阶段一留了个尾巴：气泡虽然搬进了 overlay，桌宠窗口仍然按 `bubbleReserveFor(windowWidth(size))`
+预留一条 224px 的透明 strip。它不可见，但让窗口一直比桌宠大一圈：`328×400` 对 `328×220`。
+
+### 改了什么
+
+| 文件 | 改动 |
+|---|---|
+| `app/main/window-layout.js` | `applyBubbleHeight()` 不再算预留：`reserve` 恒为 0，只把窗口尺寸归一到 pet 大小（旧版本留下的 strip 在第一次调用时被收回）。`windowBoundsForPet()` 保留 reserve 参数——纯函数测试还在用 |
+| `app/main/windows.js` | 建窗时 `height = size`（原 `size + reserve`），`layout.begin({ reserve: 0 })`；改尺寸时窗口贴着 pet 顶对齐 |
+| `tools/smoke.js` | 旧的「预留增长/贴边下推」断言换成新不变量：预留恒 0、窗口高度恒等于桌宠、`wantReserve` 不再出现在布局里 |
+
+`pet:reserve` 通道**保留**（渲染层还在发），但已经是空操作——这样旧渲染层、旧 preload 不会报错。
+
+### 验证
+
+| 项 | 结果 |
+|---|---|
+| 桌宠窗口几何 | PASS（CDP：`outerWidth 328 × outerHeight 220`，原来 220 + 180 = 400） |
+| 气泡默认在上方 | PASS（overlay bottom 636 ≤ pet top 642，gap 6px） |
+| 气泡贴上沿自动翻到下方 | PASS（拖到 `screenY 117` 后气泡 `screenY 343` ≥ pet bottom 338） |
+| `pet:reserve` 不再动窗口 | PASS（smoke 断言 `reserve = 0` + 高度恒等） |
+| 静态门禁 | check 0 / smoke 67 / unit 166 / check-i18n 0 / check-a11y 通过 |
+| 运行时无障碍 | a11y-audit 86 项 0 失败 |
+
+### 还没做（明确放弃的部分）
+
+- **悬停菜单搬进 overlay**：菜单要能聚焦、要键盘可达（`role="menu"` + 方向键），搬进一个默认不聚焦的
+  气泡窗口会和「气泡不抢焦点」的承诺打架。现在的做法是菜单仍留在桌宠窗口里——它的尺寸本来就只依赖
+  桌宠本体，不再受 strip 影响。
+- 气泡宽度仍按 `petWidth - 12` 算（`metrics()`）。想去掉这个上限得先定「气泡能不能比桌宠宽」这个
+  设计问题，不是重构问题。
+

@@ -748,9 +748,11 @@ const PAD = 54
   // the top it is pushed down so the bubble keeps its full size. The window is
   // only re-bounded when something actually changed.
   const layoutJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'window-layout.js'), 'utf8')
-  assert.ok(/const side = 'above'/.test(layoutJs), '气泡固定出现在桌宠上方（不再翻到下面）')
-  assert.ok(/const minTop = work\.y \+ wantReserve/.test(layoutJs), '上方空间不够时把桌宠下移，保留气泡大小')
-  assert.ok(/const changed = side !== bubbleSide/.test(layoutJs) && /if \(changed\) \{/.test(layoutJs), '尺寸未变时不调用 setBounds')
+  // P2-4 stage 2: the bubble is its own window, so the pet window never grows a
+  // strip and never gets pushed down. The overlay flips below when it must.
+  assert.ok(/reserve = 0/.test(layoutJs), '桌宠窗口的预留恒为 0')
+  assert.ok(!/const wantReserve/.test(layoutJs), '桌宠窗口不再计算气泡预留')
+  assert.ok(/function applyBubbleHeight\(height\)/.test(layoutJs), 'pet:reserve 仍接受调用（兼容旧渲染层）')
   assert.ok(/const floorTop = Math\.min\(maxTop, display\.workArea\.y \+ layout\.reserve\)/.test(mainJs), '拖拽也不能把桌宠拖进气泡预留区')
   assert.ok(/bubbleHidden/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')) && /pet:bubble-hidden/.test(mainJs), '收起气泡只退出状态、不缩窗口')
   assert.ok(/function updateInteractive/.test(layoutJs) && /pet:rects/.test(mainJs), '命中判定放在主进程轮询（渲染层 mousemove 会漏首个事件）')
@@ -782,8 +784,8 @@ const PAD = 54
   const petCss = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.css'), 'utf8')
   assert.ok(!/Math\.max\(display\.workArea\.y,/.test(mainJs), '气泡加高不得把窗口顶部 clamp 到工作区（会顶动桌宠）')
   const layoutJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'window-layout.js'), 'utf8')
-  assert.ok(/windowBoundsForPet\(pet\.x, petTop, size, wantReserve\)/.test(layoutJs), '有空间时桌宠屏幕矩形不变，只改窗口高度')
-  assert.ok(/const minTop = work\.y \+ wantReserve/.test(layoutJs), '空间不够时桌宠下移，气泡始终在上方')
+  assert.ok(/function applyBubbleHeight\(height\)/.test(layoutJs), '气泡高度只影响 overlay，不影响桌宠窗口')
+  assert.ok(!/const minTop = work\.y \+ wantReserve/.test(layoutJs), '不再为气泡把桌宠往下推')
   assert.ok(/ipcMain\.handle\('pet:bubble'/.test(mainJs), 'pet:bubble 回传授予的空间与侧别')
   assert.ok(/applyBubbleRoom/.test(petJs), '渲染层按授予的空间/侧别定位气泡')
   assert.ok(/aspect-ratio:\s*1026/.test(petCss), '气泡框保持固定比例')
@@ -1119,25 +1121,23 @@ const PAD = 54
   assert.deepEqual(lay.windowBoundsForPet(200, 300, 220, 180), { x: 146, y: 120, width: 328, height: 400 }, '窗口 = 桌宠 - 左右留白 / 向上预留')
   assert.equal(lay.mirrorSide(), 'none', '居中不贴边')
 
+  // P2-4 stage 2: the pet window no longer reserves a bubble strip at all.
   const grown = lay.applyBubbleHeight(170)
-  assert.deepEqual(grown, { reserve: 170, side: 'above' }, '气泡固定在上方')
-  assert.equal(winBounds.height, 220 + 170, '窗口高 = 桌宠 + 预留')
-  assert.equal(winBounds.y, 300 - 170, '向上长，桌宠不动')
-  assert.deepEqual(lay.petPos, { x: 200, y: 300 }, '桌宠不该被顶走')
+  assert.deepEqual(grown, { reserve: 0, side: 'above' }, '气泡在独立窗口，桌宠窗口不再预留')
+  assert.equal(winBounds.height, 220, '窗口高度恒等于桌宠高度')
+  assert.equal(winBounds.y, 300, '窗口不因气泡上移')
+  assert.deepEqual(lay.petPos, { x: 200, y: 300 }, '桌宠不会被气泡顶走')
 
+  winBounds = { x: 146, y: 120, width: 328, height: 400 }
   const shrunk = lay.applyBubbleHeight(0)
-  assert.equal(shrunk.reserve, 0, '收气泡时预留归零')
-  assert.equal(winBounds.height, 220, '窗口收回到桌宠高度')
+  assert.equal(shrunk.reserve, 0, '任何调用都不产生预留')
+  assert.equal(winBounds.height, 220, '遗留的预留会被收回')
 
-  lay.applyBubbleHeight(20)
-  assert.equal(lay.reserve, 0, '小于 40px 的残留视为无气泡')
-
-  // Near the top edge the pet is pushed down instead of the bubble flipping.
   lay.begin({ x: 200, y: 20, reserve: 0 })
-  winBounds = { x: 146, y: 20, width: 328, height: 220 }
+  winBounds = { x: 146, y: 0, width: 328, height: 220 }
   lay.applyBubbleHeight(180)
-  assert.equal(lay.petPos.y, 180, '贴近顶部时桌宠下移到预留线')
-  assert.equal(winBounds.y, 0, '窗口顶部仍在工作区内')
+  assert.equal(lay.petPos.y, 20, '贴顶时也不再下推桌宠（气泡自己翻到下方）')
+  assert.equal(winBounds.y, 20, '窗口始终与桌宠对齐（不再为了气泡留边）')
 
   // Click-through: dragging is interactive without waiting for the cursor poll.
   const dragLay = layoutMod.createWindowLayout({
