@@ -1,7 +1,54 @@
-# 代码签名（SignPath Foundation 免费 OSS 路线）
+# 代码签名（三条路线 + 现状）
 
-> 选定路线：**A. SignPath Foundation 免费开源签名**
-> 状态：申请材料、GitHub Actions、artifact 配置示例、本地验签脚本已就绪；**当前 `0.5.0` 仍是未签名构建**。SignPath 审核通过并配置 secrets/vars 后，由 GitHub Actions 签名。
+> 现状（2026-10-23，0.6.8）：**仍未签名**。三条路线的代码侧准备工作都已做完，
+> 卡在只能由人来办的一步：申请/采购证书（见 §0.3）。
+> 签名一旦可用，`sign-release.yml` 会自动接管，产物地址与文件名不变。
+
+## 0. 三条路线怎么选
+
+| 路线 | 门槛 | 成本 | 拿证时间 | 发布者显示 | 本项目适配度 |
+|---|---|---|---|---|---|
+| **A. SignPath Foundation**（原选定） | 仓库必须 public + OSI 许可证 + 活跃维护 | 免费 | 审核 1–4 周（不保证通过） | `SignPath Foundation` | 已写好申请材料与 workflow；前提是 P2-8 先把仓库公开 |
+| **B. Azure Trusted Signing** | 需要 Azure 订阅 + 组织身份验证（个人也可，需 3 年+ 企业/个人实名） | ≈ $9.99/月（Basic） | 1–3 个工作日 | 自己的名字/组织名 | **推荐起步**：云签名、无硬件 token、GitHub Action 成熟 |
+| **C. OV 代码签名证书**（DigiCert/Sectigo/SSL.com 等） | 企业营业执照或个人身份核验 | ¥2000–5000/年 | 3–10 个工作日 | 自己的名字/组织名 | 最通用，但要硬件 token 或云 HSM，CI 接入麻烦 |
+
+不建议 EV：单价 ¥5000+/年、审核更严，而 SmartScreen 信誉现在对 OV/EV 的差别已不明显。
+
+### 0.1 三条路线的共同点
+
+不管选哪条，**签名对象、时间戳、验签方式完全一样**：
+
+```powershell
+# 本地先把产物签出来（有证书后）
+signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /a dist\DeskPet-0.6.8-setup.exe
+# 验签：状态必须 Valid、必须有时间戳
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify-signature.ps1
+```
+
+- 必须带 RFC3161 时间戳，否则证书过期后旧版本全部失效；
+- `DeskPet-<v>-setup.exe`、`DeskPet-<v>-portable.exe`、`win-unpacked\DeskPet.exe` 三个都要签；
+- 签名必须发生在 electron-builder 打包**之后**（签 exe 本身，不是目录）。
+
+### 0.2 已经就绪的部分（不需要证书就能验收）
+
+- `tools/verify-signature.ps1`：批量验签 + 时间戳检查，未签名时以非 0 退出（可直接当门禁用）。
+- `.github/workflows/sign-release.yml`：SignPath 作业（路线 A）与 Azure Trusted Signing 作业（路线 B）两份，各自用 vars 开关，未配置时自动跳过。
+- `npm run verify:signature`：本地一条命令验签。
+- README「Code signing policy」：三条路线与发布者身份描述。
+
+### 0.3 阻塞点（需要人来办，代码无法代办）
+
+1. **路线 A**：仓库还是 private → 先做 P2-8（补 `PRIVACY.md` 后公开）；然后去 <https://signpath.org/apply> 提交申请，等审核。
+2. **路线 B**：需要 Azure 订阅 + 完成组织/个人身份验证（Microsoft Entra 账号、税务/地址信息）；在 Azure 门户创建 Trusted Signing Account + Certificate Profile 后，把四个值填进仓库 vars：
+   `AZURE_TS_ENDPOINT`、`AZURE_TS_ACCOUNT`、`AZURE_TS_PROFILE`、`AZURE_TS_SUBJECT`，再加 secrets `AZURE_CLIENT_ID`/`AZURE_TENANT_ID`/`AZURE_SUBSCRIPTION_ID`（OIDC 联邦凭据，不用存密码）。
+3. **路线 C**：下单买证书 → 身份核验 → 拿到 token/HSM → 在 CI 里配 `WINDOWS_CERT_FILE`+`WINDOWS_CERT_PASSWORD`（或云 HSM 的 endpoint）。
+
+**建议顺序**：先做 P2-8 公开仓库（半天），同时按路线 B 注册 Azure Trusted Signing（1–3 天出证）；
+等 A 的 SignPath 审核结果（1–4 周）作为备选。两条都通了就把 `sign-release.yml` 的开关打开。
+
+---
+
+# 路线 A 细节：SignPath Foundation 免费 OSS 签名
 
 ## 1. 这条路线是什么
 
@@ -174,7 +221,7 @@ signtool verify /pa /v .\signed\DeskPet-0.5.1-portable.exe
 - **Azure Artifact Signing**：个人 Public Trust 仅美国/加拿大，组织限特定国家/地区，中国大陆个人不适用。
 - **自签名**：只用于本机测试，不解决用户端 SmartScreen。
 
-## 8. 当前检查清单
+## 8. 当前检查清单（路线 A）
 
 - [x] README 增加 Code signing policy
 - [x] `.github/workflows/sign-release.yml`
@@ -185,3 +232,57 @@ signtool verify /pa /v .\signed\DeskPet-0.5.1-portable.exe
 - [ ] GitHub secrets + variables
 - [ ] 跑签名工作流并人工批准
 - [ ] 验签通过、发布带签名的版本
+
+---
+
+# 路线 B 细节：Azure Trusted Signing
+
+## B.1 开通（人工，一次性）
+
+1. Azure 订阅（Pay-As-You-Go 即可），并完成 Microsoft Entra 目录的**身份验证**（个人：3 年以上个人身份；企业：营业执照）。
+2. 门户里创建 **Trusted Signing Account**（区域选 `East US` 或 `West Europe`），再建 **Certificate Profile**（类型 `PublicTrust`，有效期 1 年，自动续期）。
+3. 在 Certificate Profile 里登记 `Subject`（个人名或组织名，CCA 审核过的名字）。
+4. 创建 Entra 应用注册 → 联邦凭据（GitHub OIDC，`repo:liuhaolh6/desk-pet:ref:refs/tags/v*`）→ 给这个应用授 “Trusted Signing Certificate Profile Signer” 角色。
+
+## B.2 接入 GitHub（仓库已经写好，只需填值）
+
+仓库 Variables：`AZURE_TS_ENDPOINT`（如 `https://eus.codesigning.azure.net`）、`AZURE_TS_ACCOUNT`、`AZURE_TS_PROFILE`、`AZURE_TS_SUBJECT`；
+仓库 Secrets：`AZURE_CLIENT_ID`、`AZURE_TENANT_ID`、`AZURE_SUBSCRIPTION_ID`。
+
+配置好后推 `v*` tag → `sign-release.yml` 的 `build-sign-azure` 作业会：构建 → 用 `trusted-signing-action` 签 `setup.exe` / `portable.exe` / `win-unpacked\DeskPet.exe` → `verify-signature.ps1` 验签 → 上传 `deskpet-signed`。
+
+## B.3 本地手签（拿到证书后的备选）
+
+```powershell
+winget install Microsoft.SigningClient   # 或 npm i -g @azure/trusted-signing-cli
+signtool sign /fd SHA256 /tr http://timestamp.acs.microsoft.com /td SHA256 /dlib "C:\Program Files\Microsoft Signing Client\dlib.dll" /dmdf metadata.json dist\DeskPet-0.6.8-setup.exe
+```
+
+`metadata.json` 里写 `Endpoint`/`CodeSigningAccountName`/`CertificateProfileName`/`CorrelationId`，格式见 Azure 文档。
+
+---
+
+# 路线 C 细节：OV 代码签名证书
+
+1. 向 DigiCert / Sectigo / SSL.com 下单 OV 代码签名（**不要买“文档签名”**），完成企业/个人核验。
+2. 交付物一般是硬件 token 或云 HSM。云 HSM 会给你 `WINDOWS_CERT_FILE`(base64 pfx) / `WINDOWS_CERT_PASSWORD` / `WINDOWS_CERT_HSM` 一类参数。
+3. 在 `sign-release.yml` 里改用 electron-builder 内置签名（最省事）：给构建环境加：
+
+```yaml
+env:
+  CSC_LINK: ${{ secrets.WINDOWS_CERT_FILE }}
+  CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+  CSC_IDENTITY_AUTO_DISCOVERY: 'true'
+```
+
+   electron-builder 会自动签 `setup.exe`/`portable.exe`/`win-unpacked` 里的 exe（签名参数加 `signingHashAlgorithms: [sha256]`、`rfc3161TimeStampServer: http://timestamp.digicert.com`）。
+4. 签完用 `tools/verify-signature.ps1` 验；把 `Signed by` 写进 `SHA256SUMS.txt` 旁边。
+
+---
+
+# 通用：签完之后要做什么
+
+- Release 说明里写明签名主体与时间戳，并提供 `SHA256SUMS.txt`（已有）。
+- SmartScreen 信誉从零开始累积：前几十次下载仍可能弹警告，**不要**在文档里承诺“马上没警告”。
+- 每次发版都用同一身份签；换证书等于重置信誉。
+- 未签名产物不要再对外发（避免用户拿到混合版本）。

@@ -6,7 +6,16 @@
 
 ## [Unreleased]
 
-- 计划中的工作与现有不足的完整清单见 [`ROADMAP.md`](ROADMAP.md)（成熟度评分、P0–P3 方向、未来展望）；
+### 文档
+- **签名路线与阻塞点写清楚（ROADMAP P2-2 准备部分）**：`SIGNING.md` 重写成三条路线（SignPath Foundation 免费
+  OSS / Azure Trusted Signing ≈$9.99 月 / OV 证书 ¥2000–5000 年）的对比与落地步骤，明确唯一阻塞是
+  “申请或采购证书需要人工身份核验”，代码侧（workflow、验签脚本）已就绪。
+- `sign-release.yml` 增加 **Azure Trusted Signing** 作业（`build-sign-azure`），与 SignPath 作业并存，
+  各自用仓库 vars 开关，未配置时自动跳过；签完自动跑 `tools/verify-signature.ps1` 并生成 `SHA256SUMS.txt`。
+- `tools/verify-signature.ps1` 默认改为验三个产物（`setup.exe` / `portable.exe` / `win-unpacked\DeskPet.exe`），
+  缺哪个跳过哪个。
+
+> 计划中的工作与现有不足的完整清单见 [`ROADMAP.md`](ROADMAP.md)（成熟度评分、P0–P3 方向、未来展望）；
   机制细节与踩坑记录见 [`HANDOFF.md`](HANDOFF.md)。
 
 ## [0.6.8] - 2026-10-23
