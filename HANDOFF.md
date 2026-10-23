@@ -16,8 +16,8 @@
 | 版本 | `0.6.6`，**已出包** `dist\DeskPet-0.6.6-portable.exe`（153.7 MB，未签名）与 `dist\win-unpacked\`；tag 推到 `v0.6.6`（`0.6.1`–`0.6.5` 按用户决定不补 tag，只在 `main` 历史里） |
 | 最近提交 | `e01c1cb` = 0.6.6 托盘真相结案；`12176d2` = 0.6.6 重新打包 + 托盘收口 + 真按键验证；`5be8c4d` = 0.6.6 长文案/托盘兜底/手册/诊断导出；再往前 `adbe033` 0.6.5 首次引导 |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
-| 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js` |
-| 自动化基线 | smoke **57 项** · check-a11y **57 项** · a11y-audit **86 项** · a11y-keyboard **6 项**，全部通过 |
+| 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js`（`npm test` = smoke + `npm run unit`） |
+| 自动化基线 | smoke **57 项** · unit **60 例** · check-a11y **57 项** · a11y-audit **86 项** · a11y-keyboard **6 项**，全部通过 |
 | 最新产物 | `dist/DeskPet-0.6.4-portable.exe`，153,754,785 字节，SHA-256 `22d173d4219b47e1e2df82de9c43f9a6777613668c0ec3e937ea09f9f206e82c`（0.6.5 还没打包，重打后再换这一行） |
 
 **能做什么**：换形象（照片抠图 / 导入 PNG）、点击看天气和喝水进度、按时提醒喝水、24 条内置温柔提示语、
@@ -121,7 +121,8 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `lib/weather.js` | 141 | Open-Meteo 取数、城市搜索、`advice()` 提醒推导 |
 | `lib/placement.js` | 185 | 多显示器归属、吸附、启动还原（纯函数） |
 | `lib/cutout*.js` + `lib/png.js` | 359/320/438/161 | 离线抠图：入口、数学、像素管线、PNG 编解码 |
-| `tools/smoke.js` | 1165 | `npm test`：存储/角色/天气/气泡/几何/文案/引导/托盘/诊断/模块拆分/窗口状态机/天气泵/提醒 57 项断言 |
+| `tools/smoke.js` | 1165 | `npm test` 的第一段：存储/角色/天气/气泡/几何/文案/引导/托盘/诊断/模块拆分/窗口状态机/天气泵/提醒 57 项断言 |
+| `tests/unit/*.test.js`（新） | 60 例 | `npm run unit`（`node:test`，零依赖）：`bubble-model` 19 · `placement` 16 · `weather.advice` 10 · `cutout-math` 15（P1-3） |
 | `docs/USER-GUIDE.md` | 123 | 用户手册：三分钟上手 + 9 条 FAQ（0.6.6 / ROADMAP P0-4） |
 
 ### 3.3 气泡几何契约（0.6.1 起，改之前先读 `M14-NOTES.md`）
@@ -190,8 +191,9 @@ token 表上限 3，窗口关闭即清空。
 
 | 工具 | 覆盖 | 命令 | 当前 |
 |---|---|---|---|
-| 语法 | 14 个 JS 文件 | `npm run check` | ✅ |
+| 语法 | 32 个 JS 文件 | `npm run check` | ✅ |
 | `tools/smoke.js` | 存储/角色/天气码/`advice`/气泡模型/几何不变量/文案/首次引导/托盘兜底/诊断导出/主进程模块拆分/窗口状态机/预留-可见性分离/天气泵回退/提醒限流与勿扰 | `npm test` | ✅ 57 项 |
+| `tests/unit/` | 纯函数单测：气泡模型归一化/取值、多显示器放置与吸附、天气文案优先级、抠图数学（阈值/形态学/连通块/裁剪框） | `npm run unit` | ✅ 60 例 |
 | `tools/check-a11y.js` | 静态无障碍断言（对比度数学、24px、reduced-motion、回流、aria、`lang`、引导卡、托盘/诊断行） | `node tools/check-a11y.js` | ✅ 57 项 |
 | `tools/a11y-audit.js` | 真实 DOM 审计（AX 名称、对比度、目标尺寸、焦点、320px 回流、forced-colors、reduced-motion） | `--port <调试端口>` | ✅ 86 项 / 0 失败 |
 | `tools/a11y-keyboard.js` | 键盘-only 抠图全流程 | `node tools/a11y-keyboard.js` | ✅ 6 项 |
@@ -353,6 +355,6 @@ node node_modules/electron-builder/cli.js --win portable --x64
 
 > 继续 `D:\project\deskpet` 的 Windows 桌面宠物项目，先读 `HANDOFF.md`（§0 速览、§4 不变量、§6 坑）
 > 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.6`，`main` 已同步，tag 到 `v0.6.6`。
-> 验证基线：`npm run check` + `npm test`（57 项）+ `node tools/check-a11y.js`（57 项）全部通过；
+> 验证基线：`npm run check` + `npm test`（smoke 57 项 + unit 60 例）+ `node tools/check-a11y.js`（57 项）全部通过；
 > 带界面的还要跑 `a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
 > 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。

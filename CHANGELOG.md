@@ -9,6 +9,13 @@
 - 计划中的工作与现有不足的完整清单见 [`ROADMAP.md`](ROADMAP.md)（成熟度评分、P0–P3 方向、未来展望）；
   机制细节与踩坑记录见 [`HANDOFF.md`](HANDOFF.md)。
 
+### 测试
+- **纯函数单测框架（ROADMAP P1-3）**：新增 `tests/unit/` 四个 `node:test` 文件、合计 **60 例**——
+  `bubble-model.test.js`（19：样式夹取、非法输入回退、空行裁剪、缺天气占位）、`placement.test.js`（16：多显示器归属、夹取、贴边吸附、存档失效）、
+  `weather.test.js`（10：WMO 码表、`advice()` 优先级、入参校验）、`cutout-math.test.js`（15：阈值、形态学、连通块、裁剪框）。
+  `package.json` 新增 `npm run unit`（`node --test "tests/unit/*.test.js"`）与 `unit:watch`，`npm test` 改为 smoke + unit 两段；
+  `npm run check` 把 4 个测试文件也纳入语法检查。零新依赖，见 [`M20-NOTES.md`](M20-NOTES.md)。
+
 ### 重构
 - **主进程拆模块（阶段 4，收口）**（ROADMAP P1-1）：新增 `app/main/windows.js`（297 行，五个窗口的创建/单例/设置副效应）、
   `catalog.js`（106，角色与声音目录 + `pet-role://`/`pet-sound://` 协议 + 广播）、`boot.js`（81，选数据目录 + 单实例锁），
