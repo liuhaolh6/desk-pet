@@ -40,6 +40,9 @@ function createReminders(deps) {
     const s = store.readSettings()
     if (s.mode === 'quiet') return 'quiet-mode'
     if (inQuietHours(s.water || {})) return 'quiet-hours'
+    // P1-5: 「稍后 10 分钟」wins over the normal interval — it is an explicit
+    // "not now" from the user, so it must not be silenced by not-due first.
+    if (Number(s.water.snoozeUntil) > now()) return 'snoozed'
     const interval = clamp(Number(s.water.intervalMinutes) || 60, 5, 600) * 60000
     const last = Number(s.water.lastDrinkAt) || 0
     if (now() - last < interval) return 'not-due'

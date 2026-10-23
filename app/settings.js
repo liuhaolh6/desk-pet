@@ -46,6 +46,7 @@
       panel.classList.toggle('active', on)
       panel.hidden = !on
     })
+    if (panelId === 'reminder') refreshWaterStats()
     const title = $('panelTitle')
     const hint = $('panelHint')
     if (title) title.textContent = target.dataset.title || ''
@@ -102,6 +103,7 @@
     $('interval').value = String((settings.water && settings.water.intervalMinutes) || 60)
     setIfIdle('quietFrom', settings.water ? settings.water.quietFrom : 23)
     setIfIdle('quietTo', settings.water ? settings.water.quietTo : 8)
+    setIfIdle('cupMl', (settings.water && settings.water.cupMl) || 200)
     setIfIdle('autoHide', settings.bubble ? settings.bubble.autoHideSeconds : 20)
     setIfIdle('cooldown', settings.bubble ? settings.bubble.cooldownMinutes : 30)
     if (document.activeElement !== $('phrases')) {
@@ -194,6 +196,24 @@
     })
     $('quietTo').addEventListener('change', (ev) => {
       save({ water: { quietTo: clamp(Number(ev.target.value) || 0, 0, 23) } }, true)
+    })
+    $('cupMl').addEventListener('change', (ev) => {
+      const cupMl = clamp(Number(ev.target.value) || 200, 50, 1000)
+      ev.target.value = String(cupMl)
+      save({ water: { cupMl } }, true)
+    })
+    $('exportWaterBtn').addEventListener('click', () => {
+      const btn = $('exportWaterBtn')
+      btn.disabled = true
+      api.exportWaterCsv().then((result) => {
+        if (!result || !result.ok) {
+          setStatus('导出没成功，再试一次？')
+          $('waterExportHint').textContent = (result && result.error) || '导出失败'
+          return
+        }
+        $('waterExportHint').textContent = '已导出 ' + (result.path || '') + '（' + (result.rows || 0) + ' 行）'
+        setStatus('导出好啦')
+      }).catch(() => setStatus('导出没成功，再试一次？')).finally(() => { btn.disabled = false })
     })
     $('autoHide').addEventListener('change', (ev) => {
       save({ bubble: { autoHideSeconds: clamp(Number(ev.target.value) || 0, 0, 120) } }, true)
@@ -414,6 +434,53 @@
     })
   }
 
+  // --------------------------------------------------- P1-5: water log
+  /** Draws today's timeline + the last seven days; called on every panel entry. */
+  function refreshWaterStats() {
+    const todayNode = $('waterToday')
+    const timeNode = $('waterTimeline')
+    const weekNode = $('waterWeek')
+    if (!todayNode || !timeNode || !weekNode) return
+    api.getWaterStats().then((stats) => {
+      if (!stats) return
+      const today = stats.today || { cups: 0, ml: 0, items: [] }
+      todayNode.textContent = today.cups
+        ? '今天第 ' + today.cups + ' 杯，共约 ' + today.ml + ' 毫升'
+        : '今天还没喝呢，等第一杯'
+      timeNode.textContent = ''
+      ;(today.items || []).forEach((item) => {
+        const li = document.createElement('li')
+        li.textContent = item.time
+        li.title = item.time + ' · ' + item.ml + 'ml'
+        timeNode.appendChild(li)
+      })
+      const week = stats.week || []
+      const max = Math.max(1, ...week.map((day) => day.cups))
+      weekNode.textContent = ''
+      week.forEach((day) => {
+        const li = document.createElement('li')
+        if (day.isToday) li.setAttribute('aria-current', 'true')
+        const label = document.createElement('span')
+        label.className = 'day-label'
+        label.textContent = day.isToday ? '今天' : day.label
+        const bar = document.createElement('span')
+        bar.className = 'bar'
+        const fill = document.createElement('i')
+        fill.style.width = Math.round((day.cups / max) * 100) + '%'
+        bar.appendChild(fill)
+        const count = document.createElement('span')
+        count.className = 'day-count'
+        count.textContent = day.cups + ' 杯'
+        li.appendChild(label)
+        li.appendChild(bar)
+        li.appendChild(count)
+        weekNode.appendChild(li)
+      })
+    }).catch(() => {
+      todayNode.textContent = '没读到喝水记录'
+    })
+  }
+
   // ------------------------------------------------- P1-4: find a setting
   // A hand-written index beats scraping the DOM: it can carry the words
   // people actually type ("音量/响度/大声"), and smoke can check that every
@@ -436,6 +503,9 @@
     { panel: 'reminder', id: 'interval', label: '多久提醒喝水', hint: '喝水间隔分钟', keys: '喝水 几杯 间隔 提醒' },
     { panel: 'reminder', id: 'quietFrom', label: '安静时间（开始）', hint: '这个点以后不吵你', keys: '安静 免打扰 别吵 睡觉' },
     { panel: 'reminder', id: 'quietTo', label: '安静时间（结束）', hint: '这个点以后恢复提醒', keys: '安静 免打扰 起床' },
+    { panel: 'reminder', id: 'waterTimeline', label: '今天的喝水时间轴', hint: '几点喝了一杯', keys: '喝水 记录 时间轴 今天 几杯' },
+    { panel: 'reminder', id: 'cupMl', label: '一杯多少毫升', hint: '导出 CSV 用', keys: '毫升 一杯 容量 导出' },
+    { panel: 'reminder', id: 'exportWaterBtn', label: '导出喝水记录', hint: '生成 CSV', keys: '导出 csv 表格 记录 备份' },
     { panel: 'weather', id: 'city', label: '你在哪座城市', hint: '搜城市名', keys: '城市 定位 地点 在哪 天气' },
     { panel: 'weather', id: 'locateBtn', label: '用我的位置', hint: '自动定位', keys: '定位 位置 gps 自动' },
     { panel: 'weather', id: 'refreshMinutes', label: '多久看一眼天气', hint: '刷新间隔', keys: '天气 刷新 间隔 更新' },

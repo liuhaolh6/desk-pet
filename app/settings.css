@@ -984,3 +984,59 @@ button:disabled {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ---------------------------------------------------------------- water log
+   P1-5: the timeline is plain text chips (a screen reader reads "07:30" fine);
+   the week is a list of label + bar + count, no chart library. */
+.water-timeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.water-timeline li {
+  padding: 2px 8px;
+  border: 1px solid var(--line, #dcd6cc);
+  border-radius: 999px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.water-week {
+  display: grid;
+  gap: 4px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.water-week li {
+  display: grid;
+  grid-template-columns: 3.2em 1fr 4.5em;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.water-week .day-label {
+  color: var(--muted, #7a7268);
+}
+.water-week .bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--track, #e7e1d7);
+  overflow: hidden;
+}
+.water-week .bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent, #6c8ebf);
+}
+.water-week .day-count {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.water-week li[aria-current="true"] .day-label {
+  color: var(--ink, #2b2622);
+  font-weight: 600;
+}

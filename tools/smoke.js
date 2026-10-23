@@ -903,7 +903,7 @@ const PAD = 54
   const root = path.join(__dirname, '..')
   const modDir = path.join(root, 'app', 'main')
   const mods = fs.readdirSync(modDir).filter((f) => f.endsWith('.js')).sort()
-  assert.deepEqual(mods, ['boot.js', 'catalog.js', 'cutout-service.js', 'diagnostics.js', 'geometry.js', 'ipc.js', 'log.js', 'reminder.js', 'tray.js', 'weather-pump.js', 'window-layout.js', 'windows.js'], 'app/main/ 下的模块名单')
+  assert.deepEqual(mods, ['boot.js', 'catalog.js', 'cutout-service.js', 'diagnostics.js', 'geometry.js', 'ipc.js', 'log.js', 'reminder.js', 'tray.js', 'water-ipc.js', 'weather-pump.js', 'window-layout.js', 'windows.js'], 'app/main/ 下的模块名单')
   const mainJs = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
   for (const name of mods) {
     const file = path.join(modDir, name)
@@ -1253,6 +1253,75 @@ const PAD = 54
   }
   assert.ok(/@media \(prefers-reduced-motion: reduce\)/.test(settingsCss), '减少动效的兜底还在')
   ok('P1-4 设置可用性：搜索、每项一句说明、按页恢复默认、最近城市')
+}
+
+// ------------------------------------------------- P1-5: water log
+{
+  const root = path.join(__dirname, '..')
+  const preloadJs = fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')
+  const petJs = fs.readFileSync(path.join(root, 'app', 'pet.js'), 'utf8')
+  const settingsHtml = fs.readFileSync(path.join(root, 'app', 'settings.html'), 'utf8')
+  const settingsJs = fs.readFileSync(path.join(root, 'app', 'settings.js'), 'utf8')
+  const settingsCss = fs.readFileSync(path.join(root, 'app', 'settings.css'), 'utf8')
+  const reminderJs = fs.readFileSync(path.join(root, 'app', 'main', 'reminder.js'), 'utf8')
+  const ipcJs = fs.readFileSync(path.join(root, 'app', 'main', 'ipc.js'), 'utf8')
+  const waterIpcJs = fs.readFileSync(path.join(root, 'app', 'main', 'water-ipc.js'), 'utf8')
+  const storeJs = fs.readFileSync(path.join(root, 'lib', 'store.js'), 'utf8')
+  const waterLog = require(path.join(root, 'lib', 'water-log.js'))
+
+  // Pure module.
+  assert.equal(typeof waterLog.summarize, 'function', 'water-log 导出 summarize')
+  assert.equal(typeof waterLog.toCsv, 'function', 'water-log 导出 toCsv')
+  assert.equal(typeof waterLog.dayKey, 'function', 'water-log 导出 dayKey')
+
+  // Settings shape + upgrade path.
+  const s0 = store.readSettings()
+  assert.equal(s0.water.cupMl, 200, '默认一杯 200ml')
+  assert.equal(s0.water.snoozeUntil, 0, '默认没有延后')
+  assert.deepEqual(s0.water.log, [], '默认没有记录')
+  const next = store.writeSettings({ water: { log: [
+    { at: 300, ml: 100 }, { at: 100, ml: 'bad' }, { at: 200, ml: 250 },
+  ] } })
+  assert.deepEqual(next.water.log.map((i) => i.at), [100, 200, 300], '记录按时间排序，坏数据被清掉')
+  store.writeSettings({ water: { cupMl: 5 } })
+  assert.equal(store.readSettings().water.cupMl, 50, '杯量下限 50ml')
+  store.writeSettings({ water: { cupMl: 200, log: [], snoozeUntil: 0 } })
+
+  // Reminder honours the snooze before the interval.
+  assert.ok(/snoozed/.test(reminderJs), '提醒会识别 snooze')
+  assert.ok(
+    reminderJs.indexOf("'snoozed'") < reminderJs.indexOf('const interval = clamp'),
+    'snooze 判定在间隔判定之前'
+  )
+
+  // Main process wiring.
+  for (const channel of ["'pet:water-snooze'", "'water:stats'", "'water:export'"]) {
+    assert.ok(waterIpcJs.includes(channel), 'water-ipc 有 ' + channel)
+  }
+  assert.ok(/registerWaterIpc\(/.test(ipcJs), 'ipc.js 调用 registerWaterIpc')
+  assert.ok(/waterLog\.dayKey\(/.test(waterIpcJs), '记一杯时用同一个 dayKey')
+  assert.ok(/snoozeUntil: 0/.test(waterIpcJs), '喝了水会清掉 snooze')
+  assert.ok(/water-.*\.csv/.test(waterIpcJs), '导出文件名是 water-<stamp>.csv')
+
+  // Preload surface.
+  for (const api of ['waterSnooze', 'getWaterStats', 'exportWaterCsv']) {
+    assert.ok(new RegExp(api + ':').test(preloadJs), 'preload 暴露 ' + api)
+  }
+
+  // Pet bubble: the defer button snoozes instead of just hiding.
+  assert.ok(/稍后 10 分钟/.test(petJs), '气泡上有「稍后 10 分钟」')
+  assert.ok(/api\.waterSnooze\(10\)/.test(petJs), '点「稍后 10 分钟」会写入 snooze')
+
+  // Settings panel.
+  for (const id of ['waterTimeline', 'waterWeek', 'cupMl', 'exportWaterBtn']) {
+    assert.ok(settingsHtml.includes('id="' + id + '"'), '设置页有 ' + id)
+  }
+  assert.ok(/refreshWaterStats\(\)/.test(settingsJs), '有刷新喝水记录的入口')
+  assert.ok(/panelId === 'reminder'/.test(settingsJs), '切到提醒页时刷新')
+  for (const cls of ['.water-timeline', '.water-week', '.ghost-small']) {
+    assert.ok(settingsCss.includes(cls), '样式里有 ' + cls)
+  }
+  ok('P1-5 喝水记录：稍后 10 分钟、今日时间轴、本周杯数、CSV 导出')
 }
 
 console.log('\n' + pass + ' checks passed')

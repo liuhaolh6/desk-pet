@@ -205,6 +205,43 @@
               </div>
             </div>
           </div>
+
+          <div class="card">
+            <h3>喝水记录</h3>
+            <div class="field">
+              <span class="field-label" id="waterTodayLabel">今天</span>
+              <div class="field-body">
+                <p id="waterToday" class="field-hint">今天还没喝呢，等第一杯</p>
+                <ol id="waterTimeline" class="water-timeline" aria-labelledby="waterTodayLabel"></ol>
+              </div>
+            </div>
+            <div class="field">
+              <span class="field-label" id="waterWeekLabel">最近七天</span>
+              <div class="field-body">
+                <p class="field-hint">从今天往前数七天，杯数最多的一天最满</p>
+                <ul id="waterWeek" class="water-week" aria-labelledby="waterWeekLabel"></ul>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="cupMl">一杯大概多少毫升</label>
+              <div class="field-body">
+                <div class="control-line">
+                  <input id="cupMl" type="number" min="50" max="1000" step="10" aria-describedby="cupMlHint">
+                  <span class="unit">毫升</span>
+                </div>
+                <p id="cupMlHint" class="field-hint">每杯按喝的时候的杯量记，改了只影响之后那几杯</p>
+              </div>
+            </div>
+            <div class="field">
+              <span class="field-label">导出</span>
+              <div class="field-body">
+                <div class="control-line">
+                  <button id="exportWaterBtn" type="button" class="ghost-small">导出喝水记录（CSV）</button>
+                </div>
+                <p id="waterExportHint" class="field-hint">存到数据目录，里面只有时间和毫升数</p>
+              </div>
+            </div>
+          </div>
         </section>
 
         <section class="panel" data-panel="weather" hidden>

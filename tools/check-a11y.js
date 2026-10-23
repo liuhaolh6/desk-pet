@@ -224,6 +224,25 @@ for (const file of ['app/cutout.css', 'app/pet.css', 'app/settings.css', 'app/ed
   check('音效控件有可访问名称', (settingsJs.match(/setAttribute\('aria-label'/g) || []).length >= 3)
 }
 
+//
+// ------------------------------------------------- P1-5: water log (settings)
+{
+  const html = read('app/settings.html')
+  const js = read('app/settings.js')
+  const timeline = (html.match(/<ol id="waterTimeline"[^>]*>/i) || [''])[0]
+  check('喝水时间轴是列表且有名称', !!timeline && !!attr(timeline, 'aria-labelledby'))
+  check('时间轴的名称指向可见标签', /id="waterTodayLabel"/.test(html))
+  const week = (html.match(/<ul id="waterWeek"[^>]*>/i) || [''])[0]
+  check('本周杯数是列表且有名称', !!week && !!attr(week, 'aria-labelledby'))
+  check('今天的柱条用 aria-current 标记', /setAttribute\('aria-current', 'true'\)/.test(js))
+  const cup = (html.match(/<input id="cupMl"[^>]*>/i) || [''])[0]
+  check('杯量输入有标签与说明', !!attr(cup, 'aria-describedby') && /for="cupMl"/.test(html))
+  const exportBtn = (html.match(/<button id="exportWaterBtn"[^>]*>([^<]*)</i) || [])
+  check('导出按钮是带文案的真按钮', attr(html.match(/<button id="exportWaterBtn"[^>]*>/i)[0], 'type') === 'button' && /导出喝水记录/.test(exportBtn[1] || ''))
+  check('导出结果用文字说明而不是只弹窗', /waterExportHint/.test(html) && /textContent = '已导出 ' \+/.test(js))
+  check('时间轴不只靠颜色区分', !/\.water-timeline li\s*\{[^}]*color:/.test(read('app/settings.css')))
+}
+
 console.log('')
 if (failures) {
   console.error(failures + ' accessibility check(s) failed')

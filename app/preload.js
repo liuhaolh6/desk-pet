@@ -73,6 +73,10 @@ contextBridge.exposeInMainWorld('deskPet', {
   openOnboard: () => ipcRenderer.send('onboard:open'),
   dismissOnboard: () => ipcRenderer.send('onboard:dismiss'),
   drinkDone: () => ipcRenderer.send('pet:water-done'),
+  // P1-5: 「稍后 10 分钟」and the water log behind the settings panel.
+  waterSnooze: (minutes) => ipcRenderer.send('pet:water-snooze', minutes),
+  getWaterStats: () => ipcRenderer.invoke('water:stats'),
+  exportWaterCsv: () => ipcRenderer.invoke('water:export'),
   openDataDir: () => ipcRenderer.invoke('app:open-data-dir'),
   quit: () => ipcRenderer.send('app:quit'),
 
