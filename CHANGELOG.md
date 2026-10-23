@@ -9,6 +9,12 @@
 - 计划中的工作与现有不足的完整清单见 [`ROADMAP.md`](ROADMAP.md)（成熟度评分、P0–P3 方向、未来展望）；
   机制细节与踩坑记录见 [`HANDOFF.md`](HANDOFF.md)。
 
+### 重构
+- **主进程拆模块（阶段 1）**（ROADMAP P1-1 / L21）：新增 `app/main/log.js`、`geometry.js`、`tray.js`、`diagnostics.js`
+  （合计 281 行），`app/main.js` 从 1451 行降到 **1284 行**，只做接线；行为与对外 API 不变
+  （`app:status` 字段形状、托盘菜单项、诊断导出文件格式均同 0.6.6）。smoke 新增模块契约与几何纯函数断言（54 项）。
+  细节与剩余阶段见 [`M18-NOTES.md`](M18-NOTES.md)。
+
 ## [0.6.6] - 2026-10-22
 
 长文案不再糊成一团，托盘靠不住时也有后路，出问题能一键导出信息。
