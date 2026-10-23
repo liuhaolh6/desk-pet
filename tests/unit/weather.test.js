@@ -10,7 +10,7 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const weather = require('../../lib/weather.js')
 
-const { describe, advice, WMO, TIMEOUT_MS, fetchWeather } = weather
+const { describe, advice, aqiGrade, parseDays, fetchAirQuality, WMO, TIMEOUT_MS, fetchWeather } = weather
 
 test('describe：已知天气码给出文案与图标', () => {
   assert.deepEqual(describe(0), { text: '晴', icon: '☀️' })
@@ -33,6 +33,15 @@ test('advice：没有温度时返回空串（不硬编文案）', () => {
 test('advice：下雪优先于下雨', () => {
   assert.match(advice({ temp: -2, code: 73 }), /下雪/)
   assert.match(advice({ temp: 2, code: 71, precip: 90 }), /下雪/)
+})
+
+test('advice：阵雨(80-82)不是下雪——别把 8x 全当成雪', () => {
+  for (const code of [80, 81, 82]) {
+    assert.match(advice({ temp: 20, code, precip: 100 }), /带伞/)
+    assert.doesNotMatch(advice({ temp: 20, code, precip: 100 }), /下雪/)
+  }
+  assert.match(advice({ temp: 0, code: 85 }), /下雪/)
+  assert.match(advice({ temp: -2, code: 77 }), /下雪/)
 })
 
 test('advice：下雨码或高降水概率都提醒带伞', () => {
@@ -66,4 +75,70 @@ test('WMO：码表覆盖常见天气，且每项都是 [文案, 图标]', () => 
 test('fetchWeather：缺经纬度时以错误拒绝，而不是发出请求', async () => {
   await assert.rejects(() => fetchWeather({}), /缺少经纬度/)
   await assert.rejects(() => fetchWeather({ lat: 'x', lon: 1 }), /缺少经纬度/)
+})
+
+test('aqiGrade：按欧洲 AQI 分级，边界值落在上一档', () => {
+  assert.equal(aqiGrade(0).text, '优')
+  assert.equal(aqiGrade(20).text, '优')
+  assert.equal(aqiGrade(21).text, '良')
+  assert.equal(aqiGrade(40).text, '良')
+  assert.equal(aqiGrade(61).text, '较差')
+  assert.equal(aqiGrade(95).text, '很差')
+  assert.equal(aqiGrade(180).text, '极差')
+})
+
+test('aqiGrade：缺失/非法值返回 null（不能把 null 当成 0 说“优”）', () => {
+  assert.equal(aqiGrade(null), null)
+  assert.equal(aqiGrade(undefined), null)
+  assert.equal(aqiGrade(''), null)
+  assert.equal(aqiGrade(-1), null)
+  assert.equal(aqiGrade('abc'), null)
+})
+
+test('parseDays：今天/明天/后天三天，含日出日落与降水概率', () => {
+  const days = parseDays({
+    time: ['2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26'],
+    weather_code: [1, 61, 3, 0],
+    temperature_2m_max: [18, 15, 17, 19],
+    temperature_2m_min: [7, 6, 8, 9],
+    precipitation_probability_max: [0, 80, 10, 0],
+    sunrise: ['2026-10-23T06:42', '2026-10-24T06:43', '2026-10-25T06:44', '2026-10-26T06:45'],
+    sunset: ['2026-10-23T17:21', '2026-10-24T17:20', '2026-10-25T17:19', '2026-10-26T17:18'],
+  })
+  assert.equal(days.length, 3)
+  assert.equal(days[1].label, '明天')
+  assert.equal(days[1].text, '小雨')
+  assert.equal(days[1].high, 15)
+  assert.equal(days[1].precip, 80)
+  assert.equal(days[2].sunset, '17:19')
+})
+
+test('parseDays：空数据返回空数组（不抛）', () => {
+  assert.deepEqual(parseDays(null), [])
+  assert.deepEqual(parseDays({}), [])
+})
+
+test('fetchAirQuality：上游报错时返回 null，不把天气卡带崩', async (t) => {
+  const real = globalThis.fetch
+  t.after(() => { globalThis.fetch = real })
+  globalThis.fetch = async () => { throw new Error('offline') }
+  assert.equal(await fetchAirQuality(30.2, 120.1), null)
+  globalThis.fetch = async () => ({ ok: false, status: 502, json: async () => ({}) })
+  assert.equal(await fetchAirQuality(30.2, 120.1), null)
+  globalThis.fetch = async () => ({ ok: true, json: async () => ({ current: {} }) })
+  assert.equal(await fetchAirQuality(30.2, 120.1), null)
+})
+
+test('fetchAirQuality：正常响应映射成可展示结构', async (t) => {
+  const real = globalThis.fetch
+  t.after(() => { globalThis.fetch = real })
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({ current: { european_aqi: 35.4, pm2_5: 12.2, pm10: 20 } }),
+  })
+  const air = await fetchAirQuality(30.2, 120.1)
+  assert.equal(air.aqi, 35)
+  assert.equal(air.text, '良')
+  assert.equal(air.pm25, 12)
+  assert.match(air.tip, /出去走走/)
 })

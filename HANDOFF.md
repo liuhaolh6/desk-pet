@@ -17,7 +17,7 @@
 | 最近提交 | `e01c1cb` = 0.6.6 托盘真相结案；`12176d2` = 0.6.6 重新打包 + 托盘收口 + 真按键验证；`5be8c4d` = 0.6.6 长文案/托盘兜底/手册/诊断导出；再往前 `adbe033` 0.6.5 首次引导 |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js`（`npm test` = smoke + `npm run unit`） |
-| 自动化基线 | smoke **59 项** · unit **75 例** · check-a11y **84 项** · a11y-audit **86 项** · a11y-keyboard **6 项**，全部通过 |
+| 自动化基线 | smoke **60 项** · unit **85 例** · check-a11y **84 项** · a11y-audit **86 项** · a11y-keyboard **6 项**，全部通过 |
 | 最新产物 | `dist/DeskPet-0.6.4-portable.exe`，153,754,785 字节，SHA-256 `22d173d4219b47e1e2df82de9c43f9a6777613668c0ec3e937ea09f9f206e82c`（0.6.5 还没打包，重打后再换这一行） |
 
 **能做什么**：换形象（照片抠图 / 导入 PNG）、点击看天气和喝水进度、按时提醒喝水、24 条内置温柔提示语、
@@ -72,7 +72,7 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
    │
    ├─ utilityProcess cutout-worker ──► ONNX Runtime（推理 + 合成 + PNG 编码）
    ├─ store（lib/store.js）──► <数据目录>/{settings,roles,weather-cache,sounds}.json + roles/*.png + sounds/*
-   ├─ weather（lib/weather.js）──► api.open-meteo.com / geocoding-api.open-meteo.com
+   ├─ weather（lib/weather.js）──► api.open-meteo.com / geocoding-api.open-meteo.com / air-quality-api.open-meteo.com
    └─ 定时器：喝水提醒、天气刷新、隐藏时通知
 ```
 
@@ -116,11 +116,11 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `app/cutout.js` / `.html` / `.css` | 621 / — / 353 | 抠图窗口：三态视图、擦除、旋转、保存 |
 | `app/editor.js` / `.html` / `.css` | 537 / — / 233 | 气泡布置编辑器 |
 | `app/onboard.js` / `.html` / `.css` | 57 / 52 / 183 | 首次欢迎卡（M17 P0-1）：三步说明 + 两个按钮，关闭即写 `onboarded` |
-| `app/bubble-model.js` | 346 | 卡片→行→模块的数据模型（纯函数，Node 可测） |
+| `app/bubble-model.js` | 367 | 卡片→行→模块的数据模型（纯函数，Node 可测）；含天气/空气/喝水取值 |
 | `app/sound-model.js` | 208 | 音效事件/片段模型（纯函数） |
 | `app/tokens.css` | — | 设计 token（配色、圆角、阴影、字号） |
 | `lib/store.js` | 364 | 设置/角色/缓存的原子读写 + 读取缓存；`defaults()` 深拷贝、`weather.recent`（去空/去重/≤5）与 `water.log`（排序/上限 500/杯量 50–1000）读写时规整 |
-| `lib/weather.js` | 141 | Open-Meteo 取数、城市搜索、`advice()` 提醒推导 |
+| `lib/weather.js` | 221 | Open-Meteo 取数（三天预报 + 空气质量）、城市搜索、`advice()` 提醒推导、`aqiGrade/parseDays` 纯函数 |
 | `lib/placement.js` | 185 | 多显示器归属、吸附、启动还原（纯函数） |
 | `lib/cutout*.js` + `lib/png.js` | 359/320/438/161 | 离线抠图：入口、数学、像素管线、PNG 编解码 |
 | `tools/smoke.js` | 1350 | `npm test` 的第一段：存储/角色/天气/气泡/几何/文案/引导/托盘/诊断/模块拆分/窗口状态机/天气泵/提醒/设置搜索与恢复默认/喝水记录 59 项断言 |
@@ -193,7 +193,7 @@ token 表上限 3，窗口关闭即清空。
 
 | 工具 | 覆盖 | 命令 | 当前 |
 |---|---|---|---|
-| 语法 | 32 个 JS 文件 | `npm run check` | ✅ |
+| 语法 | 35 个 JS 文件 | `npm run check` | ✅ |
 | `tools/smoke.js` | 存储/角色/天气码/`advice`/气泡模型/几何不变量/文案/首次引导/托盘兜底/诊断导出/主进程模块拆分/窗口状态机/预留-可见性分离/天气泵回退/提醒限流与勿扰/设置搜索与按页恢复默认/喝水记录与延后 | `npm test` | ✅ 59 项 |
 | `tests/unit/` | 纯函数单测：气泡模型归一化/取值、多显示器放置与吸附、天气文案优先级、抠图数学（阈值/形态学/连通块/裁剪框） | `npm run unit` | ✅ 60 例 |
 | `tools/check-a11y.js` | 静态无障碍断言（对比度数学、24px、reduced-motion、回流、aria、`lang`、引导卡、托盘/诊断行、搜索框与恢复默认确认层） | `node tools/check-a11y.js` | ✅ 76 项 |
@@ -358,6 +358,6 @@ node node_modules/electron-builder/cli.js --win portable --x64
 
 > 继续 `D:\project\deskpet` 的 Windows 桌面宠物项目，先读 `HANDOFF.md`（§0 速览、§4 不变量、§6 坑）
 > 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.6`，`main` 已同步，tag 到 `v0.6.6`。
-> 验证基线：`npm run check` + `npm test`（smoke 59 项 + unit 75 例）+ `node tools/check-a11y.js`（84 项）全部通过；
+> 验证基线：`npm run check` + `npm test`（smoke 60 项 + unit 85 例）+ `node tools/check-a11y.js`（84 项）全部通过；
 > 带界面的还要跑 `a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
 > 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。
