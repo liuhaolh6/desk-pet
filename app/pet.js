@@ -8,6 +8,10 @@
   const api = window.deskPet
   const model = window.DeskPetBubble
   const sound = window.DeskPetSound
+  // P2-6 stage 2: this window's copy comes from the dictionary, not the markup.
+  const i18n = window.deskPetI18n
+  const t = (api && api.i18n && api.i18n.t) || ((key) => key)
+  if (i18n && api && api.i18n) i18n.applyStatic(document, api.i18n)
   const pet = document.getElementById('pet')
   const petWrap = document.getElementById('petWrap')
   const petFlip = document.getElementById('petFlip')
@@ -78,7 +82,7 @@
     state.layout = model.normalizeLayout(settings.bubble && settings.bubble.layout)
     const size = clamp(Number(settings.size) || 220, 80, 480)
     document.documentElement.style.setProperty('--pet-size', size + 'px')
-    pet.alt = settings.name || '桌宠'
+    pet.alt = settings.name || t('pet.alt')
     const role = (state.roles || []).find((r) => r.id === settings.roleId)
     const src = role ? role.url : 'pet-role://default/'
     if (pet.getAttribute('src') !== src) pet.setAttribute('src', src)
@@ -275,20 +279,14 @@
     renderCard(card, id)
   }
 
-  const WATER_TIPS = [
-    '慢慢喝，别急呀',
-    '温温的水最舒服',
-    '喝一口，歇一会儿',
-    '我在旁边陪你喝',
-    '小口小口，刚刚好',
-  ]
+  const WATER_TIPS = ['water.tip1', 'water.tip2', 'water.tip3', 'water.tip4', 'water.tip5']
 
   /** One warm line that fits the current hour and cup count. */
   function waterTip(cups, hour) {
-    if (hour >= 22 || hour < 6) return '太晚啦，抿一小口就好'
-    if (cups <= 1) return '才刚开始，慢慢来呀'
-    if (cups >= 8) return '今天很乖，睡前少喝一点点'
-    return WATER_TIPS[(cups + hour) % WATER_TIPS.length]
+    if (hour >= 22 || hour < 6) return t('water.late')
+    if (cups <= 1) return t('water.start')
+    if (cups >= 8) return t('water.good')
+    return t(WATER_TIPS[(cups + hour) % WATER_TIPS.length])
   }
 
   function contextFor(card) {
@@ -318,11 +316,11 @@
     state.currentCard = cardId
     const ctx = contextFor(card)
     let rows = model.pruneRows(model.resolveCard(card, ctx))
-    if (!rows.length) rows = [[{ text: '…', css: '' }]]
+    if (!rows.length) rows = [[{ text: t('water.empty'), css: '' }]]
     const payload = {
       rows: rows.map((row) => row.map((item) => ({ text: item.text, css: item.css || '' }))),
       actions: card.action
-        ? [{ id: 'water-done', label: '喝过了', primary: true }, { id: 'water-later', label: '稍后 10 分钟' }]
+        ? [{ id: 'water-done', label: t('water.done'), primary: true }, { id: 'water-later', label: t('water.later') }]
         : [],
     }
     showBubble(payload)

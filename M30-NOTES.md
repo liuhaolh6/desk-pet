@@ -124,7 +124,7 @@ node tools/check-i18n.js --update   # 重写基线（只在"已抽取完"后跑�
 | 阶段 | 范围 | 基线（该阶段结束时） |
 |---|---|---|
 | 一 | 骨架 + 主进程首批（托盘/提醒/主动说话）+ 设置页语言开关 | 880 |
-| 二 | 桌宠/气泡窗口 + 窗口标题 + 主进程对话框/通知 | 待填 |
+| 二 | 桌宠窗口（标题 / 菜单 / alt / 喝水卡文案）+ 四个窗口标题 | 859 |
 | 三 | 设置页（`settings.js` 238 + `settings.html` 173，最大的一块） | 待填 |
 | 四 | 抠图 + 气泡布置编辑器 | 待填 |
 | 五 | 数据层（`bubble-model` / `sound-model` / `lib/weather` / `lib/store`）与示例内容 | 待填 |
@@ -137,7 +137,29 @@ app/editor.js 54 · lib/weather.js 54          共 30 个文件 / 880 处
 ```
 
 **已归零的文件**（0 处）：`app/main.js`、`app/main/tray.js`、`app/main/reminder.js`、`app/main/nudge-pump.js`
-（只剩 1 处日志文案）、`app/preload.js`、`lib/nudges.js`（还剩 3 处兜底文案）、`app/overlay.js`、`app/onboard.js`。
+（只剩 1 处日志文案）、`app/preload.js`、`lib/nudges.js`（还剩 3 处兜底文案）、`app/overlay.js`、`app/onboard.js`、
+`app/pet.html`（阶段二）、`app/main/windows.js`（阶段二；只剩文件头注释）。
+
+### 8.1 阶段二：桌宠窗口与窗口标题（880 → 859）
+
+这一阶段的真正教训是：**HTML 里不能留“备用中文”**。写 `data-i18n="pet.menu.quit"` 的同时把
+“先退出啦”当文本子节点留着，看起来无副作用（反正启动就被盖掉），但基线永远数不降——
+而且它给后来人一个错觉：“这里的中文是必要的”。所以阶段二把 `pet.html` 的中文全删了：
+元素内容为空，`applyStatic()` 在 `pet.js` 开头一次填完；字典缺键时显示的是 key 本身（不是空白），
+问题依然可见，只是从“看起来正常”变成“明显不对”。
+
+三处具体决定：
+
+1. **`alt` 优先用名字**：用户给桌宠起了名字（默认“小芳”）就不该翻译成 “Desk pet”。
+   `pet.alt` 只是没名字时的兜底。
+2. **喝水小语是“键数组”不是“文本数组”**：`WATER_TIPS = ['water.tip1'…]`，用的时候才 `t()`。
+   这样按小时分档的三句（`water.late/start/good`）与五句循环句都在字典里，且避免在模块加载时
+   就把语言钉死（语言要重启才生效，但测试与工具会换字典）。
+3. **窗口标题在 `createWindows` 里解一次**：`title(key, fallback)` 小助手，`main.js` 只多传一个 `i18n`。
+   不把 i18n 泄到每个 `openXxx()` 里，是因为标题只在建窗时定一次，改语言本来就要重启。
+
+验证：`.tmp/cdp-p26s2.js`（zh 8/8、en 5/5）——真窗口里看 `document.title`、五个菜单项文本、
+`#petMenu` 的 `aria-label`、`alt`、以及字典里的 `water.later`；切 `locale` 后重启再看一遍。
 
 ## 9. 已知限制与后续
 

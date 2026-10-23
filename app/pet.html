@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>桌宠</title>
+  <title data-i18n="pet.title"></title>
   <link rel="stylesheet" href="tokens.css">
   <link rel="stylesheet" href="pet.css">
 </head>
@@ -11,21 +11,22 @@
   <div id="stage">
     <div id="petWrap" class="pet-wrap">
       <div id="petFlip" class="pet-flip">
-        <img id="pet" alt="桌宠" draggable="false">
+        <img id="pet" alt="" data-i18n-alt="pet.alt" draggable="false">
       </div>
-      <button id="menuBtn" class="menu-btn" type="button" aria-label="打开菜单" title="菜单">
+      <button id="menuBtn" class="menu-btn" type="button" data-i18n-aria-label="pet.menu.open" data-i18n-title="pet.menu.label">
         <span></span><span></span><span></span>
       </button>
-      <div id="petMenu" class="pet-menu" role="menu" aria-label="桌宠菜单" hidden>
-        <button type="button" role="menuitem" data-action="settings">设置</button>
-        <button type="button" role="menuitem" data-action="editor">布置气泡</button>
-        <button type="button" role="menuitem" data-action="weather">看看天气</button>
+      <div id="petMenu" class="pet-menu" role="menu" data-i18n-aria-label="pet.menu.label" hidden>
+        <button type="button" role="menuitem" data-action="settings" data-i18n="pet.menu.settings"></button>
+        <button type="button" role="menuitem" data-action="editor" data-i18n="pet.menu.editor"></button>
+        <button type="button" role="menuitem" data-action="weather" data-i18n="pet.menu.weather"></button>
         <div class="pet-menu-sep" role="separator"></div>
-        <button type="button" role="menuitem" data-action="hide">先藏起来</button>
-        <button type="button" role="menuitem" data-action="quit" class="danger">先退出啦</button>
+        <button type="button" role="menuitem" data-action="hide" data-i18n="pet.menu.hide"></button>
+        <button type="button" role="menuitem" data-action="quit" class="danger" data-i18n="pet.menu.quit"></button>
       </div>
     </div>
   </div>
+  <script src="i18n.js"></script>
   <script src="bubble-model.js"></script>
   <script src="sound-model.js"></script>
   <script src="pet.js"></script>

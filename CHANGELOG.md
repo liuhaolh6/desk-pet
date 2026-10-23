@@ -7,6 +7,13 @@
 ## [Unreleased]
 
 ### 新增
+- **多语言：桌宠窗口与窗口标题（ROADMAP P2-6 阶段二）**：`pet.html` 的 `<title>`、仿色图 `alt`、菜单按钮、
+  菜单与按钮的 `aria-label` 全改成 `data-i18n*` 标记，**中文不再当兵补文案留在标记里**（否则“还剩多少处”永远数不准）；
+  `pet.js` 启动时 `applyStatic()` 一次填完，喝水卡的「喝过了 / 稍后 10 分钟」和五句喝水小语、三条按小时
+  分档的句子也都走字典（`water.done/later/tip1-5/late/start/good`）。四个窗口的标题（设置 / 气泡布置 / 抠图 /
+  首次引导）改为 `createWindows({ i18n })` 里的 `title(key, fallback)`，主进程不再写死中文。
+  角色图 `alt` 优先用用户起的名字，没名字才回落到字典。基线 **880 → 859**；真窗口复验 zh 8/8 + en 5/5
+  （`.tmp/cdp-p26s2.js`），a11y 审计 86/0、键盘 6/6，smoke 63 → 64。
 - **多语言骨架（ROADMAP P2-6 阶段一）**：文案搬进 `locales/zh-CN.json`（`locales/en-US.json` 结构同步就位），
   主进程、渲染层、纯 Node 各有一个 `t()`；设置 → 其他 多了语言下拉（跟随系统 / 中文 / English），
   **改完重开桌宠生效**。真正的地基是尺子：`tools/check-i18n.js` 剥掉注释后数出每个文件还剩多少处内联中文，

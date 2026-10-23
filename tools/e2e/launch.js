@@ -38,7 +38,9 @@ async function launch(options = {}) {
   // 数据目录默认放在仓库里的 .e2e-data/：某些受限环境（以及开着杀软的机器）
   // 不允许子进程写 %TEMP%，放仓库里最稳；跑完就删。
   const dataDir = options.dataDir || path.join(ROOT, '.e2e-data', String(process.pid))
-  seedSettings(dataDir, options.settings)
+  // seed=false：保留上一次进程写下的 settings.json（i18n 用例要验「改完重开生效」，
+  // 必须真的重启一次同一个数据目录）。keepData=true：close() 不删目录。
+  if (options.seed !== false) seedSettings(dataDir, options.settings)
 
   const args = [
     '.',
@@ -101,7 +103,7 @@ async function launch(options = {}) {
         }
       }
       try {
-        fs.rmSync(dataDir, { recursive: true, force: true })
+        if (!options.keepData) fs.rmSync(dataDir, { recursive: true, force: true })
       } catch (err) {
         /* Windows 上偶发占用，留个目录没关系 */
       }

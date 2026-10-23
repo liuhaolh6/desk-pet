@@ -27,12 +27,14 @@ const { clamp, WIN_PAD, windowWidth, bubbleReserveFor } = require('./geometry')
  * @param {function} deps.log
  * @param {function} deps.getWeather
  * @param {function} deps.onCutoutClosed 抠图窗关闭时清理输入令牌
+ * @param {object} deps.i18n     主进程 i18n（窗口标题走 `t()`，P2-6 阶段二）
  */
 function createWindows(deps) {
   const {
     BrowserWindow, screen, app, store, layout, winState,
-    assets, portableExe, log, getWeather, onCutoutClosed,
+    assets, portableExe, log, getWeather, onCutoutClosed, i18n,
   } = deps
+  const title = (key, fallback) => (i18n && typeof i18n.t === 'function' ? i18n.t(key) : fallback)
 
   let petWin = null
   let settingsWin = null
@@ -156,7 +158,7 @@ function createWindows(deps) {
       height: 660,
       minWidth: 460,
       minHeight: 560,
-      title: '桌宠设置',
+      title: title('window.settings', '桌宠设置'),
       backgroundColor: '#f7f9fd',
       autoHideMenuBar: true,
       webPreferences: {
@@ -176,7 +178,7 @@ function createWindows(deps) {
       height: 700,
       minWidth: 780,
       minHeight: 540,
-      title: '气泡布置',
+      title: title('window.editor', '气泡布置'),
       backgroundColor: '#f7f9fd',
       autoHideMenuBar: true,
       webPreferences: {
@@ -196,7 +198,7 @@ function createWindows(deps) {
       height: 760,
       minWidth: 680,
       minHeight: 600,
-      title: '用照片做个我',
+      title: title('window.cutout', '用照片做个我'),
       backgroundColor: '#f7f9fd',
       autoHideMenuBar: true,
       webPreferences: {
@@ -247,7 +249,7 @@ function createWindows(deps) {
       width,
       height,
       useContentSize: true,
-      title: '欢迎使用桌宠',
+      title: title('window.onboard', '欢迎使用桌宠'),
       backgroundColor: '#fbf6f8',
       autoHideMenuBar: true,
       resizable: false,

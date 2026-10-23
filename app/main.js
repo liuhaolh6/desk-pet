@@ -175,6 +175,7 @@ app.whenReady().then(() => {
     assets: ASSETS, portableExe: PORTABLE_EXE, log,
     getWeather: () => (weatherPump ? weatherPump.current() : null),
     onCutoutClosed: () => { if (cutoutService) cutoutService.clearInputs() },
+    i18n,
   })
 
   // P2-4: the bubble gets its own transparent window. It follows the pet and

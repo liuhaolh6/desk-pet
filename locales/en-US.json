@@ -26,9 +26,39 @@
   },
   "water": {
     "notifyTitle": "DeskPet",
-    "notifyBody": "Time for some water — no rush."
+    "notifyBody": "Time for some water — no rush.",
+    "done": "Drank it",
+    "later": "In 10 minutes",
+    "empty": "…",
+    "late": "It is late — just a sip, okay?",
+    "start": "A fresh start — take your time",
+    "good": "You did well today — just a little before bed",
+    "tip1": "Slow sips, no rush",
+    "tip2": "Warm water feels best",
+    "tip3": "One sip, one breath",
+    "tip4": "I will drink with you",
+    "tip5": "Small sips, just right"
   },
   "weather": {
     "failLog": "weather failed: {message}"
+  },
+  "pet": {
+    "title": "Desk pet",
+    "alt": "Desk pet",
+    "menu": {
+      "label": "Desk pet menu",
+      "open": "Open menu",
+      "settings": "Settings",
+      "editor": "Edit bubble",
+      "weather": "Check weather",
+      "hide": "Hide for now",
+      "quit": "Quit"
+    }
+  },
+  "window": {
+    "settings": "Desk pet settings",
+    "editor": "Bubble layout",
+    "cutout": "Make me from a photo",
+    "onboard": "Welcome"
   }
 }

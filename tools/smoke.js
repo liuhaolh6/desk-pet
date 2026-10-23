@@ -1365,7 +1365,7 @@ const PAD = 54
   }
 
   // Pet bubble: the defer button snoozes instead of just hiding.
-  assert.ok(/稍后 10 分钟/.test(petJs), '气泡上有「稍后 10 分钟」')
+  assert.ok(/water\.later/.test(petJs), '气泡上的「稍后 10 分钟」来自语言包')
   assert.ok(/api\.waterSnooze\(10\)/.test(petJs), '点「稍后 10 分钟」会写入 snooze')
 
   // Settings panel.
@@ -1503,8 +1503,34 @@ const PAD = 54
   const keysZh = Object.keys(flatten(zh)).sort()
   const keysEn = Object.keys(flatten(en)).sort()
   assert.deepEqual(keysZh, keysEn, 'zh-CN 与 en-US 键名一致')
-  assert.ok(keysZh.length >= 15, '语言包至少 15 条（当前 ' + keysZh.length + '）')
+  assert.ok(keysZh.length >= 40, '语言包至少 40 条（当前 ' + keysZh.length + '）')
   ok('P2-6 多语言：主进程字典 + 渲染层取用 + 语言包键名一致 + 托盘无硬编码')
+}
+
+{
+  // P2-6 stage 2: the pet window and the window titles speak the dictionary.
+  const root = path.join(__dirname, '..')
+  const petHtmlS2 = fs.readFileSync(path.join(root, 'app', 'pet.html'), 'utf8')
+  const petJsS2 = fs.readFileSync(path.join(root, 'app', 'pet.js'), 'utf8')
+  const winS2 = fs.readFileSync(path.join(root, 'app', 'main', 'windows.js'), 'utf8')
+  const mainS2 = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
+  const zhS2 = JSON.parse(fs.readFileSync(path.join(root, 'locales', 'zh-CN.json'), 'utf8'))
+
+  for (const key of ['pet.title', 'pet.alt', 'pet.menu.settings', 'pet.menu.quit']) {
+    assert.ok(new RegExp('data-i18n(-alt|-title|-aria-label)?="' + key.replace(/\./g, '\\.') + '"').test(petHtmlS2), 'pet.html 用 data-i18n 标了 ' + key)
+  }
+  assert.ok(/<script src="i18n\.js"><\/script>/.test(petHtmlS2), 'pet.html 引入渲染层 i18n')
+  assert.ok(/applyStatic\(document, api\.i18n\)/.test(petJsS2), 'pet.js 启动时填充静态文案')
+  assert.ok(/t\('water\.(done|later)'\)/.test(petJsS2), '喝水按钮文案走字典')
+  const menuButtons = petHtmlS2.match(/data-action="(settings|editor|weather|hide|quit)"[^>]*/g) || []
+  assert.equal(menuButtons.length, 5, '菜单五个动作都在')
+  assert.ok(menuButtons.every((tag) => /data-i18n="pet\.menu\./.test(tag)), '每个菜单项都挂了 data-i18n')
+  for (const key of ['window.settings', 'window.editor', 'window.cutout', 'window.onboard']) {
+    assert.ok(new RegExp("title\\('" + key.replace(/\./g, '\\.') + "'").test(winS2), 'windows.js 窗口标题走 ' + key)
+  }
+  assert.ok(/onCutoutClosed: \(\) => \{ if \(cutoutService\) cutoutService\.clearInputs\(\) \},\s*i18n,/.test(mainS2), 'main.js 把 i18n 交给 createWindows')
+  assert.equal(zhS2.pet.menu.hide, '先藏起来', '语言包里藏着菜单文案')
+  ok('P2-6 阶段二：桌宠窗口与窗口标题走语言包')
 }
 
 console.log('\n' + pass + ' checks passed')

@@ -26,9 +26,39 @@
   },
   "water": {
     "notifyTitle": "桌宠",
-    "notifyBody": "该喝水啦，慢慢喝～"
+    "notifyBody": "该喝水啦，慢慢喝～",
+    "done": "喝过了",
+    "later": "稍后 10 分钟",
+    "empty": "…",
+    "late": "太晚啦，抿一小口就好",
+    "start": "才刚开始，慢慢来呀",
+    "good": "今天很乖，睡前少喝一点点",
+    "tip1": "慢慢喝，别急呀",
+    "tip2": "温温的水最舒服",
+    "tip3": "喝一口，歇一会儿",
+    "tip4": "我在旁边陪你喝",
+    "tip5": "小口小口，刚刚好"
   },
   "weather": {
     "failLog": "天气没拿到：{message}"
+  },
+  "pet": {
+    "title": "桌宠",
+    "alt": "桌宠",
+    "menu": {
+      "label": "桌宠菜单",
+      "open": "打开菜单",
+      "settings": "设置",
+      "editor": "布置气泡",
+      "weather": "看看天气",
+      "hide": "先藏起来",
+      "quit": "先退出啦"
+    }
+  },
+  "window": {
+    "settings": "桌宠设置",
+    "editor": "气泡布置",
+    "cutout": "用照片做个我",
+    "onboard": "欢迎使用桌宠"
   }
 }
