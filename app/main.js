@@ -19,6 +19,9 @@ const {
 } = require('electron')
 
 const { createStore } = require('../lib/store')
+const { createThemes, registerThemeIpc } = require('./main/theme')
+const { seedDefaults } = require('./main/seed')
+const debugOpen = require('./main/debug-open')
 const { fetchWeather, geocode, advice } = require('../lib/weather')
 const placement = require('../lib/placement')
 const cutout = require('../lib/cutout')
@@ -49,13 +52,11 @@ const { createMainI18n, registerI18nIpc } = require('./main/i18n')
 const logger = createLogger()
 const { breadcrumb, log } = logger
 breadcrumb('start argv=' + process.argv.slice(1).join(' ') + ' exec=' + process.execPath)
-// electron-builder's portable target sets these to the folder/file of the .exe
-// the user actually double-clicked (the running process lives in a temp dir).
+// Portable target: the .exe the user double-clicked (the process runs from temp).
 const PORTABLE_DIR = process.env.PORTABLE_EXECUTABLE_DIR || ''
 const PORTABLE_EXE = process.env.PORTABLE_EXECUTABLE_FILE || ''
 
-// The logger (breadcrumb + buffered log file) lives in app/main/log.js: the
-// records start before any data directory exists, so the two cannot be split.
+// Logger: breadcrumbs start before a data directory exists (see main/log.js).
 process.on('uncaughtException', (err) => log('uncaught', (err && err.stack) || String(err)))
 process.on('unhandledRejection', (err) => log('unhandledRejection', (err && err.stack) || String(err)))
 log('boot electron=' + process.versions.electron + ' packaged=' + app.isPackaged + ' argv=' + process.argv.join(' '))
@@ -69,15 +70,24 @@ let reminders = null
 let nudges = null
 let cutoutService = null
 let privacy = null
+let themes = null
 let quitting = false
+
+// ROADMAP P2-7: the active theme pack is a CSS string produced here (main), so
+// packs stay validated in one place; pages apply it (app/theme-boot.js).
+function broadcastTheme() {
+  const { BrowserWindow } = require('electron')
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed()) win.webContents.send('theme:changed')
+  }
+}
 
 // P2-6: one translator for the main process; renderers get the dictionary over
 // IPC (`i18n:dict`) and do their own lookup with the same `t()`.
 let i18n = null
 function t(key, vars) { return i18n ? i18n.t(key, vars) : key }
 
-// P1-1: the tray + shortcut (P0-3) and the diagnostics export (P0-5) live in
-// modules; main.js only wires them to the pet window and the store.
+// P1-1: tray/shortcut (P0-3) and diagnostics (P0-5) are modules; this wires them.
 const trayHost = createTrayHost({
   assets: ASSETS,
   readSettings: () => store.readSettings(),
@@ -101,9 +111,7 @@ const diagnostics = createDiagnostics({ t: (key, vars) => t(key, vars),
   log,
 })
 
-// P1-2: one explicit machine owns "what is the pet doing". Every IPC that used to
-// flip a local boolean now goes through it, so an impossible order (drag during
-// cutout, menu while dragging) is counted and logged instead of half-applied.
+// P1-2: one explicit machine owns "what is the pet doing" (see window-state.js).
 // ROADMAP P2-3: 更新检查。只“提示 + 打开下载页”，静默安装要等 P2-2 的签名到位。
 const updater = createUpdater({
   version: VERSION,
@@ -129,18 +137,14 @@ const winState = createWindowState({
   },
 })
 
-// The pet window is the only consumer of role images, but a custom scheme keeps
-// file paths out of the renderer entirely.
+// Role images go through a custom scheme so renderers never see file paths.
 protocol.registerSchemesAsPrivileged([
   { scheme: 'pet-role', privileges: { standard: true, secure: true, supportFetchAPI: true } },
   { scheme: 'pet-sound', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
 ])
 log('schemes registered')
 
-// P1-1 stage 2: layout, drag maths and click-through hit testing live in a
-// module. `petPos` / `bubbleSide` / `reserve` moved with it; `getWindow` is a
-// thunk so the module never caches a closed window, and `onMirror` is late-bound
-// because the windows module is created later (inside whenReady).
+// P1-1 stage 2: layout, drag maths and hit testing live in window-layout.js.
 const layout = createWindowLayout({
   screen,
   placement,
@@ -168,10 +172,23 @@ app.whenReady().then(() => {
   log('ready')
   app.setAppUserModelId('com.deskpet.app')
   store = createStore(app.getPath('userData'))
+  // ROADMAP P2-7: theme packs. The user folder shadows built-ins, so an import
+  // never has to write into the (read-only for portable builds) install dir.
+  themes = createThemes({
+    builtinDir: path.join(__dirname, '..', 'themes'),
+    userDir: path.join(store.dir, 'themes'),
+    log,
+  })
   // P2-6：语言来自设置（空 = 跟随系统），坏文件/缺子串都不影响启动。
   i18n = createMainI18n({ requested: (store.readSettings().locale || ''), system: app.getLocale(), log })
   // preload 在窗口加载时同步取字典，所以通道必须先于 createWindows 注册。
   registerI18nIpc({ ipcMain, i18n })
+  registerThemeIpc({
+    ipcMain,
+    get themes() { return themes },
+    store,
+    onChange: () => broadcastTheme(),
+  })
 
   seedDefaults(store, i18n)
   privacy = createPrivacy({ dir: store.dir, fs, path, log, t })
@@ -261,15 +278,7 @@ app.whenReady().then(() => {
   reminders.start()
   nudges.start()
 
-  if (process.env.DESKPET_OPEN_SETTINGS === '1') setTimeout(() => windows.openSettings(), 800)
-  if (process.env.DESKPET_OPEN_EDITOR === '1') setTimeout(() => windows.openEditor(), 800)
-  // M17 P0-1: first run gets the three-step card (once). Existing installs
-  // that never dismissed it yet see it once too; after that `onboarded` is
-  // true and the only way back in is 设置 → 其他 → 再看一次欢迎引导.
-  if (process.env.DESKPET_OPEN_ONBOARD === '1') setTimeout(() => windows.openOnboard(true), 800)
-  else if (process.env.DESKPET_NO_ONBOARD !== '1' && store.readSettings().onboarded !== true) {
-    setTimeout(() => windows.openOnboard(false), 1400)
-  }
+  debugOpen.windows({ windows, store, log })
 
   screen.on('display-removed', () => layout.ensureOnScreen())
   screen.on('display-added', () => layout.ensureOnScreen())
@@ -287,12 +296,3 @@ app.on('before-quit', () => {
 app.on('window-all-closed', () => { /* keep running in the tray */ })
 
 // P2-6 阶段三-P：语言确定后，把"用户数据里的默认值"补齐（只补空的，不覆盖用户改过的）。
-function seedDefaults(store, i18n) {
-  const tr = (k) => i18n.t(k)
-  const cfg = store.readSettings()
-  const patch = {}
-  if (!cfg.name) patch.name = tr('defaults.name')
-  if (cfg.weather && !cfg.weather.label) patch.weather = Object.assign({}, cfg.weather, { label: tr('defaults.cityAuto') })
-  if (!Array.isArray(cfg.roles) || !cfg.roles.length) patch.roles = [{ id: 'default', name: tr('defaults.roleName'), builtin: true, createdAt: 0 }]
-  if (Object.keys(patch).length) { try { store.writeSettings(patch) } catch (err) { /* 默认值补不上不影响启动 */ } }
-}

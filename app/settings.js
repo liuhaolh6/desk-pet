@@ -182,6 +182,31 @@
     })
   }
 
+  function renderThemes(packs, current) {
+    const sel = $('themeSelect')
+    if (!sel) return
+    const usable = (packs || []).filter((p) => p.ok)
+    sel.innerHTML = ''
+    for (const pack of usable) {
+      const opt = document.createElement('option')
+      opt.value = pack.id
+      // Unknown packs (user import) fall back to their id so the row is usable.
+      opt.textContent = t(pack.nameKey || 'theme.' + pack.id) || pack.id
+      if (pack.id === current) opt.selected = true
+      sel.appendChild(opt)
+    }
+    sel.value = current
+  }
+
+  async function loadThemes() {
+    try {
+      const res = await api.getThemes()
+      renderThemes(res && res.packs, res && res.current)
+    } catch (err) {
+      /* a broken theme folder must not block the rest of the page */
+    }
+  }
+
   function wire() {
     wireFind()
     wireReset()
@@ -195,6 +220,16 @@
       $('sizeVal').textContent = value + 'px'
       save({ size: value })
     })
+
+    const themeSel = $('themeSelect')
+    if (themeSel) {
+      themeSel.addEventListener('change', async (ev) => {
+        const id = ev.target.value
+        const res = await api.setTheme(id)
+        if (res && res.ok) setStatus(t('settings.saved').replace('{what}', t('theme.' + id)))
+        else setStatus(t('settings.saveFailed'))
+      })
+    }
 
     $('alwaysOnTop').addEventListener('change', (ev) => save({ alwaysOnTop: ev.target.checked }, true))
     $('autostart').addEventListener('change', (ev) => save({ autostart: ev.target.checked }, true))
@@ -620,6 +655,7 @@
   ['appearance', 'autostart'],
   ['appearance', 'snapEnabled'],
   ['appearance', 'snapGap'],
+  ['appearance', 'themeSelect'],
   ['role', 'importBtn'],
   ['role', 'cutoutBtn'],
   ['role', 'resetPosBtn'],
@@ -1033,6 +1069,7 @@
       renderAppStatus()
       renderLocaleStatus()
       renderUpdateStatus()
+      loadThemes()
     } catch (err) {
       setStatus(t('settings.loadFailed'))
     }

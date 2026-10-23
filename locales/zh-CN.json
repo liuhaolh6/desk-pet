@@ -167,7 +167,11 @@
     "onboard": "欢迎使用桌宠"
   },
   "panel": {
-    "appearance": {
+    "theme": {
+    "default": "默认（浅粉）",
+    "pixel": "像素（暗色）"
+  },
+  "appearance": {
       "title": "外观",
       "hint": "它叫什么、多大一只，平时怎么待在桌面上"
     },
@@ -197,6 +201,8 @@
     }
   },
   "appearance": {
+    "theme": "主题包",
+    "themeHint": "换一套配色与圆角。像素风用等宽字体、方角、深色底。",
     "name": "它叫什么",
     "namePlaceholder": "小芳",
     "nameHint": "气泡落款、托盘提示和提醒标题都会用这个名字",
@@ -873,6 +879,11 @@
         "label": "靠边停好",
         "desc": "拖到屏幕边缘吸住",
         "keywords": "吸附 吸住 边缘 贴边"
+      },
+      "themeSelect": {
+        "label": "主题包",
+        "desc": "换一套配色与圆角",
+        "keywords": "主题 皮肤 配色 换肤 像素 暗色"
       },
       "snapGap": {
         "label": "离边多远开始吸",

@@ -861,7 +861,9 @@ const PAD = 54
   assert.equal(DEFAULT_SETTINGS.onboarded, false, '全新安装默认还没看过引导')
   assert.ok(/ipcMain\.on\('onboard:open'/.test(mainJs) && /ipcMain\.on\('onboard:dismiss'/.test(mainJs), '主进程处理打开/关掉欢迎引导')
   assert.ok(/writeSettings\(\{ onboarded: true \}\)/.test(mainJs), '关掉时记下已经看过')
-  assert.ok(/store\.readSettings\(\)\.onboarded !== true/.test(mainJs), '只在那之前自动弹一次')
+  const debugOpen = fs.readFileSync(path.join(root, 'app', 'main', 'debug-open.js'), 'utf8')
+  assert.ok(/onboarded = store\.readSettings\(\)\.onboarded === true/.test(debugOpen), '只在那之前自动弹一次')
+  assert.ok(/if \(!onboarded\) setTimeout/.test(debugOpen), '没看过才弹引导')
   assert.ok(/DESKPET_NO_ONBOARD/.test(mainJs), '自动化测试可以关掉自动弹出')
   assert.ok(/openOnboard: \(\) => ipcRenderer\.send\('onboard:open'\)/.test(preloadJs), 'preload 暴露 openOnboard')
   assert.ok(/dismissOnboard: \(\) => ipcRenderer\.send\('onboard:dismiss'\)/.test(preloadJs), 'preload 暴露 dismissOnboard')
@@ -969,7 +971,41 @@ const PAD = 54
     assert.ok(fs.existsSync(path.join(repo, 'docs/PRIVACY.md')), 'docs/PRIVACY.md 存在')
   }
 
-  assert.deepEqual(mods, ['boot.js', 'catalog.js', 'cutout-service.js', 'diagnostics.js', 'fullscreen.js', 'geometry.js', 'i18n.js', 'ipc.js', 'log.js', 'nudge-pump.js', 'overlay.js', 'privacy.js', 'reminder.js', 'tray.js', 'updater.js', 'water-ipc.js', 'weather-pump.js', 'window-layout.js', 'windows.js'], 'app/main/ 下的模块名单')
+  // ROADMAP P2-7: theme packs. Validation is what makes import safe later on.
+  const themeLib = require(path.join(root, 'lib', 'theme'))
+  {
+    const good = themeLib.validateTheme({ id: 'pixel', nameKey: 'theme.pixel', tokens: { '--ink': '#fff', '--radius-sm': '0px' } })
+    assert.equal(good.ok, true, '合法主题通过校验')
+    assert.equal(Object.keys(good.theme.tokens).length, 2, '只保留白名单 token')
+    const evil = themeLib.validateTheme({ id: 'x', tokens: { '--ink': 'red;}</style><script>' } })
+    assert.equal(evil.ok, false, '注入型 token 值被拒')
+    const unknown = themeLib.validateTheme({ id: 'x', tokens: { '--position': 'fixed' } })
+    assert.equal(unknown.ok, false, '白名单外的 token 被拒（不能改布局）')
+    const badId = themeLib.validateTheme({ id: 'X Y', tokens: { '--ink': '#000' } })
+    assert.equal(badId.ok, false, 'id 必须是短横线小写')
+    assert.equal(themeLib.tokensToCss({ '--ink': '#000', '--radius-sm': '0px' }), ':root{--ink:#000;--radius-sm:0px;}', 'CSS 变量按名字排序生成')
+    assert.equal(themeLib.tokensToCss({}), '', '没有 token 时不生成 CSS')
+    for (const id of ['default', 'pixel']) {
+      const file = path.join(root, 'themes', id, 'theme.json')
+      assert.ok(fs.existsSync(file), '内置主题存在：' + id)
+      const res = themeLib.validateTheme(JSON.parse(fs.readFileSync(file, 'utf8')))
+      assert.equal(res.ok, true, '内置主题校验通过：' + id)
+      assert.equal(res.theme.id, id, '内置主题 id 与目录一致：' + id)
+    }
+    const themesJs = fs.readFileSync(path.join(root, 'app', 'main', 'theme.js'), 'utf8')
+    assert.ok(/userDir/.test(themesJs) && /builtinDir/.test(themesJs), '用户主题目录优先于内置')
+    assert.ok(/id-folder-mismatch/.test(themesJs), '包声明的 id 必须与目录名一致')
+    const preloadTheme = fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')
+    assert.ok(/getThemes: \(\) => ipcRenderer\.invoke\('theme:list'\)/.test(preloadTheme), 'preload 暴露 getThemes')
+    const bootSrc = fs.readFileSync(path.join(root, 'app', 'theme-boot.js'), 'utf8')
+    assert.ok(/getTheme\(\)/.test(bootSrc) && /textContent = css/.test(bootSrc), '渲染层用 <style> 应用主题 CSS')
+    assert.ok(/theme:changed/.test(mainSource()) && /onThemeChanged/.test(fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')), '换主题后广播到每个窗口')
+    for (const page of ['pet.html', 'overlay.html', 'settings.html', 'editor.html', 'cutout.html', 'onboard.html']) {
+      assert.ok(fs.readFileSync(path.join(root, 'app', page), 'utf8').includes('theme-boot.js'), page + ' 引入 theme-boot.js')
+    }
+  }
+
+  assert.deepEqual(mods, ['boot.js', 'catalog.js', 'cutout-service.js', 'debug-open.js', 'diagnostics.js', 'fullscreen.js', 'geometry.js', 'i18n.js', 'ipc.js', 'log.js', 'nudge-pump.js', 'overlay.js', 'privacy.js', 'reminder.js', 'seed.js', 'theme.js', 'tray.js', 'updater.js', 'water-ipc.js', 'weather-pump.js', 'window-layout.js', 'windows.js'], 'app/main/ 下的模块名单')
   const mainJs = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
   for (const name of mods) {
     const file = path.join(modDir, name)

@@ -64,6 +64,10 @@ function subscribe(channel, callback) {
 contextBridge.exposeInMainWorld('deskPet', {
   // state
   getState: () => ipcRenderer.invoke('state:get'),
+  getThemes: () => ipcRenderer.invoke('theme:list'),
+  getTheme: () => ipcRenderer.invoke('theme:current'),
+  setTheme: (id) => ipcRenderer.invoke('theme:set', id),
+  onThemeChanged: (cb) => ipcRenderer.on('theme:changed', () => cb()),
   getAppStatus: () => ipcRenderer.invoke('app:status'),
   // P2-6：当前语言与合并后的字典。同步 t() 在 preload 里就绪，异步这两个是给
   // 「切换语言要重启」的状态展示用的。

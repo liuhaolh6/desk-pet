@@ -167,7 +167,11 @@
     "onboard": "Welcome"
   },
   "panel": {
-    "appearance": {
+    "theme": {
+    "default": "Default (blush)",
+    "pixel": "Pixel (dark)"
+  },
+  "appearance": {
       "title": "Appearance",
       "hint": "Its name, how big it is, and how it sits on your desktop"
     },
@@ -197,6 +201,8 @@
     }
   },
   "appearance": {
+    "theme": "Theme",
+    "themeHint": "A different palette and corner style. Pixel uses a mono font, square corners and a dark base.",
     "name": "Its name",
     "namePlaceholder": "Xiaofang",
     "nameHint": "Used in bubble signatures, the tray tooltip and reminder titles",
@@ -873,6 +879,11 @@
         "label": "Snap to edges",
         "desc": "Stick when dragged to a screen edge",
         "keywords": "snap edge stick"
+      },
+      "themeSelect": {
+        "label": "Theme pack",
+        "desc": "Swap the palette and corners",
+        "keywords": "theme skin palette pixel dark color"
       },
       "snapGap": {
         "label": "Snap distance",
