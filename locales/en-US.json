@@ -653,7 +653,17 @@
     },
     "zoomHint": "Drag the picture to move it; scroll to zoom.",
     "zoomLabel": "Zoom",
-    "confirmWhole": "Using the whole photo as the character needs one more confirmation"
+    "confirmWhole": "Using the whole photo as the character needs one more confirmation",
+    "err": {
+      "modelMissing": "The cut-out model isn't ready yet",
+      "noResult": "The model didn't return anything this time",
+      "noHuman": "I couldn't find a clear person in that photo",
+      "tooMuch": "The person fills too much of the frame — the background may be taken as part of you",
+      "badFormat": "I can't read that format yet",
+      "emptyImage": "That image is empty",
+      "tooLarge": "That image is over 25MB — please compress it first",
+      "noData": "Didn't receive the image data"
+    }
   },
   "editor": {
     "addRow": "+ Add a row",
@@ -1247,6 +1257,17 @@
         "what": "only opens the browser when you click \"Download\"",
         "when": "only when you click it"
       }
+    }
+  },
+  "date": {
+    "weekday": {
+      "0": "Sunday",
+      "1": "Monday",
+      "2": "Tuesday",
+      "3": "Wednesday",
+      "4": "Thursday",
+      "5": "Friday",
+      "6": "Saturday"
     }
   }
 }

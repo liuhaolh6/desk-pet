@@ -197,7 +197,7 @@ app.whenReady().then(() => {
 
   cutoutService = createCutoutService({
     store, nativeImage, cutout, app, utilityProcess,
-    path, fs, log, rootDir: __dirname,
+    path, fs, log, t, rootDir: __dirname,
   })
   weatherPump = createWeatherPump({
     store, fetchWeather, advice, clamp, log, t,

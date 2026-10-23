@@ -374,3 +374,17 @@ WMO 码表、AQI 分级、三天标签、建议句都写成中文字面量，共
 
 踩坑：把 `phrasesSeed` 直接挂到 `state` 上时引用了不存在的 `payload` 变量，渲染层 `boot()` 抛 `ReferenceError`，
 表现是"点宠物没反应"。教训：渲染层启动失败不会弹窗，只能看 `app.log` 里的 `pet-console` 行。
+
+### 阶段三-N：窗口标题 / 星期 / 抠图报错（已完成）
+
+- `app/main/windows.js` 4 处：窗口标题的兜底中文去掉，`title(key)` 缺翻译器时**退键名**而不是中文。
+- `lib/water-log.js` 7 处：`WEEK_NAMES` 数组删掉，`summarize(log, now, fallback, t)` 多收翻译器，
+  星期用 `date.weekday.<0-6>`；调用方 `app/main/water-ipc.js` 从 `ipc.js` 拿 `t`。
+- `app/main/cutout-service.js` 8 处 → 2：模型没准备好 / 没结果 / 没找到人像 / 占太满 / 格式 / 空图
+  / 超 25MB 全部进 `cutout.err.*`；`createCutoutService` 收 `deps.t`。
+- **只留 2 处**在 `decodeImageDataUrl`：它是模块级函数、拿不到 `t`，保留中文并在 IPC 层按 `NO_DATA`
+  错误码翻译。教训：给模块函数塞翻译器前先确认它有没有实例上下文。
+- 验证：en 数据目录 `loadCutoutPhoto` 报 `Didn't receive the image data`；`getWaterStats().week` 末两天 =
+  `Friday` / `Saturday`；窗口标题 `Desk pet`；zh 同一份代码按 locale 转身。
+
+基线 **42 → 24**。

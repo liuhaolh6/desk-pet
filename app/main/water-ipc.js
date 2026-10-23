@@ -21,7 +21,7 @@ const { WATER_LOG_MAX } = require('../../lib/store.js')
  * @param {Function} [deps.now]
  */
 function registerWaterIpc(deps) {
-  const { ipcMain, store, path, fs, shell, clamp, now = Date.now } = deps
+  const { ipcMain, store, path, fs, shell, clamp, t, now = Date.now } = deps
   const log = deps.log || (() => {})
 
   ipcMain.on('pet:water-done', () => {
@@ -51,7 +51,7 @@ function registerWaterIpc(deps) {
       date: w.today && w.today.date,
       cups: w.today && w.today.cups,
       cupMl: w.cupMl,
-    })
+    }, t)
   })
 
   // Writes `water-<stamp>.csv` next to settings.json and reveals it: no native

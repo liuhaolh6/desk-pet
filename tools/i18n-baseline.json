@@ -11,9 +11,9 @@
     "app/main/weather-pump.js": 0,
     "app/main/nudge-pump.js": 1,
     "app/main/ipc.js": 0,
-    "app/main/windows.js": 4,
+    "app/main/windows.js": 0,
     "app/main/privacy.js": 0,
-    "app/main/cutout-service.js": 9,
+    "app/main/cutout-service.js": 2,
     "app/main/diagnostics.js": 0,
     "app/preload.js": 0,
     "app/pet.js": 1,
@@ -32,7 +32,7 @@
     "lib/nudges.js": 3,
     "lib/weather.js": 0,
     "lib/store.js": 5,
-    "lib/water-log.js": 7,
+    "lib/water-log.js": 0,
     "lib/cutout.js": 7,
     "lib/update-check.js": 3
   }

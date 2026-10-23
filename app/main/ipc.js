@@ -437,7 +437,7 @@ function registerIpc(deps) {
   registerNudgeIpc({ ipcMain, nudges, getPet: () => windows.pet() })
   ipcMain.on('onboard:open', () => actions.openOnboard(true))
   ipcMain.on('onboard:dismiss', () => actions.dismissOnboard())
-  registerWaterIpc({ ipcMain, store, path, fs, shell, clamp, log })
+  registerWaterIpc({ ipcMain, store, path, fs, shell, clamp, log, t: tr })
 
   ipcMain.on('app:quit', () => { setQuitting(true); app.quit() })
   ipcMain.handle('app:open-data-dir', () => shell.openPath(store.dir))

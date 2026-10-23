@@ -21,18 +21,18 @@ function decodeImageDataUrl(dataUrl) {
     throw err
   }
   const match = dataUrl.match(/^data:(image\/(?:png|jpeg|jpg|webp));base64,([A-Za-z0-9+/=\s]+)$/i)
-  if (!match) throw new Error('这个格式还看不了呢')
+  if (!match) throw new Error(tr('cutout.err.badFormat'))
   const buffer = Buffer.from(match[2].replace(/\s/g, ''), 'base64')
-  if (!buffer.length) throw new Error('这张图是空的')
-  if (buffer.length > MAX_IMAGE_BYTES) throw new Error('图片超过 25MB 啦，先压缩一下好吗')
+  if (!buffer.length) throw new Error(tr('cutout.err.emptyImage'))
+  if (buffer.length > MAX_IMAGE_BYTES) throw new Error(tr('cutout.err.tooLarge'))
   return { buffer, mime: match[1].toLowerCase() }
 }
 
 function cutoutErrorMessage(code) {
-  if (code === 'NO_PERSON') return '没找到清晰的人像'
-  if (code === 'OVER_SEGMENTED') return '画面里人像占得太多了，可能把背景也当成你了'
-  if (code === 'MODEL_MISSING' || code === 'MODEL_LOAD_FAILED') return '抠图模型还没准备好'
-  if (code === 'BAD_OUTPUT_SHAPE' || code === 'NO_OUTPUT') return '模型这次没给出结果'
+  if (code === 'NO_PERSON') return tr('cutout.err.noHuman')
+  if (code === 'OVER_SEGMENTED') return tr('cutout.err.tooMuch')
+  if (code === 'MODEL_MISSING' || code === 'MODEL_LOAD_FAILED') return tr('cutout.err.modelMissing')
+  if (code === 'BAD_OUTPUT_SHAPE' || code === 'NO_OUTPUT') return tr('cutout.err.noResult')
   return '这次没抠成'
 }
 
@@ -49,6 +49,7 @@ function cutoutErrorMessage(code) {
  * @param {string} [deps.rootDir]   __dirname of app/main.js (project root resolution)
  */
 function createCutoutService(deps) {
+  const tr = (key) => (typeof deps.t === 'function' ? deps.t(key) : key)
   const { store, nativeImage, cutout, app, utilityProcess, path, fs, log = () => {}, rootDir } = deps
   const inputs = new Map()
   let worker = null

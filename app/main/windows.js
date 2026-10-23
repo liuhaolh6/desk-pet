@@ -34,7 +34,8 @@ function createWindows(deps) {
     BrowserWindow, screen, app, store, layout, winState,
     assets, portableExe, log, getWeather, onCutoutClosed, i18n,
   } = deps
-  const title = (key, fallback) => (i18n && typeof i18n.t === 'function' ? i18n.t(key) : fallback)
+  // 缺翻译器时退键名（永不退中文），开发期一眼看出漏翻
+  const title = (key) => (i18n && typeof i18n.t === 'function' ? i18n.t(key) : key)
 
   let petWin = null
   let settingsWin = null
@@ -158,7 +159,7 @@ function createWindows(deps) {
       height: 660,
       minWidth: 460,
       minHeight: 560,
-      title: title('window.settings', '桌宠设置'),
+      title: title('window.settings'),
       backgroundColor: '#f7f9fd',
       autoHideMenuBar: true,
       webPreferences: {
@@ -178,7 +179,7 @@ function createWindows(deps) {
       height: 700,
       minWidth: 780,
       minHeight: 540,
-      title: title('window.editor', '气泡布置'),
+      title: title('window.editor'),
       backgroundColor: '#f7f9fd',
       autoHideMenuBar: true,
       webPreferences: {
@@ -198,7 +199,7 @@ function createWindows(deps) {
       height: 760,
       minWidth: 680,
       minHeight: 600,
-      title: title('window.cutout', '用照片做个我'),
+      title: title('window.cutout'),
       backgroundColor: '#f7f9fd',
       autoHideMenuBar: true,
       webPreferences: {
@@ -249,7 +250,7 @@ function createWindows(deps) {
       width,
       height,
       useContentSize: true,
-      title: title('window.onboard', '欢迎使用桌宠'),
+      title: title('window.onboard'),
       backgroundColor: '#fbf6f8',
       autoHideMenuBar: true,
       resizable: false,
