@@ -16,8 +16,8 @@
 | 版本 | `0.6.6`，**已出包** `dist\DeskPet-0.6.6-portable.exe`（153.7 MB，未签名）与 `dist\win-unpacked\`；tag 推到 `v0.6.6`（`0.6.1`–`0.6.5` 按用户决定不补 tag，只在 `main` 历史里） |
 | 最近提交 | `e01c1cb` = 0.6.6 托盘真相结案；`12176d2` = 0.6.6 重新打包 + 托盘收口 + 真按键验证；`5be8c4d` = 0.6.6 长文案/托盘兜底/手册/诊断导出；再往前 `adbe033` 0.6.5 首次引导 |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
-| 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js`（`npm test` = smoke + `npm run unit`） |
-| 自动化基线 | smoke **61 项** · unit **100 例** · check-a11y **95 项** · a11y-audit **86 项** · a11y-keyboard **6 项** · a11y-tree **4 窗口 / 0 无名**，全部通过 |
+| 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js`（`npm test` = smoke + `npm run unit`）；带窗口的再加 `npm run test:e2e` |
+| 自动化基线 | smoke **61 项** · unit **100 例** · check-a11y **95 项** · a11y-audit **86 项** · a11y-keyboard **6 项** · a11y-tree **4 窗口 / 0 无名** · e2e **3 用例**，全部通过 |
 | 最新产物 | `dist/DeskPet-0.6.4-portable.exe`，153,754,785 字节，SHA-256 `22d173d4219b47e1e2df82de9c43f9a6777613668c0ec3e937ea09f9f206e82c`（0.6.5 还没打包，重打后再换这一行） |
 
 **能做什么**：换形象（照片抠图 / 导入 PNG）、点击看天气和喝水进度、按时提醒喝水、24 条内置温柔提示语、
@@ -196,7 +196,7 @@ token 表上限 3，窗口关闭即清空。
 
 | 工具 | 覆盖 | 命令 | 当前 |
 |---|---|---|---|
-| 语法 | 41 个 JS 文件 | `npm run check` | ✅ |
+| 语法 | 47 个 JS 文件 | `npm run check` | ✅ |
 | `tools/smoke.js` | 存储/角色/天气码/`advice`/气泡模型/几何不变量/文案/首次引导/托盘兜底/诊断导出/主进程模块拆分/窗口状态机/预留-可见性分离/天气泵回退/提醒限流与勿扰/设置搜索与按页恢复默认/喝水记录与延后/主动说话 | `npm test` | ✅ 61 项 |
 | `tests/unit/` | 纯函数单测：气泡模型归一化/取值、多显示器放置与吸附、天气文案与 AQI、抠图数学、喝水记录、主动说话决策 | `npm run unit` | ✅ 100 例 |
 | `tools/check-a11y.js` | 静态无障碍断言（对比度数学、24px、reduced-motion、forced-colors 分支、回流、aria、`lang`、引导卡、托盘/诊断行、搜索框与恢复默认确认层） | `node tools/check-a11y.js` | ✅ 95 项 |
@@ -205,8 +205,8 @@ token 表上限 3，窗口关闭即清空。
 | `tools/a11y-tree.js` | 无障碍树走查：四个窗口的每个可交互节点都必须有名字（代替"没装 NVDA"的读屏检查） | `node tools/a11y-tree.js 9229` | ✅ 4 窗口 / 0 无名 |
 | `tools/a11y-real.js` | 真机留证：四窗口截图 + 横向溢出计数 + 高对比度计算色（`docs/a11y-shots/`） | `node tools/a11y-real.js 9229 [outDir] [tag]` | ✅ 200% 缩放 0 溢出 |
 | `tools/cutout-diag.js` | 合成图 alpha/背景/主体/边缘指标 | `npm run diag:fixtures` | ✅ |
-| CDP 脚本 | 气泡几何/命中/收起/城市搜索/编辑器/无 resize | `.tmp-verify/cdp-*.js`（不入库） | 按需 |
-| CI | `ci.yml`：check + a11y 静态 + test + 合成图 + 真模型正/负例 | push / PR | 配置在库，**私有仓库无法匿名查看** |
+| `tools/e2e/` | 真窗口 e2e：无 resize / 气泡与预留 / 城市搜索与存盘（自带本地桩，不依赖外网） | `npm run test:e2e` | ✅ 3 用例 |
+| CI | `ci.yml`：`test` job（check + a11y 静态 + test + 合成图 + 真模型正/负例）+ `e2e` job（真 Electron，headless） | push / PR | 配置在库，**私有仓库无法匿名查看** |
 
 起一个可被 CDP 连的开发实例：
 
@@ -363,6 +363,6 @@ node node_modules/electron-builder/cli.js --win portable --x64
 
 > 继续 `D:\project\deskpet` 的 Windows 桌面宠物项目，先读 `HANDOFF.md`（§0 速览、§4 不变量、§6 坑）
 > 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.6`，`main` 已同步，tag 到 `v0.6.6`。
-> 验证基线：`npm run check` + `npm test`（smoke 61 项 + unit 100 例）+ `node tools/check-a11y.js`（84 项）全部通过；
-> 带界面的还要跑 `a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
+> 验证基线：`npm run check` + `npm test`（smoke 61 项 + unit 100 例）+ `node tools/check-a11y.js`（95 项）全部通过；
+> 带界面的还要跑 `npm run test:e2e`（3 用例）、`a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
 > 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。

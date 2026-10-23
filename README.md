@@ -51,6 +51,7 @@ Windows 桌面上的常驻小宠物：点一下看天气、被提醒喝水，换
 npm install          # 首次安装 Electron（国内可用镜像，见下）
 npm start            # 启动桌宠
 npm test             # 无界面测试：存储 / 角色 / 天气码映射
+npm run test:e2e     # 真窗口 e2e：点宠物、开合气泡、找城市（会起一个临时实例）
 ```
 
 镜像加速（国内网络）：

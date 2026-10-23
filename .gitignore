@@ -29,3 +29,6 @@ shot-*.png
 # local build toolchain / extraction dirs (M6 packaging)
 .tools/
 .tmp-*/
+
+# headless e2e 的临时数据目录
+.e2e-data/
