@@ -23,6 +23,20 @@ const cutout = require('../lib/cutout')
 let pass = 0
 function ok(name) { pass += 1; console.log('  ✓', name) }
 
+/**
+ * P1-1: the main process is split into app/main.js + app/main/*.js, so source
+ * assertions have to look at all of them instead of one file.
+ */
+function mainSource() {
+  const root = path.join(__dirname, '..', 'app')
+  const files = [path.join(root, 'main.js')]
+  const modDir = path.join(root, 'main')
+  for (const name of fs.readdirSync(modDir).sort()) {
+    if (name.endsWith('.js')) files.push(path.join(modDir, name))
+  }
+  return files.map((file) => fs.readFileSync(file, 'utf8')).join('\n')
+}
+
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'deskpet-'))
 const store = createStore(dir)
 
@@ -712,7 +726,7 @@ const PAD = 54
   const petJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.js'), 'utf8')
   const petCssRaw = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.css'), 'utf8')
   const petCss = petCssRaw.replace(/\/\*[\s\S]*?\*\//g, '')
-  const mainJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main.js'), 'utf8')
+  const mainJs = mainSource()
   assert.ok(/pointerType === 'touch'/.test(petJs), '触摸不应触发 hover 样式')
   const petRule = petCss.match(/#pet\s*\{[\s\S]*?\}/)
   assert.ok(petRule, '#pet 规则存在')
@@ -749,7 +763,7 @@ const PAD = 54
 {
   // Bubble reserve must never move the pet (0.5.7): the old top-clamp shifted the
   // whole pet down by the bubble height when it sat near the top of the screen.
-  const mainJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main.js'), 'utf8')
+  const mainJs = mainSource()
   const petJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.js'), 'utf8')
   const petCss = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.css'), 'utf8')
   assert.ok(!/Math\.max\(display\.workArea\.y,/.test(mainJs), '气泡加高不得把窗口顶部 clamp 到工作区（会顶动桌宠）')
@@ -769,7 +783,7 @@ const PAD = 54
   const petCss = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.css'), 'utf8')
   const petJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.js'), 'utf8')
   const petHtml = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.html'), 'utf8')
-  const mainJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main.js'), 'utf8')
+  const mainJs = mainSource()
   const modelJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'bubble-model.js'), 'utf8')
   assert.ok(/aspect-ratio:\s*1026\s*\/\s*700/.test(petCss), '气泡框保持 1026:700 固定比例（不再拉伸）')
   assert.ok(!/preserveAspectRatio="none"/.test(petHtml), 'SVG 不再用 preserveAspectRatio=none 拉伸云朵')
@@ -811,7 +825,7 @@ const PAD = 54
   const html = fs.readFileSync(path.join(root, 'app', 'onboard.html'), 'utf8')
   const css = fs.readFileSync(path.join(root, 'app', 'onboard.css'), 'utf8')
   const js = fs.readFileSync(path.join(root, 'app', 'onboard.js'), 'utf8')
-  const mainJs = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
+  const mainJs = mainSource()
   const preloadJs = fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')
   const settingsHtml = fs.readFileSync(path.join(root, 'app', 'settings.html'), 'utf8')
   const settingsJs = fs.readFileSync(path.join(root, 'app', 'settings.js'), 'utf8')
@@ -837,18 +851,18 @@ const PAD = 54
   // M17 P0-3: the tray icon is not guaranteed to be visible, so a global
   // shortcut and a settings row must keep 设置/退出 reachable.
   const root = path.join(__dirname, '..')
-  const mainJs = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
+  const mainJs = mainSource()
   const preloadJs = fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')
   const settingsHtml = fs.readFileSync(path.join(root, 'app', 'settings.html'), 'utf8')
   const settingsJs = fs.readFileSync(path.join(root, 'app', 'settings.js'), 'utf8')
   const petHtml = fs.readFileSync(path.join(root, 'app', 'pet.html'), 'utf8')
 
   assert.ok(/globalShortcut/.test(mainJs), '主进程引入 globalShortcut')
-  assert.ok(/const accelerator = 'CommandOrControl\+Alt\+P'/.test(mainJs) && /globalShortcut\.register\(accelerator, togglePet\)/.test(mainJs), 'Ctrl+Alt+P 注册为显示/隐藏桌宠')
+  assert.ok(/const ACCELERATOR = 'CommandOrControl\+Alt\+P'/.test(mainJs) && /globalShortcut\.register\(ACCELERATOR, actions\.togglePet\)/.test(mainJs), 'Ctrl+Alt+P 注册为显示/隐藏桌宠')
   assert.ok(/globalShortcut\.unregisterAll\(\)/.test(mainJs), '退出前注销全局快捷键')
-  assert.ok(/function togglePet/.test(mainJs) && /click: togglePet/.test(mainJs), '托盘菜单和快捷键共用同一个显示/隐藏入口')
+  assert.ok(/function togglePet/.test(mainJs) && /click: actions\.togglePet/.test(mainJs), '托盘菜单和快捷键共用同一个显示/隐藏入口')
   assert.ok(/try \{\s*tray = new Tray\(image\)/.test(mainJs), '托盘创建失败不能让主进程崩掉')
-  assert.ok(/trayStatus = \{ ok: false/.test(mainJs) && /trayStatus = image\.isEmpty\(\)/.test(mainJs), '托盘失败/图标为空都记下原因')
+  assert.ok(/status = \{ ok: false/.test(mainJs) && /status = image\.isEmpty\(\)/.test(mainJs), '托盘失败/图标为空都记下原因')
   assert.ok(/ipcMain\.handle\('app:status'/.test(mainJs) && /getAppStatus: \(\) => ipcRenderer\.invoke\('app:status'\)/.test(preloadJs), '渲染层能读到托盘与快捷键状态')
   assert.ok(/id="trayStatus"/.test(settingsHtml) && /id="shortcutStatus"/.test(settingsHtml), '设置 → 其他 有托盘/快捷键两行说明')
   assert.ok(/renderAppStatus/.test(settingsJs) && /api\.getAppStatus\(\)/.test(settingsJs), '设置页打开时填入真实状态')
@@ -860,20 +874,55 @@ const PAD = 54
 {
   // M17 P0-5: one-click diagnostics export, redacted.
   const root = path.join(__dirname, '..')
-  const mainJs = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
+  const mainJs = mainSource()
   const preloadJs = fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')
   const settingsHtml = fs.readFileSync(path.join(root, 'app', 'settings.html'), 'utf8')
   const settingsJs = fs.readFileSync(path.join(root, 'app', 'settings.js'), 'utf8')
 
-  assert.ok(/function buildDiagnostics/.test(mainJs) && /ipcMain\.handle\('app:diagnostics'/.test(mainJs), '主进程提供诊断导出')
+  assert.ok(/function build\(\)/.test(mainJs) && /createDiagnostics/.test(mainJs) && /ipcMain\.handle\('app:diagnostics'/.test(mainJs), '主进程提供诊断导出')
   assert.ok(/s\.weather\.lat = REDACTED/.test(mainJs) && /s\.weather\.lon = REDACTED/.test(mainJs) && /s\.weather\.city = REDACTED/.test(mainJs), '城市与坐标打码')
   assert.ok(/delete s\.bubble\.phrases/.test(mainJs) && /delete s\.bubble\.layout/.test(mainJs), '自定义短语和不透明的气泡布局不导出')
-  assert.ok(/tailLines\(LOG_FILE, 200/.test(mainJs) && /cutout-trace\.jsonl/.test(mainJs), '带上 app.log 与 cutout-trace 的尾巴')
+  assert.ok(/logger\.tail\(logger\.filePath\(\), 200/.test(mainJs) && /cutout-trace\.jsonl/.test(mainJs), '带上 app.log 与 cutout-trace 的尾巴')
   assert.ok(/shell\.showItemInFolder\(file\)/.test(mainJs), '导出后直接打开所在文件夹')
   assert.ok(/id="diagBtn"/.test(settingsHtml) && /exportDiagnostics: \(\) => ipcRenderer\.invoke\('app:diagnostics'\)/.test(preloadJs), '设置页按钮接到 preload')
   assert.ok(/api\.exportDiagnostics\(\)/.test(settingsJs) && /btn\.disabled = true/.test(settingsJs), '导出时按钮禁用、结果写回说明行')
-  assert.ok(!/writeFileSync\([^)]*role|copyFileSync/.test(mainJs.slice(mainJs.indexOf('function exportDiagnostics'))), '导出过程不复制角色照片')
+  assert.ok(!/writeFileSync\([^)]*role|copyFileSync/.test(mainJs.slice(mainJs.indexOf('function exportFile'))), '导出过程不复制角色照片')
   ok('诊断导出：一键写 txt、坐标/短语脱敏、带日志尾巴')
+}
+
+{
+  // M18 P1-1: main.js was split into app/main/*.js; main.js only wires the
+  // modules together. Assertions above read the whole set via mainSource().
+  const root = path.join(__dirname, '..')
+  const modDir = path.join(root, 'app', 'main')
+  const mods = fs.readdirSync(modDir).filter((f) => f.endsWith('.js')).sort()
+  assert.deepEqual(mods, ['diagnostics.js', 'geometry.js', 'log.js', 'tray.js'], 'app/main/ 下的模块名单')
+  const mainJs = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
+  for (const name of mods) {
+    const file = path.join(modDir, name)
+    const text = fs.readFileSync(file, 'utf8')
+    assert.ok(/module\.exports = \{/.test(text), name + ' 有导出')
+    assert.ok(text.split('\n').length <= 320, name + ' 不超过 320 行')
+  }
+  assert.ok(/require\('\.\/main\/log'\)/.test(mainJs), 'main.js 引用 log 模块')
+  assert.ok(/require\('\.\/main\/geometry'\)/.test(mainJs), 'main.js 引用 geometry 模块')
+  assert.ok(/require\('\.\/main\/tray'\)/.test(mainJs) && /createTrayHost\(/.test(mainJs), 'main.js 引用 tray 模块并接线')
+  assert.ok(/require\('\.\/main\/diagnostics'\)/.test(mainJs) && /createDiagnostics\(/.test(mainJs), 'main.js 引用 diagnostics 模块并接线')
+  assert.ok(!/function buildDiagnostics/.test(mainJs), '旧的诊断实现已从 main.js 移出')
+  assert.ok(!/function createTray\(/.test(mainJs), '旧的托盘实现已从 main.js 移出')
+  ok('P1-1 拆分：main.js 只接线，模块各自导出且 ≤320 行')
+}
+
+{
+  // M18 P1-1 stage 1: geometry/log/tray/diagnostics are the first four modules.
+  const geo = require(path.join(__dirname, '..', 'app', 'main', 'geometry.js'))
+  assert.equal(geo.windowWidth(220), 328, '桌子宽度 = 桌宠 + 两侧留白')
+  assert.equal(geo.bubbleReserveFor(328), Math.ceil((316 * 700) / 1026) + 8, '气泡预留按渲染层的同一公式')
+  assert.equal(geo.clamp(999, 80, 480), 480, 'clamp 上限')
+  assert.equal(geo.clamp(10, 80, 480), 80, 'clamp 下限')
+  const log = require(path.join(__dirname, '..', 'app', 'main', 'log.js'))
+  assert.equal(typeof log.createLogger, 'function', 'logger 工厂可导入')
+  ok('P1-1 模块：geometry 纯函数与 logger 工厂可直接 require')
 }
 
 console.log('\n' + pass + ' checks passed')
