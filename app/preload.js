@@ -56,6 +56,9 @@ contextBridge.exposeInMainWorld('deskPet', {
   sendRects: (rects) => ipcRenderer.send('pet:rects', Array.isArray(rects) ? rects : []),
   setDragging: (on) => ipcRenderer.send('pet:dragging', !!on),
   setBubble: (visible, height) => ipcRenderer.invoke('pet:bubble', { visible: !!visible, height: height || 0 }),
+  // P1-2: the hover menu is a renderer overlay, so the main-process state
+  // machine learns about it from here (it gates bubble/drag and the reserve).
+  setMenu: (open) => ipcRenderer.send('pet:menu', !!open),
   hidePet: () => ipcRenderer.send('pet:hide'),
   openSettings: () => ipcRenderer.send('pet:open-settings'),
   openEditor: () => ipcRenderer.send('pet:open-editor'),

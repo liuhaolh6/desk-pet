@@ -15,6 +15,15 @@
   （`app:status` 字段形状、托盘菜单项、诊断导出文件格式均同 0.6.6）。smoke 新增模块契约与几何纯函数断言（54 项）。
   细节与剩余阶段见 [`M18-NOTES.md`](M18-NOTES.md)。
 
+- **显式窗口状态机**（ROADMAP P1-2 / L7）：新增 `app/window-state.js`（纯 Node，127 行）——
+  `idle / bubble / menu / dragging / cutout` 五态 + 转移表 + 非法事件计数（不抛异常，留给诊断用），
+  取代原来的 `petDragging` 散子与 `540ms/50ms` 时序约定；`app:status` 多了 `window: { state, illegal, lastIllegal }`。
+  行为不变，但“气泡先隐藏再点设置”这类顺序错位现在会被状态机拦住。smoke 增全矩阵断言（55 项）。
+  细节、实测数据与踩坑见 [`M19-NOTES.md`](M19-NOTES.md)。
+
+- **只抠图抢焦点**（随 P1-2）：气泡与悬停菜单改用 `showInactive`；抠图窗口平时不抢焦点，
+  只有点“开始”才 `focus()`。以前鼠标移到桌宠身上就会把焦点从编辑器/浏览器抢走。
+
 ## [0.6.6] - 2026-10-22
 
 长文案不再糊成一团，托盘靠不住时也有后路，出问题能一键导出信息。

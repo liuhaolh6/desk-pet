@@ -17,7 +17,7 @@
 | 最近提交 | `e01c1cb` = 0.6.6 托盘真相结案；`12176d2` = 0.6.6 重新打包 + 托盘收口 + 真按键验证；`5be8c4d` = 0.6.6 长文案/托盘兜底/手册/诊断导出；再往前 `adbe033` 0.6.5 首次引导 |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js` |
-| 自动化基线 | smoke **54 项** · check-a11y **57 项** · a11y-audit **86 项** · a11y-keyboard **6 项**，全部通过 |
+| 自动化基线 | smoke **55 项** · check-a11y **57 项** · a11y-audit **86 项** · a11y-keyboard **6 项**，全部通过 |
 | 最新产物 | `dist/DeskPet-0.6.4-portable.exe`，153,754,785 字节，SHA-256 `22d173d4219b47e1e2df82de9c43f9a6777613668c0ec3e937ea09f9f206e82c`（0.6.5 还没打包，重打后再换这一行） |
 
 **能做什么**：换形象（照片抠图 / 导入 PNG）、点击看天气和喝水进度、按时提醒喝水、24 条内置温柔提示语、
@@ -83,16 +83,21 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 `tray.js`（托盘 + `Ctrl+Alt+P`）、`diagnostics.js`（脱敏导出）；`app/main.js` 只负责装配与窗口/IPC/定时器。
 模块之间靠**注入回调**连接（不 `require` 主文件），所以都能单独 `require` 或 mock。
 
+与拆模块同批（P1-2）新增 **`app/window-state.js`**：`idle / bubble / menu / dragging / cutout` 五态机，
+主进程持有唯一实例 `winState`；气泡、菜单、拖动、抠图四类事件全部过转移表，
+非法事件只计数不抛（`app:status` 的 `window.illegal` 即此）。以后改窗口行为先看这张表。
+
 ### 3.2 关键文件
 
 | 路径 | 行数 | 作用 |
 |---|---|---|
-| `app/main.js` | 1284 | 主进程入口：窗口/IPC/天气调度/提醒/命中轮询，把模块接线起来（P1-1 阶段 1 已拆出 4 个模块） |
+| `app/main.js` | 1307 | 主进程入口：窗口/IPC/天气调度/提醒/命中轮询，把模块接线起来（P1-1 阶段 1 已拆出 4 个模块） |
+| `app/window-state.js`（新） | 127 | 五态机：转移表 + `transition/can/is/reset` + 非法计数与历史；纯 Node，smoke 直接 require |
 | `app/main/log.js` | 60 | 呼吸日志：`createLogger()` → `log/breadcrumb/setFile/filePath/tail`（纯 Node，无 Electron） |
 | `app/main/geometry.js` | 25 | 窗口几何纯函数：`clamp/windowWidth/bubbleReserveFor`（与渲染层同一公式） |
 | `app/main/tray.js` | 97 | 托盘 + 全局快捷键：`createTrayHost()` 返回 `probe/status/register/setTooltip`，`ACCELERATOR` 常量 |
 | `app/main/diagnostics.js` | 99 | 诊断导出：脱敏设置 + 日志尾巴 → txt，返回 `{ok,path,bytes}` |
-| `app/pet.js` | 819 | 桌宠渲染、气泡几何与 60% 字号下限 + 截断、命中区上报、手势仲裁、菜单 |
+| `app/pet.js` | 821 | 桌宠渲染、气泡几何与 60% 字号下限 + 截断、命中区上报、手势仲裁、菜单 |
 | `app/pet.css` | 450 | 气泡 1026:700 框、动效、reduced-motion |
 | `app/settings.js` / `.html` / `.css` | 512 / 295 / 831 | 设置窗口，7 个 `data-panel` 分类；其他面板带托盘/快捷键状态与诊断导出 |
 | `app/cutout.js` / `.html` / `.css` | 621 / — / 353 | 抠图窗口：三态视图、擦除、旋转、保存 |
@@ -105,7 +110,7 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `lib/weather.js` | 141 | Open-Meteo 取数、城市搜索、`advice()` 提醒推导 |
 | `lib/placement.js` | 185 | 多显示器归属、吸附、启动还原（纯函数） |
 | `lib/cutout*.js` + `lib/png.js` | 359/320/438/161 | 离线抠图：入口、数学、像素管线、PNG 编解码 |
-| `tools/smoke.js` | 929 | `npm test`：存储/角色/天气/气泡/几何/文案/引导/托盘/诊断/模块拆分 54 项断言 |
+| `tools/smoke.js` | 990 | `npm test`：存储/角色/天气/气泡/几何/文案/引导/托盘/诊断/模块拆分/窗口状态机 55 项断言 |
 | `docs/USER-GUIDE.md` | 123 | 用户手册：三分钟上手 + 9 条 FAQ（0.6.6 / ROADMAP P0-4） |
 
 ### 3.3 气泡几何契约（0.6.1 起，改之前先读 `M14-NOTES.md`）
@@ -175,7 +180,7 @@ token 表上限 3，窗口关闭即清空。
 | 工具 | 覆盖 | 命令 | 当前 |
 |---|---|---|---|
 | 语法 | 14 个 JS 文件 | `npm run check` | ✅ |
-| `tools/smoke.js` | 存储/角色/天气码/`advice`/气泡模型/几何不变量/文案/首次引导/托盘兜底/诊断导出/主进程模块拆分 | `npm test` | ✅ 54 项 |
+| `tools/smoke.js` | 存储/角色/天气码/`advice`/气泡模型/几何不变量/文案/首次引导/托盘兜底/诊断导出/主进程模块拆分/窗口状态机 | `npm test` | ✅ 55 项 |
 | `tools/check-a11y.js` | 静态无障碍断言（对比度数学、24px、reduced-motion、回流、aria、`lang`、引导卡、托盘/诊断行） | `node tools/check-a11y.js` | ✅ 57 项 |
 | `tools/a11y-audit.js` | 真实 DOM 审计（AX 名称、对比度、目标尺寸、焦点、320px 回流、forced-colors、reduced-motion） | `--port <调试端口>` | ✅ 86 项 / 0 失败 |
 | `tools/a11y-keyboard.js` | 键盘-only 抠图全流程 | `node tools/a11y-keyboard.js` | ✅ 6 项 |
@@ -326,7 +331,7 @@ node node_modules/electron-builder/cli.js --win portable --x64
 | 打包/发版踩坑 | [`M6-PACKAGING.md`](M6-PACKAGING.md)、`CONTRIBUTING.md` |
 | 签名 | [`SIGNING.md`](SIGNING.md) |
 | 模型与二进制资产决策 | [`MODEL-ASSETS.md`](MODEL-ASSETS.md) |
-| 改主进程/拆模块 | [`M18-NOTES.md`](M18-NOTES.md)（`app/main/*` 的边界与注入约定） |
+| 改主进程/拆模块 | [`M18-NOTES.md`](M18-NOTES.md)（`app/main/*` 的边界与注入约定）、[`M19-NOTES.md`](M19-NOTES.md)（窗口五态机与转移表） |
 | 改阻挡式交互 / 首次引导 | [`M17-NOTES.md`](M17-NOTES.md) |
 | 窗口屏闪 / 缩放虚影 / 位移 | [`PET-WINDOW-NOTES.md`](PET-WINDOW-NOTES.md) |
 | 历次版本细节 | `CHANGELOG.md` + 对应 `Mxx-NOTES.md` |
@@ -337,6 +342,6 @@ node node_modules/electron-builder/cli.js --win portable --x64
 
 > 继续 `D:\project\deskpet` 的 Windows 桌面宠物项目，先读 `HANDOFF.md`（§0 速览、§4 不变量、§6 坑）
 > 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.6`，`main` 已同步，tag 到 `v0.6.6`。
-> 验证基线：`npm run check` + `npm test`（54 项）+ `node tools/check-a11y.js`（57 项）全部通过；
+> 验证基线：`npm run check` + `npm test`（55 项）+ `node tools/check-a11y.js`（57 项）全部通过；
 > 带界面的还要跑 `a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
 > 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。

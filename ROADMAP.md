@@ -133,10 +133,12 @@
 
 ### P1 — 0.7.0（约 2 周）：把地基理顺，顺手补三类高频需求
 
+> 进度：P1-1 阶段 1 与 P1-2 已在 `main` 完成（未发版，见 [`M18-NOTES.md`](M18-NOTES.md)、[`M19-NOTES.md`](M19-NOTES.md)）；P1-1 还剩阶段 2/3（`window.js`、`pickDataDir/boot`）。
+
 | 编号 | 做什么 | 为什么 | 验收标准 | 量 |
 |---|---|---|---|---|
 | P1-1 🟡 | **拆 `app/main.js`** → `app/main/{window,tray,ipc,weather-pump,reminder,hit-test,log}.js`，`main.js` 只做装配。**阶段 1 已完成**：`log/geometry/tray/diagnostics` 四模块（`app/main/`，合计 281 行），`main.js` 1451→1284 | L21 | 单文件 ≤300 行；行为零变化（52+57+86+6 全绿） | 1.5d（剩 2 段） |
-| P1-2 | **显式窗口状态机**：`idle / bubble-visible / menu-open / dragging / cutout` 五态 + 转移表，替代 540ms/50ms 约定；加纯函数单测 | L7 | 状态机单测覆盖全部转移；连点 20 次无 resize、无闪 | 1.5d |
+| P1-2 ✅ | **显式窗口状态机**：`idle / bubble / menu / dragging / cutout` 五态 + 转移表，替代 540ms/50ms 约定；加纯函数单测 | L7 | 已验收：全矩阵 165 组转移单测；连点 20 次 + 40 次连点·悬停混合，`window.illegal === 0`、无 resize/闪（详见 [`M19-NOTES.md`](M19-NOTES.md)） | 1.5d |
 | P1-3 | **纯函数单测框架**：`node:test`（零依赖）覆盖 `bubble-model` / `placement` / `weather.advice` / `cutout-math` | L24 | `npm run unit`，≥40 个用例；smoke 里文本断言逐步替换 | 1d |
 | P1-4 | **设置可用性**：面板搜索、每项一句话说明、`恢复默认`（按面板）、"城市最近使用" | L17 | 搜索能定位到项；恢复默认有二次确认 | 1d |
 | P1-5 | **喝水增强**：`稍后 10 分钟`、今日时间轴、本周杯数（本地 json）、导出 CSV | L19/L16 | 三条都能用；数据只在本机 | 1.5d |
