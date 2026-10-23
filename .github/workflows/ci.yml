@@ -39,3 +39,34 @@ jobs:
 
       - name: Real model on a no-person image (must report NO_PERSON)
         run: node tools/cutout-diag.js --input tools/fixtures/negative-landscape.png --expect no-person
+
+  # 真窗口 e2e：起一个真实的 Electron（headless 会话，不需要 xvfb），
+  # 用 CDP 点宠物 / 开气泡 / 找城市。失败直接变红。
+  e2e:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # 注意：这里不能设 ELECTRON_SKIP_BINARY_DOWNLOAD，e2e 要真的 Electron 可执行文件。
+      - name: Install
+        run: npm ci
+
+      - name: Headless Electron e2e (noresize / collapse / city)
+        run: npm run test:e2e
+        env:
+          DESKPET_E2E_PORT: '9333'
+
+      - name: Upload e2e data dir on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-data
+          path: .e2e-data/
+          if-no-files-found: ignore
+          retention-days: 3

@@ -133,7 +133,7 @@
 
 ### P1 — 0.7.0（约 2 周）：把地基理顺，顺手补三类高频需求
 
-> 进度：P1-1 / P1-2 / P1-3 / P1-4 / P1-5 / P1-6 / P1-7 / P1-8 已在 `main` 完成（未发版，见 [`M18-NOTES.md`](M18-NOTES.md)、[`M19-NOTES.md`](M19-NOTES.md)、[`M20-NOTES.md`](M20-NOTES.md)、[`M21-NOTES.md`](M21-NOTES.md)、[`M22-NOTES.md`](M22-NOTES.md)、[`M23-NOTES.md`](M23-NOTES.md)、[`M24-NOTES.md`](M24-NOTES.md)、[`M25-NOTES.md`](M25-NOTES.md)）；`app/main.js` 1451 → **226 行**（≤300 目标达成），`npm run unit` 100 例。
+> 进度：**P1-1〜P1-9 全部在 `main` 完成**（未发版，见 [`M18-NOTES.md`](M18-NOTES.md) … [`M26-NOTES.md`](M26-NOTES.md)）；`app/main.js` 1451 → **226 行**（≤300 目标达成），`npm run unit` 100 例，`npm run test:e2e` 3 用例。
 
 | 编号 | 做什么 | 为什么 | 验收标准 | 量 |
 |---|---|---|---|---|
@@ -145,7 +145,7 @@
 | P1-6 ✅ | **天气增强**：空气质量（Open-Meteo air-quality，免 key，欧洲 AQI 六级）、未来 3 天逐日（高低温/降水/日出日落）、模块库 +3（`天气：未来两天`、`空气：好坏`、`空气：PM2.5`） | L12 | 已验收：默认天气卡多一行空气+两天；断网/空气接口失败只空一行（走缓存 + 「离线缓存」）；CDP 8/8；unit 85 / smoke 60 / check-a11y 84 | 1d |
 | P1-7 ✅ | **气泡时机**：连续使用 50 分钟 / 深夜 23 点后 / 久未互动 → 主动冒一条（本地规则，可在设置关） | L15 的一半 | 已验收：三个触发器可单独关；前台全屏时闭嘴（探测失败按非全屏）；CDP 9/9；unit 100 / smoke 61 | 1d |
 | P1-8 ✅ | **真机 a11y**：NVDA 脚本走一遍、高对比度主题截图、200% 缩放检查四窗口 | L28 | 已验收：`A11Y-AUDIT.md` §7"真机检查" + 12 张截图（200% 四窗口 0 溢出、高对比度计算色、无障碍树 4 窗口 0 无名）；NVDA 未装 → 改为无障碍树走查 + 手工清单 | 1d |
-| P1-9 | **CDP 三脚本入库**：`noresize` / `collapse` / `city` 进 `tools/`，CI 加 headless 冒烟（xvfb 不需要，Windows runner 可直接跑 Electron） | L25 | CI 里能跑，失败会红 | 1d |
+| P1-9 ✅ | **CDP 三脚本入库**：`noresize` / `collapse` / `city` 进 `tools/e2e/`，CI 加 headless 冒烟（Windows runner 直接跑 Electron，不需要 xvfb） | L25 | 已验收：`npm run test:e2e` 三个用例本地全过（4.4s / 2.0s / 3.4s）；`ci.yml` 新增 `e2e` job，失败变红；城市用例走本地桩服务，不依赖外网 | 1d |
 
 ### P2 — 0.8–0.9（约 1–2 月）：把"给别人用"这件事做完
 

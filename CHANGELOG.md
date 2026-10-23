@@ -9,6 +9,13 @@
 - 计划中的工作与现有不足的完整清单见 [`ROADMAP.md`](ROADMAP.md)（成熟度评分、P0–P3 方向、未来展望）；
   机制细节与踩坑记录见 [`HANDOFF.md`](HANDOFF.md)。
 
+### 工程化
+- **真窗口 e2e 入库（ROADMAP P1-9）**：把散在 `.tmp-verify/` 里的一次性 CDP 脚本整理成 `tools/e2e/`——
+  `run.js` 用临时数据目录起一个干净的 Electron（不需要 xvfb），`cases/` 三条用例：`noresize`（连点 5 次 + 收起，
+  窗口高度恒为 444）、`collapse`（气泡完整落在窗口内、收起后宠物重新可点）、`city`（找城市 → 点结果 → 存盘 → 进最近城市）。
+  外网不可靠，`city` 走 `run.js` 起的本地地理编码桩（`DESKPET_GEOCODE_BASE`），整条 IPC 链路是真的，只有网络被换掉。
+  `npm run test:e2e` 一键跑；`ci.yml` 新增 `e2e` job（Windows runner，失败变红，失败时上传 `.e2e-data/` 供排查）。见 [`M26-NOTES.md`](M26-NOTES.md)。
+
 ### 无障碍
 - **真机 a11y（ROADMAP P1-8）**：把"只在代码里保证"的三件事搬到真窗口上验。200% 缩放（`--force-device-scale-factor=2`，
   `devicePixelRatio === 2`）下四个窗口横向溢出都是 0，截图进 `docs/a11y-shots/`；高对比度用 `--force-high-contrast` 起，
