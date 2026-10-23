@@ -17,6 +17,17 @@
         </div>
       </div>
 
+      <div class="search">
+        <div class="search-box">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input id="settingSearch" type="search" autocomplete="off" spellcheck="false"
+                 placeholder="搜设置项：音量、城市、喝水…" aria-label="搜索设置项"
+                 aria-describedby="searchHint" aria-controls="searchResults" aria-expanded="false">
+        </div>
+        <p id="searchHint" class="search-hint">输入两个字就能找，比如「音量」「城市」「几杯」</p>
+        <div id="searchResults" class="search-results" aria-label="设置项搜索结果" hidden></div>
+      </div>
+
       <nav class="nav" aria-label="设置分类">
         <button type="button" class="nav-item active" data-panel="appearance" data-title="外观" data-hint="它叫什么、多大一只，平时怎么待在桌面上"><span class="nav-icon">◐</span>外观</button>
         <button type="button" class="nav-item" data-panel="role" data-title="角色" data-hint="换一张喜欢的图，或者用照片做一个它"><span class="nav-icon">◉</span>角色</button>
@@ -42,7 +53,21 @@
           <h2 id="panelTitle">外观</h2>
           <p id="panelHint" class="panel-hint">它叫什么、多大一只，平时怎么待在桌面上</p>
         </div>
-        <span class="pill">改完就生效</span>
+        <div class="topbar-actions">
+          <span class="pill">改完就生效</span>
+          <div class="reset-wrap">
+            <button id="resetPanelBtn" class="ghost-small" type="button" aria-haspopup="dialog" aria-expanded="false">恢复这页默认</button>
+            <div id="resetConfirm" class="reset-confirm" role="alertdialog" aria-modal="false"
+                 aria-labelledby="resetConfirmText" aria-describedby="resetConfirmHint" hidden>
+              <p id="resetConfirmText" class="reset-title">把「<span id="resetPanelName">这一页</span>」恢复成默认？</p>
+              <p id="resetConfirmHint" class="reset-hint">只改这一页的设置，别的页面和你导入的图都不会动。</p>
+              <div class="reset-buttons">
+                <button id="resetOk" class="danger-small" type="button">恢复默认</button>
+                <button id="resetCancel" type="button">先不动</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </header>
 
       <div class="panels">
@@ -163,6 +188,7 @@
                   <option value="90">每 90 分钟</option>
                   <option value="120">每 120 分钟</option>
                 </select>
+                <p class="field-hint">到点了会把气泡推到你面前，点一下「喝了」就重新计时</p>
               </div>
             </div>
 
@@ -191,6 +217,7 @@
                   <button id="searchBtn" type="button">找一找</button>
                   <button id="locateBtn" type="button">用我的位置</button>
                 </div>
+                <div id="recentCities" class="chips-inline recent-cities" aria-label="最近用过的城市" hidden></div>
                 <div id="results" class="results" hidden></div>
                 <p id="cityNow" class="field-hint"></p>
               </div>
@@ -229,6 +256,7 @@
               <span class="field-label">什么时候响</span>
               <div class="field-body">
                 <div id="soundEvents" class="sound-events"></div>
+                <p class="field-hint">点我、冒泡、提醒喝水各响哪段；不想听就选「静音」</p>
               </div>
             </div>
 

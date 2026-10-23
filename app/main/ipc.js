@@ -69,6 +69,9 @@ function registerIpc(deps) {
     window: { state: winState.state, illegal: winState.illegal, lastIllegal: winState.lastIllegal },
   }))
 
+  // P1-4: “恢复这页默认”需要知道每个键的出厂值；只读、不带任何用户数据。
+  ipcMain.handle('settings:defaults', () => store.defaults())
+
   ipcMain.handle('settings:set', (ev, patch) => {
     const prev = store.readSettings()
     const next = store.writeSettings(patch || {})

@@ -129,6 +129,38 @@ const cutoutHtml = read('app/cutout.html')
   check('导出结果写在 aria-live 之外不打断读屏', !/id="diagStatus"[^>]*aria-live/.test(html))
 }
 
+// ------------------------------------------- settings.html (P1-4 usability)
+{
+  const html = read('app/settings.html')
+  const js = read('app/settings.js')
+  const search = (html.match(/<input id="settingSearch"[^>]*>/i) || [''])[0]
+  check('搜索框有可访问名称', attr(search, 'aria-label') === '搜索设置项', attr(search, 'aria-label'))
+  check('搜索框是 search 类型且无自动大写', attr(search, 'type') === 'search' && attr(search, 'autocomplete') === 'off')
+  check('搜索框说明用 aria-describedby 关联', !!attr(search, 'aria-describedby') && /id="searchHint"/.test(html))
+  check('结果区不是假的列表角色', !/id="searchResults"[^>]*role="list"/.test(html))
+  const results = (html.match(/<div id="searchResults"[^>]*>/i) || [''])[0]
+  check('结果区有名称', !!attr(results, 'aria-label'))
+  check('搜索框报告展开状态', /setAttribute\('aria-expanded', 'true'\)/.test(js) && /setAttribute\('aria-expanded', 'false'\)/.test(js))
+  check('搜索结果是真按钮', /const row = document\.createElement\('button'\)/.test(js) && /row\.type = 'button'/.test(js))
+  check('键盘能进结果并回车选中', /ArrowDown/.test(js) && /ev\.key === 'Enter'/.test(js))
+  check('空结果给出文字提示而不是只有颜色', /没找到有关的设置/.test(js))
+  check('跳转后焦点落在目标控件', /node\.focus\(\{ preventScroll: true \}\)/.test(js))
+  check('减少动效时取消平滑滚动', /prefers-reduced-motion: reduce/.test(js) && /'auto' : 'smooth'/.test(js))
+
+  const confirm = (html.match(/<div id="resetConfirm"[^>]*>/i) || [''])[0]
+  check('恢复默认的确认层是 alertdialog', attr(confirm, 'role') === 'alertdialog')
+  check('确认层有名称与说明', !!attr(confirm, 'aria-labelledby') && !!attr(confirm, 'aria-describedby'))
+  check('确认层默认收起且报告展开状态', /id="resetConfirm"[\s\S]{0,200}hidden/.test(html) && /aria-haspopup="dialog"/.test(html))
+  check('确认层拿到焦点后可按 Esc 退出', /resetOk'\)\.focus/.test(js) && /ev\.key === 'Escape'/.test(js))
+  check('确认按钮有明确文案', /id="resetOk"[^>]*>恢复默认</.test(html) && /id="resetCancel"[^>]*>先不动</.test(html))
+
+  const chips = (html.match(/<div id="recentCities"[^>]*>/i) || [''])[0]
+  check('最近城市一行有名称', !!attr(chips, 'aria-label'))
+  check('最近城市标明当前选中', /setAttribute\('aria-pressed', String\(name === current\)\)/.test(js))
+  check('每个设置项都有一句话说明', !/\n\s*<div class="field">(?:(?!<\/div>)[\s\S])*?class="field-label"(?:(?!<\/div>)[\s\S])*?<\/div>\s*<\/div>/.test(html) ||
+    (html.match(/class="field-hint"/g) || []).length >= 10)
+}
+
 // ------------------------------------------------------------- onboard.html
 {
   const html = read('app/onboard.html')

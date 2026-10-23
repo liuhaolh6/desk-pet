@@ -114,6 +114,7 @@
     renderSoundEvents()
     renderSoundFiles()
     renderRoles()
+    renderRecentCities(settings)
   }
 
   function renderRoles() {
@@ -160,6 +161,8 @@
   }
 
   function wire() {
+    wireFind()
+    wireReset()
     $('name').addEventListener('input', (ev) => {
       const value = ev.target.value.trim() || '小芳'
       save({ name: value })
@@ -411,6 +414,279 @@
     })
   }
 
+  // ------------------------------------------------- P1-4: find a setting
+  // A hand-written index beats scraping the DOM: it can carry the words
+  // people actually type ("音量/响度/大声"), and smoke can check that every
+  // target id still exists in settings.html.
+  const FIND_INDEX = [
+    { panel: 'appearance', id: 'name', label: '它叫什么', hint: '改名字', keys: '名字 称呼 改名 昵称' },
+    { panel: 'appearance', id: 'size', label: '多大一只', hint: '窗口大小', keys: '大小 尺寸 变大 变小 缩放' },
+    { panel: 'appearance', id: 'alwaysOnTop', label: '一直看得见', hint: '不被别的窗口盖住', keys: '置顶 最前面 挡住' },
+    { panel: 'appearance', id: 'autostart', label: '开机就出现', hint: '登录后自动启动', keys: '开机 自启 启动 登录' },
+    { panel: 'appearance', id: 'snapEnabled', label: '靠边停好', hint: '拖到屏幕边缘吸住', keys: '吸附 吸住 边缘 贴边' },
+    { panel: 'appearance', id: 'snapGap', label: '离边多远开始吸', hint: '吸附距离（px）', keys: '吸附 距离 像素' },
+    { panel: 'role', id: 'importBtn', label: '换一张图当样子', hint: '选自己的图片', keys: '角色 形象 图片 换装 皮肤' },
+    { panel: 'role', id: 'cutoutBtn', label: '用照片做个我', hint: '抠图做新角色', keys: '抠图 照片 去背 剪影' },
+    { panel: 'role', id: 'resetPosBtn', label: '回到右下角', hint: '重置桌宠位置', keys: '位置 归位 右下角 跑丢' },
+    { panel: 'bubble', id: 'autoHide', label: '气泡留多久', hint: '停留秒数', keys: '气泡 停留 几秒 消失' },
+    { panel: 'bubble', id: 'cooldown', label: '两次天气之间', hint: '天气气泡间隔', keys: '天气 间隔 频率 多久' },
+    { panel: 'bubble', id: 'phrases', label: '想对我说的话', hint: '每行一句台词', keys: '台词 说话 句子 文案 语录' },
+    { panel: 'bubble', id: 'editorBtn', label: '气泡长什么样', hint: '排版与样式', keys: '气泡 样式 排版 布局 外观' },
+    { panel: 'reminder', id: 'mode', label: '唠叨程度', hint: '提醒频率', keys: '唠叨 提醒 频率 少说 多说' },
+    { panel: 'reminder', id: 'interval', label: '多久提醒喝水', hint: '喝水间隔分钟', keys: '喝水 几杯 间隔 提醒' },
+    { panel: 'reminder', id: 'quietFrom', label: '安静时间（开始）', hint: '这个点以后不吵你', keys: '安静 免打扰 别吵 睡觉' },
+    { panel: 'reminder', id: 'quietTo', label: '安静时间（结束）', hint: '这个点以后恢复提醒', keys: '安静 免打扰 起床' },
+    { panel: 'weather', id: 'city', label: '你在哪座城市', hint: '搜城市名', keys: '城市 定位 地点 在哪 天气' },
+    { panel: 'weather', id: 'locateBtn', label: '用我的位置', hint: '自动定位', keys: '定位 位置 gps 自动' },
+    { panel: 'weather', id: 'refreshMinutes', label: '多久看一眼天气', hint: '刷新间隔', keys: '天气 刷新 间隔 更新' },
+    { panel: 'sound', id: 'sound', label: '让我出声', hint: '总开关', keys: '声音 静音 出声 音效' },
+    { panel: 'sound', id: 'soundVolume', label: '音量', hint: '响度', keys: '音量 响度 大声 小声' },
+    { panel: 'sound', id: 'soundEvents', label: '什么时候响', hint: '各事件音效', keys: '声音 事件 点击 提醒' },
+    { panel: 'sound', id: 'soundImportBtn', label: '添加一段音频', hint: '自定义音效', keys: '音效 音频 自定义 导入' },
+    { panel: 'other', id: 'diagBtn', label: '导出诊断信息', hint: '日志与状态，坐标打码', keys: '诊断 日志 报错 反馈 导出' },
+    { panel: 'other', id: 'onboardBtn', label: '再看一次欢迎引导', hint: '重新走一遍引导', keys: '引导 欢迎 新手 教程' },
+    { panel: 'other', id: 'openDirBtn', label: '东西放哪', hint: '打开数据文件夹', keys: '数据 文件夹 备份 目录' },
+    { panel: 'other', id: 'quitBtn', label: '先退出啦', hint: '关掉桌宠', keys: '退出 关闭 结束' },
+  ]
+
+  const PANEL_TITLE = {}
+  document.querySelectorAll('.nav-item').forEach((btn) => {
+    PANEL_TITLE[btn.dataset.panel] = btn.dataset.title || btn.textContent.trim()
+  })
+
+  const reduceMotion = () => {
+    try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches } catch (err) { return false }
+  }
+
+  function findMatches(query) {
+    const q = String(query || '').trim().toLowerCase()
+    if (!q) return []
+    const scored = []
+    FIND_INDEX.forEach((entry) => {
+      const label = entry.label.toLowerCase()
+      const keys = entry.keys.toLowerCase()
+      const panelName = String(PANEL_TITLE[entry.panel] || '').toLowerCase()
+      let score = 0
+      if (label.includes(q)) score = 3
+      else if (keys.includes(q)) score = 2
+      else if (panelName.includes(q) || entry.hint.toLowerCase().includes(q)) score = 1
+      if (score) scored.push({ entry: entry, score: score })
+    })
+    scored.sort((a, b) => b.score - a.score)
+    return scored.slice(0, 8).map((item) => item.entry)
+  }
+
+  function renderFindResults(query) {
+    const box = $('searchResults')
+    const input = $('settingSearch')
+    if (!box || !input) return
+    const matches = findMatches(query)
+    box.innerHTML = ''
+    if (!String(query || '').trim()) {
+      box.hidden = true
+      input.setAttribute('aria-expanded', 'false')
+      return
+    }
+    if (!matches.length) {
+      const empty = document.createElement('p')
+      empty.className = 'search-empty'
+      empty.textContent = '没找到有关的设置，试试「气泡」「城市」「音量」'
+      box.appendChild(empty)
+      box.hidden = false
+      input.setAttribute('aria-expanded', 'true')
+      return
+    }
+    matches.forEach((entry) => {
+      const row = document.createElement('button')
+      row.type = 'button'
+      row.className = 'search-result'
+      row.dataset.target = entry.id
+      const strong = document.createElement('b')
+      strong.textContent = entry.label
+      const span = document.createElement('span')
+      span.textContent = (PANEL_TITLE[entry.panel] || entry.panel) + ' · ' + entry.hint
+      row.append(strong, span)
+      row.addEventListener('click', () => revealSetting(entry))
+      box.appendChild(row)
+    })
+    box.hidden = false
+    input.setAttribute('aria-expanded', 'true')
+  }
+
+  /** Jump to the panel holding the control, bring it into view, flash it. */
+  function revealSetting(entry) {
+    selectPanel(entry.panel)
+    const node = $(entry.id)
+    if (!node) return
+    const field = node.closest('.field') || node
+    field.scrollIntoView({ block: 'center', behavior: reduceMotion() ? 'auto' : 'smooth' })
+    field.classList.remove('field-flash')
+    void field.offsetWidth // restart the one-shot animation
+    field.classList.add('field-flash')
+    setTimeout(() => field.classList.remove('field-flash'), 1400)
+    if (typeof node.focus === 'function') node.focus({ preventScroll: true })
+    $('searchResults').hidden = true
+    $('settingSearch').setAttribute('aria-expanded', 'false')
+    setStatus('找到了：' + entry.label, 1800)
+  }
+
+  function wireFind() {
+    const input = $('settingSearch')
+    const box = $('searchResults')
+    if (!input || !box) return
+    input.addEventListener('input', () => renderFindResults(input.value))
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape') { input.value = ''; renderFindResults(''); return }
+      if (ev.key === 'ArrowDown' || ev.key === 'Enter') {
+        const first = box.querySelector('.search-result')
+        if (!first) return
+        ev.preventDefault()
+        if (ev.key === 'Enter') first.click()
+        else first.focus()
+      }
+    })
+    input.addEventListener('blur', () => {
+      setTimeout(() => {
+        const active = document.activeElement
+        if (active && active.classList && active.classList.contains('search-result')) return
+        box.hidden = true
+        input.setAttribute('aria-expanded', 'false')
+      }, 120)
+    })
+  }
+
+  // ------------------------------------------------ P1-4: per-panel reset
+  /** The patch that puts one panel back to its factory values. */
+  function panelResetPatch(panel) {
+    const d = state.defaults
+    if (!d) return null
+    if (panel === 'appearance') {
+      return {
+        name: d.name,
+        size: d.size,
+        alwaysOnTop: d.alwaysOnTop,
+        autostart: d.autostart,
+        snap: { enabled: d.snap.enabled, gap: d.snap.gap },
+      }
+    }
+    if (panel === 'bubble') {
+      return {
+        bubble: {
+          autoHideSeconds: d.bubble.autoHideSeconds,
+          cooldownMinutes: d.bubble.cooldownMinutes,
+          phrases: d.bubble.phrases,
+        },
+      }
+    }
+    if (panel === 'reminder') {
+      return {
+        mode: d.mode,
+        water: {
+          intervalMinutes: d.water.intervalMinutes,
+          quietFrom: d.water.quietFrom,
+          quietTo: d.water.quietTo,
+        },
+      }
+    }
+    if (panel === 'weather') {
+      return {
+        weather: {
+          lat: null,
+          lon: null,
+          city: '',
+          label: '自动定位',
+          refreshMinutes: d.weather.refreshMinutes,
+          recent: [],
+        },
+      }
+    }
+    if (panel === 'sound') return { sound: JSON.parse(JSON.stringify(d.sound)) }
+    return null
+  }
+
+  function currentPanel() {
+    const active = document.querySelector('.panel.active')
+    return active ? active.dataset.panel : 'appearance'
+  }
+
+  function closeResetConfirm() {
+    const box = $('resetConfirm')
+    const btn = $('resetPanelBtn')
+    if (!box || !btn) return
+    box.hidden = true
+    btn.setAttribute('aria-expanded', 'false')
+  }
+
+  function wireReset() {
+    const btn = $('resetPanelBtn')
+    const box = $('resetConfirm')
+    if (!btn || !box) return
+    btn.addEventListener('click', () => {
+      const panel = currentPanel()
+      if (!panelResetPatch(panel)) { setStatus('这一页没有可以恢复的默认值', 2600); return }
+      $('resetPanelName').textContent = PANEL_TITLE[panel] || panel
+      const willShow = box.hidden
+      box.hidden = !willShow
+      btn.setAttribute('aria-expanded', String(willShow))
+      if (willShow) $('resetOk').focus({ preventScroll: true })
+    })
+    $('resetCancel').addEventListener('click', () => {
+      closeResetConfirm()
+      btn.focus({ preventScroll: true })
+    })
+    $('resetOk').addEventListener('click', () => {
+      const panel = currentPanel()
+      const patch = panelResetPatch(panel)
+      closeResetConfirm()
+      if (!patch) return
+      save(patch, true, '「' + (PANEL_TITLE[panel] || panel) + '」已经回到默认啦')
+    })
+    box.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape') {
+        ev.preventDefault()
+        closeResetConfirm()
+        btn.focus({ preventScroll: true })
+      }
+    })
+    document.addEventListener('click', (ev) => {
+      if (box.hidden) return
+      if (box.contains(ev.target) || btn.contains(ev.target)) return
+      closeResetConfirm()
+    })
+  }
+
+  // ------------------------------------------------- P1-4: recent cities
+  function renderRecentCities(settings) {
+    const box = $('recentCities')
+    if (!box) return
+    const list = (settings && settings.weather && settings.weather.recent) || []
+    box.innerHTML = ''
+    if (!list.length) { box.hidden = true; return }
+    const current = settings.weather && settings.weather.city
+    list.slice(0, 5).forEach((name) => {
+      const chip = document.createElement('button')
+      chip.type = 'button'
+      chip.className = 'chip-city'
+      chip.textContent = name
+      chip.setAttribute('aria-pressed', String(name === current))
+      chip.addEventListener('click', () => {
+        $('city').value = name
+        search(name)
+      })
+      box.appendChild(chip)
+    })
+    box.hidden = false
+  }
+
+  /** Moves a freshly picked city to the front of the recent list. */
+  function noteRecentCity(name) {
+    const clean = String(name || '').trim()
+    if (!clean || clean === '我找到的位置') return
+    const weather = (state.settings && state.settings.weather) || {}
+    const list = [clean].concat((weather.recent || []).filter((item) => item !== clean)).slice(0, 5)
+    save({ weather: { recent: list } }, true, '记住啦')
+  }
+
   function search(query) {
     const q = String(query || '').trim()
     if (!q) { setStatus('先写下城市名呀', 4000); $('city').focus(); return }
@@ -434,6 +710,7 @@
           save({ weather: { lat: item.lat, lon: item.lon, city: item.name, label: item.admin || item.country } }, true,
             '记住啦：' + item.name + (item.admin ? ' · ' + item.admin : '') + '，正在换天气…')
           $('city').value = item.name
+          noteRecentCity(item.name)
           box.hidden = true
           renderCityNow({ weather: { lat: item.lat, lon: item.lon, city: item.name, label: item.admin || item.country } })
           api.refreshWeather()
@@ -490,6 +767,7 @@
     wireNav()
     wire()
     try {
+      try { state.defaults = await api.getDefaults() } catch (err) { state.defaults = null }
       const state0 = await api.getState()
       state.roles = state0.roles || []
       try { state.sounds = await api.listSounds() } catch (err) { state.sounds = [] }
