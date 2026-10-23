@@ -73,11 +73,58 @@ node tools/check-a11y.js  # 57 项
    凭记忆填会一直 `REVISION_CONFLICT`（本轮踩了三次）。
 6. **`.gitignore` 与 `store.js` 是 CRLF**：多行替换要带 `\r\n`，否则 `oldText not found`。
 
-## 4. 下一段（阶段 2 / 阶段 3）
+## 4. 下一段（阶段 3）
 
 | 阶段 | 内容 | 前置 |
 |---|---|---|
-| 2 | `window.js`：`createWindow` / 位置还原 / 拖动守卫 / 命中窗口与 `forwardMouse` | 建议与 P1-2 状态机一起做，避免把 540ms 约定搬两次 |
-| 3 | `ipc.js` + `weather-pump.js` + `reminder.js`：`ipcMain.handle` 汇总、天气定时器与断网降级、喝水提醒调度 | 阶段 2 之后（依赖窗口句柄） |
+| 3 | `ipc.js` + `weather-pump.js` + `reminder.js`：`ipcMain.handle` 汇总、天气定时器与断网降级、喝水提醒调度 | 阶段 2 已完成 |
 
 阶段 2 完成后 `main.js` 应落在 300 行左右；届时把 `HANDOFF.md` §3.2 的"主进程入口"一行改成装配说明。
+## 5. 阶段 2：`app/main/window-layout.js`（250 行）
+
+### 5.1 抽了什么
+
+| 从 `main.js` 搬走 | 现在在哪 |
+|---|---|
+| `hitRects` / `petInteractive` / `petHitTimer` / `updatePetInteractive` | `createWindowLayout()` 内部状态 |
+| `getDisplays` / `resolveWindowPosition` / `ensureOnScreen` | 同名方法 |
+| `applyBubbleHeight` / `windowBoundsForPet` / `petScreenRect` / `mirrorSide` | 同名方法 |
+| 命中判定本体 | `hitTest(point, bounds, rects)` —— 纯函数，smoke 直接 require |
+
+`main.js` 只保留"读设置 → 调 layout → setBounds"的接线；`pet:drag` 里 `Math.round` 与夹取都交给模块。
+`app/main.js` **1284 → 1148 行**，`npm test` 56 项、`npm run check` 21 个文件全绿。
+
+### 5.2 顺手修掉的真实 bug：预留 ≠ 可见
+
+抽模块时把两个概念摆到了一起，才看清它们原来被混在 `setBubble(visible, height)` 一个 IPC 里：
+
+- 渲染层**窗口 resize**时会重新量一遍气泡预留（`syncBubbleSpace`），它调用 `resizeForBubble()`，
+  而后者发的是 `setBubble(extra > 0, extra)` —— 隐藏状态下这是一条**"气泡可见"**的谎报。
+- 后果：拖动的第一帧里主进程收到 `bubble-show`（状态 `dragging` → 非法），并把 `reserve` 从 0 改成 224；
+  收气泡后再量一次又会把状态拉回 `bubble`，于是 `getAppStatus().window.state` 卡在 `bubble` 而 DOM 里气泡是隐藏的。
+
+修法（三层各做一半）：
+
+1. **IPC 拆开**：`pet:bubble` 只回答"卡片在不在"（驱动状态机），新增 `pet:reserve` 只改预留高度；
+   `preload` 多了 `setReserve(height)`。
+2. **主进程去重**：`let bubbleVisible` 记住上次可见性，只有变化时才 `transition`；
+   `pet:bubble-hidden` 也同步这个标志。隐藏时调 `applyBubbleHeight(null)` —— 保留预留（0.6.4 的"收气泡不缩窗"）。
+3. **渲染层拆函数**：`reserveSpace()`（`setReserve`）与 `showBubbleFrame()`（`setBubble(true, …)`，
+   带 `stale()` 守卫）分开；`syncBubbleSpace` / 菜单 / 尺寸变化全走前者。
+
+### 5.3 验证（真机 Electron 44.9.0，CDP 9229，`.dev-p11`）
+
+| 脚本 | 结果 |
+|---|---|
+| `cdp-p11-stage2.js`（布局/固定预留/缩小/拖动） | 16/16 |
+| `cdp-p11-dragjs.js`（指针事件逐像素） | 5/5，`illegal=0` |
+| `cdp-p11-drag.js`（悬停中拖动） | 4/4，`illegal=0` |
+| `probe-idle.js`（显示→隐藏→状态） | 全程 `idle`，`illegal=0` |
+| `a11y-audit` / `a11y-keyboard` / `check-a11y` / `smoke` | 86/0、6/6、57、56 |
+
+### 5.4 测试脚本自身的两个坑
+
+1. **CDP `Input.dispatchMouseEvent` 是视口坐标**：窗口一移动，指针就"追"上去了，位移会成倍放大
+   （请求 84px，桌宠跑了 147px）。拖动必须用带 `screenX/screenY` 的合成 `PointerEvent`。
+2. **桌宠渲染色块比 `size` 高 3%（hover 缩放）**：`getBoundingClientRect()` 会比逻辑尺寸多 7px，
+   比对落点时用 **底边** 或放到 12px 容差，别拿左上角死磕 5px。
