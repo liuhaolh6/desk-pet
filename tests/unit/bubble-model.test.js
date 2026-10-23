@@ -162,6 +162,42 @@ test('valueOf：紫外线、明天、未来几小时', () => {
   assert.equal(valueOf('weather.hourly', ctx), '15点 14° ⛅ → 16点 15° ☁️')
 })
 
+test('valueOf：天气未来两天压成一行，缺数据时留空', () => {
+  const ctx = {
+    weather: {
+      ok: true,
+      days: [
+        { label: '今天', high: 18, low: 7 },
+        { label: '明天', high: 15, low: 6, icon: '🌦️' },
+        { label: '后天', high: 17, low: 8, icon: '☁️' },
+      ],
+    },
+  }
+  assert.equal(valueOf('weather.days', ctx), '明天 6~15° 🌦️ · 后天 8~17° ☁️')
+  assert.equal(valueOf('weather.days', { weather: { ok: true } }), '')
+  assert.equal(valueOf('weather.days', { weather: { ok: true, days: [{ label: '今天' }] } }), '')
+})
+
+test('valueOf：空气模块在缺空气数据时不显示（断网也不出现空洞）', () => {
+  const withAir = { weather: { ok: true, air: { aqi: 35, text: '良', pm25: 12 } } }
+  assert.equal(valueOf('air.quality', withAir), '空气良（35）')
+  assert.equal(valueOf('air.pm', withAir), 'PM2.5 12')
+  assert.equal(valueOf('air.quality', { weather: { ok: true } }), '')
+  assert.equal(valueOf('air.pm', { weather: { ok: true, air: { aqi: 35 } } }), '')
+  assert.equal(valueOf('air.quality', { weather: { ok: false, air: { aqi: 35, text: '良' } } }), '')
+})
+
+test('默认天气卡带一行空气 + 未来两天，且都是低对比度小字', () => {
+  const card = defaultLayout().cards.find((c) => c.id === 'weather')
+  const flat = card.rows.flat()
+  const types = flat.map((m) => m.type)
+  assert.ok(types.includes('air.quality'))
+  assert.ok(types.includes('weather.days'))
+  const air = flat.find((m) => m.type === 'air.quality')
+  assert.equal(air.style.size, 11)
+  assert.equal(air.style.color, '#5d6a86')
+})
+
 test('valueOf：离线缓存提示只在 stale 时出现', () => {
   assert.equal(valueOf('weather.hint', { weather: { ok: true, stale: true } }), '离线缓存')
   assert.equal(valueOf('weather.hint', { weather: { ok: true } }), '')

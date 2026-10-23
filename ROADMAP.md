@@ -133,7 +133,7 @@
 
 ### P1 — 0.7.0（约 2 周）：把地基理顺，顺手补三类高频需求
 
-> 进度：P1-1 / P1-2 / P1-3 / P1-4 / P1-5 已在 `main` 完成（未发版，见 [`M18-NOTES.md`](M18-NOTES.md)、[`M19-NOTES.md`](M19-NOTES.md)、[`M20-NOTES.md`](M20-NOTES.md)、[`M21-NOTES.md`](M21-NOTES.md)、[`M22-NOTES.md`](M22-NOTES.md)）；`app/main.js` 1451 → **226 行**（≤300 目标达成），`npm run unit` 75 例。
+> 进度：P1-1 / P1-2 / P1-3 / P1-4 / P1-5 / P1-6 已在 `main` 完成（未发版，见 [`M18-NOTES.md`](M18-NOTES.md)、[`M19-NOTES.md`](M19-NOTES.md)、[`M20-NOTES.md`](M20-NOTES.md)、[`M21-NOTES.md`](M21-NOTES.md)、[`M22-NOTES.md`](M22-NOTES.md)、[`M23-NOTES.md`](M23-NOTES.md)）；`app/main.js` 1451 → **226 行**（≤300 目标达成），`npm run unit` 85 例。
 
 | 编号 | 做什么 | 为什么 | 验收标准 | 量 |
 |---|---|---|---|---|
@@ -142,7 +142,7 @@
 | P1-3 ✅ | **纯函数单测框架**：`node:test`（零依赖）覆盖 `bubble-model` / `placement` / `weather.advice` / `cutout-math`，四个文件 60 例；`npm test` = smoke + unit | L24 | 已验收：`npm run unit` 60 例全绿（目标 ≥40）；smoke 里与纯函数重复的断言逐步让位给单测 | 1d |
 | P1-4 ✅ | **设置可用性**：面板搜索（标题/同义词/面板名三档打分、键盘可达）、每项一句话说明、顶栏「恢复这页默认」（按面板 + 二次确认 `role="alertdialog"`）、天气页「最近用过的城市」（≤5、去重） | L17 | 已验收：CDP 17/17（搜「音量」落到音量滑杆、恢复默认只改外观页、最近城市按下态与回填）；smoke 58 / check-a11y 76 / audit 86 | 1d |
 | P1-5 ✅ | **喝水增强**：`稍后 10 分钟`（写 `snoozeUntil`，提醒先判它）、今日时间轴、本周杯数（本地 `water.log`，≤500 条）、导出 CSV（数据目录 + 自动定位） | L19/L16 | 已验收：CDP 19/19（延后不算一杯、连喝两杯写 log、切页刷新时间轴与七天柱、改杯量后新记录用新杯量、CSV 三行且老记录保原杯量）；unit 75 / smoke 59 / check-a11y 84 | 1.5d |
-| P1-6 | **天气增强**：空气质量（Open-Meteo air-quality，免 key）、未来 3 天、日出日落卡 | L12 | 卡片可选模块 +1；断网降级正常 | 1d |
+| P1-6 ✅ | **天气增强**：空气质量（Open-Meteo air-quality，免 key，欧洲 AQI 六级）、未来 3 天逐日（高低温/降水/日出日落）、模块库 +3（`天气：未来两天`、`空气：好坏`、`空气：PM2.5`） | L12 | 已验收：默认天气卡多一行空气+两天；断网/空气接口失败只空一行（走缓存 + 「离线缓存」）；CDP 8/8；unit 85 / smoke 60 / check-a11y 84 | 1d |
 | P1-7 | **气泡时机**：连续使用 50 分钟 / 深夜 23 点后 / 久未互动 → 主动冒一条（本地规则，可在设置关） | L15 的一半 | 三个触发器可单独关；不打扰全屏应用 | 1d |
 | P1-8 | **真机 a11y**：NVDA 脚本走一遍、高对比度主题截图、200% 缩放检查四窗口 | L28 | `A11Y-AUDIT.md` 增"真机"小节并附截图 | 1d |
 | P1-9 | **CDP 三脚本入库**：`noresize` / `collapse` / `city` 进 `tools/`，CI 加 headless 冒烟（xvfb 不需要，Windows runner 可直接跑 Electron） | L25 | CI 里能跑，失败会红 | 1d |

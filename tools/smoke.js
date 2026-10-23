@@ -1324,5 +1324,31 @@ const PAD = 54
   ok('P1-5 喝水记录：稍后 10 分钟、今日时间轴、本周杯数、CSV 导出')
 }
 
+// ------------------------------------------------- P1-6: weather +
+{
+  const modelJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'bubble-model.js'), 'utf8')
+  const editorJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'editor.js'), 'utf8')
+  const weatherJs = fs.readFileSync(path.join(__dirname, '..', 'lib', 'weather.js'), 'utf8')
+  assert.ok(/forecast_days=3/.test(weatherJs), '天气请求取三天')
+  assert.ok(/air-quality-api\.open-meteo\.com/.test(weatherJs), '空气质量来自独立 host')
+  assert.ok(/function aqiGrade/.test(weatherJs), 'aqiGrade 纯函数')
+  assert.ok(/function parseDays/.test(weatherJs), 'parseDays 纯函数')
+  assert.ok(/function fetchAirQuality/.test(weatherJs), 'fetchAirQuality 单独失败')
+  assert.ok(weatherJs.includes('air,') && weatherJs.includes('const air = await fetchAirQuality'), 'result 带 air 字段')
+  assert.ok(weatherJs.includes('days,') && weatherJs.includes('const days = parseDays'), 'result 带 days 字段')
+  assert.ok(/aqiGrade, parseDays, fetchAirQuality/.test(weatherJs), '导出纯函数供单测')
+
+  for (const type of ['air.quality', 'air.pm', 'weather.days']) {
+    assert.ok(modelJs.includes("key: '" + type + "'"), '模块类型 ' + type)
+    assert.ok(modelJs.includes("case '" + type + "'"), 'valueOf 处理 ' + type)
+  }
+  const card = bubble.defaultLayout().cards.find((c) => c.id === 'weather')
+  const flat = card.rows.flat()
+  assert.ok(flat.some((m) => m.type === 'air.quality'), '默认天气卡带空气质量行')
+  assert.ok(flat.some((m) => m.type === 'weather.days'), '默认天气卡带未来两天行')
+  assert.ok(weatherJs.length > 0 && editorJs.includes("mk('air.quality')"), '编辑器丰富预设含空气质量')
+  ok('P1-6 天气增强：空气质量、未来三天、逐日日出日落')
+}
+
 console.log('\n' + pass + ' checks passed')
 fs.rmSync(dir, { recursive: true, force: true })

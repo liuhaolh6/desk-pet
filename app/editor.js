@@ -485,7 +485,7 @@
     }
     if (kind === 'rich') {
       const extra = {
-        weather: [[mk('weather.feels'), mk('weather.uv')], [mk('weather.sun')], [mk('weather.hourly')], [mk('weather.tomorrow')]],
+        weather: [[mk('weather.feels'), mk('weather.uv')], [mk('weather.sun')], [mk('weather.hourly')], [mk('weather.tomorrow')], [mk('weather.days')], [mk('air.quality'), mk('air.pm')]],
         water: [[text('下次大概 '), mk('water.next')]],
         random: [[mk('name'), text(' · '), mk('time')]],
       }

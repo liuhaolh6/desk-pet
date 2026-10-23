@@ -30,6 +30,9 @@
     { key: 'weather.uv', label: '天气：紫外线', sample: '紫外线 6' },
     { key: 'weather.tomorrow', label: '天气：明天', sample: '明天 6~15° 多云' },
     { key: 'weather.hourly', label: '天气：接下来几小时', sample: '15点 14° 多云 → …' },
+    { key: 'weather.days', label: '天气：未来两天', sample: '明天 6~15° ⛅ · 后天 5~14° 🌧️' },
+    { key: 'air.quality', label: '空气：好坏', sample: '空气良（35）· 出去走走正好' },
+    { key: 'air.pm', label: '空气：PM2.5', sample: 'PM2.5 12' },
     { key: 'weather.tip', label: '天气：贴心提醒', sample: '记得带伞呀' },
     { key: 'weather.updated', label: '天气：更新时间', sample: '更新于 22:12' },
     { key: 'weather.hint', label: '天气：离线提示', sample: '离线缓存' },
@@ -124,6 +127,7 @@
           [module('weather.text'), module('weather.feels')],
           [module('weather.tip')],
           [textModule('今日 '), module('weather.range'), textModule(' · 降水 '), module('weather.precip')],
+          [module('air.quality', { size: 11, color: '#5d6a86' }), module('weather.days', { size: 11, color: '#5d6a86' })],
           // #5d6a86 keeps the 11px hint line at ~4.8:1 on white (WCAG AA);
           // #8890a8 only reached 3.18:1.
           [module('weather.hint', { size: 11, color: '#5d6a86' }), module('weather.updated', { size: 11, color: '#5d6a86' })],
@@ -160,6 +164,8 @@
         { id: uid('lib'), label: '天气一行', module: module('weather.icon') },
         { id: uid('lib'), label: '贴心提醒', module: module('weather.tip') },
         { id: uid('lib'), label: '未来几小时', module: module('weather.hourly') },
+        { id: uid('lib'), label: '未来两天', module: module('weather.days') },
+        { id: uid('lib'), label: '空气质量', module: module('air.quality') },
       ],
     }
   }
@@ -247,6 +253,21 @@
         return w.hourly.slice(0, 3)
           .map((h) => h.hour + '点 ' + deg(h.temp) + (h.icon ? ' ' + h.icon : ''))
           .join(' → ')
+      }
+      case 'weather.days': {
+        if (!ok || !Array.isArray(w.days) || w.days.length < 2) return ''
+        return w.days.slice(1, 3)
+          .filter((d) => Number.isFinite(Number(d.high)))
+          .map((d) => d.label + ' ' + num(d.low) + '~' + deg(d.high) + (d.icon ? ' ' + d.icon : ''))
+          .join(' · ')
+      }
+      case 'air.quality': {
+        if (!ok || !w.air) return ''
+        return '空气' + w.air.text + '（' + num(w.air.aqi) + '）'
+      }
+      case 'air.pm': {
+        if (!ok || !w.air || !Number.isFinite(Number(w.air.pm25))) return ''
+        return 'PM2.5 ' + num(w.air.pm25)
       }
       case 'weather.tip': return ok ? (w.advice || '') : ''
       case 'weather.updated': return ok ? '更新于 ' + fmtTime(w.updatedAt) : ''
