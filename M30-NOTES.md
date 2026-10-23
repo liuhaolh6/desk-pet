@@ -302,3 +302,13 @@ WMO 码表、AQI 分级、三天标签、建议句都写成中文字面量，共
 
 基线 **299 → 134**（`lib/store.js` 29 · `app/main/ipc.js` 19 · `app/main/diagnostics.js` 16 · `app/onboard.html` 13 ·
 `app/sound-model.js` 11 是剩下的大头）。
+
+### 阶段三-H：首次引导卡（已完成）
+
+- `app/onboard.html` 13 处静态文案 → `data-i18n*`，引入 `i18n.js`；`app/onboard.js` 启动时 `applyStatic`。
+- 语言包新增 `onboard.*` 12 条（标题/招呼/导语/三步文案/脚注/两个按钮）；两种语言都写全。
+- HTML 里只保留默认名字「小芳」两个字（它来自用户设置，`greet()` 会用真实名字覆盖）。
+- `tools/check-a11y.js` 的「按钮要有可访问名称」规则补上 `data-i18n`（和之前 editor/settings 一致），否则清空文案的按钮会被判无名。
+- 验证：全新数据目录 zh 161 个汉字、按「知道啦」；切 en-US 重启后 `Welcome to Desk Pet` / `Got it`、正文汉字 0。
+
+基线 **134 → 122**。

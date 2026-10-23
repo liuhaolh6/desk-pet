@@ -772,7 +772,12 @@
     },
     "footNote": "以后想再看一遍，去设置 → 其他 就行",
     "pickCity": "先去选城市",
-    "done": "知道啦"
+    "done": "知道啦",
+    "title": "欢迎使用桌宠",
+    "greet": "你好，我是",
+    "foot": "以后想再看一遍，去设置 → 其他 就行",
+    "settingsBtn": "先去选城市",
+    "doneBtn": "知道啦"
   },
   "settings": {
     "searchPlaceholder": "搜设置项：音量、城市、喝水…",

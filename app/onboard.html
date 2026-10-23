@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <title>欢迎使用桌宠</title>
+  <title data-i18n="onboard.title"></title>
   <link rel="stylesheet" href="tokens.css">
   <link rel="stylesheet" href="onboard.css">
 </head>
@@ -11,8 +11,8 @@
     <header class="hero">
       <img class="hero-icon" src="../assets/icon.png" alt="">
       <div class="hero-text">
-        <h1 id="obTitle">你好，我是<span id="obName">小芳</span></h1>
-        <p id="obLead" class="lead">一分钟就能认全我：点一下、告诉我天气、放到顺手的位置。</p>
+        <h1 id="obTitle"><span data-i18n="onboard.greet"></span><span id="obName">小芳</span></h1>
+        <p id="obLead" class="lead" data-i18n="onboard.lead"></p>
       </div>
     </header>
 
@@ -20,34 +20,35 @@
       <li class="step">
         <span class="step-no" aria-hidden="true">1</span>
         <div class="step-text">
-          <p class="step-title">点我一下</p>
-          <p class="step-body">我会冒个泡：今天的天气、喝了几杯水，还有一句想对你说的话。</p>
+          <p class="step-title" data-i18n="onboard.step1.title"></p>
+          <p class="step-body" data-i18n="onboard.step1.body"></p>
         </div>
       </li>
       <li class="step">
         <span class="step-no" aria-hidden="true">2</span>
         <div class="step-text">
-          <p class="step-title">告诉我你在哪座城市</p>
-          <p class="step-body">打开设置 → 天气，写下城市名（拼音也行），我就能报你那儿的天气啦。</p>
+          <p class="step-title" data-i18n="onboard.step2.title"></p>
+          <p class="step-body" data-i18n="onboard.step2.body"></p>
         </div>
       </li>
       <li class="step">
         <span class="step-no" aria-hidden="true">3</span>
         <div class="step-text">
-          <p class="step-title">放到顺手的位置</p>
-          <p class="step-body">按住我拖到喜欢的地方，松手就记住；点右上角的小按钮能打开设置、布置气泡，或者让我先休息。</p>
+          <p class="step-title" data-i18n="onboard.step3.title"></p>
+          <p class="step-body" data-i18n="onboard.step3.body"></p>
         </div>
       </li>
     </ol>
 
     <footer class="actions">
-      <p class="foot-note">以后想再看一遍，去设置 → 其他 就行</p>
+      <p class="foot-note" data-i18n="onboard.foot"></p>
       <div class="buttons">
-        <button id="settingsBtn" class="ghost" type="button">先去选城市</button>
-        <button id="doneBtn" class="primary" type="button" autofocus>知道啦</button>
+        <button id="settingsBtn" class="ghost" type="button" data-i18n="onboard.settingsBtn"></button>
+        <button id="doneBtn" class="primary" type="button" autofocus data-i18n="onboard.doneBtn"></button>
       </div>
     </footer>
   </main>
+  <script src="i18n.js"></script>
   <script src="onboard.js"></script>
 </body>
 </html>

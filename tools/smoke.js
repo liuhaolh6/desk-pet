@@ -1569,5 +1569,26 @@ const PAD = 54
   ok('P2-6 阶段三-G：默认气泡与模块文案走语言包')
 }
 
+{
+  // P2-6 stage 3-H: 首次引导卡进语言包（HTML 只剩 data-i18n，文案在字典里）。
+  const root = path.join(__dirname, '..')
+  const obHtml = fs.readFileSync(path.join(root, 'app', 'onboard.html'), 'utf8')
+  const obJs = fs.readFileSync(path.join(root, 'app', 'onboard.js'), 'utf8')
+  const zhH = JSON.parse(fs.readFileSync(path.join(root, 'locales', 'zh-CN.json'), 'utf8'))
+  const enH = JSON.parse(fs.readFileSync(path.join(root, 'locales', 'en-US.json'), 'utf8'))
+  const cjkOb = (obHtml.match(/[\u4e00-\u9fff]/g) || []).length
+  assert.ok(cjkOb <= 2, 'onboard.html 只剩默认名字「小芳」两个字（当前 ' + cjkOb + ' 个）')
+  for (const key of ['onboard.title', 'onboard.greet', 'onboard.lead', 'onboard.step1.title', 'onboard.step1.body', 'onboard.step2.title', 'onboard.step2.body', 'onboard.step3.title', 'onboard.step3.body', 'onboard.foot', 'onboard.settingsBtn', 'onboard.doneBtn']) {
+    assert.ok(new RegExp('data-i18n="' + key.replace(/\./g, '\\.') + '"').test(obHtml), 'onboard.html 标了 ' + key)
+  }
+  assert.ok(/<script src="i18n\.js"><\/script>/.test(obHtml), 'onboard.html 引入渲染层 i18n')
+  assert.ok(/applyStatic\(document, api\.i18n\)/.test(obJs), 'onboard.js 启动时翻译')
+  for (const key of ['title', 'greet', 'lead', 'step1', 'step2', 'step3', 'foot', 'settingsBtn', 'doneBtn']) {
+    assert.ok(zhH.onboard && zhH.onboard[key] !== undefined, 'zh 有 onboard.' + key)
+    assert.ok(enH.onboard && enH.onboard[key] !== undefined, 'en 有 onboard.' + key)
+  }
+  ok('P2-6 阶段三-H：引导卡走语言包')
+}
+
 console.log('\n' + pass + ' checks passed')
 fs.rmSync(dir, { recursive: true, force: true })

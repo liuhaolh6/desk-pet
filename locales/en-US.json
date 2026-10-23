@@ -757,22 +757,27 @@
   },
   "onboard": {
     "hello": "Hi, I'm ",
-    "lead": "Get to know me in a minute: tap me, tell me your city, put me somewhere handy.",
+    "lead": "A minute to get to know me: click me, tell me the weather, put me somewhere handy.",
     "step1": {
-      "title": "Tap me once",
-      "body": "A bubble pops up: today's weather, how much water you've had, and something I want to say."
+      "title": "Click me",
+      "body": "I'll pop a bubble: today's weather, how much water you've had, and something I want to say to you."
     },
     "step2": {
-      "title": "Tell me your city",
-      "body": "Open Settings → Weather and type your city (pinyin works) — I'll then report its weather."
+      "title": "Tell me which city you're in",
+      "body": "Open Settings → Weather and type a city name (pinyin works too) — then I can report the weather there."
     },
     "step3": {
       "title": "Put me somewhere handy",
-      "body": "Drag me anywhere and I'll remember it. The little button in the corner opens settings, bubble layout, or lets me rest."
+      "body": "Drag me where you like and I'll remember; the small button top-right opens settings, edits the bubble, or lets me rest."
     },
     "footNote": "To see this again, go to Settings → Other.",
     "pickCity": "Pick a city first",
-    "done": "Got it"
+    "done": "Got it",
+    "title": "Welcome to Desk Pet",
+    "greet": "Hi, I'm ",
+    "foot": "You can see this again in Settings → Other",
+    "settingsBtn": "Pick a city first",
+    "doneBtn": "Got it"
   },
   "settings": {
     "searchPlaceholder": "Search settings: volume, city, water…",

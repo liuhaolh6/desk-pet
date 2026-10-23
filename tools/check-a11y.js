@@ -179,7 +179,7 @@ const cutoutHtml = read('app/cutout.html')
   check('引导卡是有名称的 dialog', attr(card, 'role') === 'dialog' && !!attr(card, 'aria-labelledby') && !!attr(card, 'aria-describedby'))
   check('#doneBtn 默认获得焦点', /\bid="doneBtn"[^>]*\bautofocus\b/.test(html))
   check('引导卡可用 Esc 关掉', js.includes("ev.key !== 'Escape'") && js.includes('dismissOnboard'))
-  check('引导卡按钮都有可访问名称', buttons(html).every((b) => !!stripTags(b) || !!attr(b, 'aria-label')))
+  check('引导卡按钮都有可访问名称', buttons(html).every((b) => !!stripTags(b) || !!attr(b, 'aria-label') || !!attr(b, 'data-i18n')))
   check('onboard.css 有 :focus-visible', /:focus-visible/.test(css))
   check('onboard.css 有 forced-colors', /@media\s*\(forced-colors:\s*active\)/.test(css))
 }

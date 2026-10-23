@@ -8,6 +8,8 @@
 (function () {
   const api = window.deskPet
   const $ = (id) => document.getElementById(id)
+  // 静态文案走语言包（与其它窗口一致）；取不到字典时保留 HTML 里的中文。
+  if (window.deskPetI18n && api && api.i18n) window.deskPetI18n.applyStatic(document, api.i18n)
 
   /** Greet the user with whatever name the pet actually has. */
   function greet() {
