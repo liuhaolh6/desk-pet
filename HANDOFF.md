@@ -81,8 +81,10 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 
 主进程自 0.7.0 起分模块（P1-1）：`app/main/` 下 `log.js`（呼吸日志）、`geometry.js`（窗口尺寸纯函数）、
 `window-layout.js`（命中/预留/多屏）、`tray.js`（托盘 + `Ctrl+Alt+P`）、`diagnostics.js`（脱敏导出）、
-`ipc.js`（全部 `ipcMain` 通道）、`weather-pump.js`、`reminder.js`、`cutout-service.js`（抠图子进程与回退）；
-`app/main.js` 只负责窗口与装配，564 行。模块之间靠**注入回调**连接（不 `require` 主文件），所以都能单独 `require` 或 mock。
+`ipc.js`（全部 `ipcMain` 通道）、`weather-pump.js`、`reminder.js`、`cutout-service.js`（抠图子进程与回退）、
+`windows.js`（五个窗口的创建/单例/设置副效应）、`catalog.js`（角色与声音目录 + 自定义协议）、
+`boot.js`（选数据目录 + 单实例锁）；`app/main.js` 只负责装配，**226 行**。
+模块之间靠**注入回调**连接（不 `require` 主文件），所以都能单独 `require` 或 mock。
 
 与拆模块同批（P1-2）新增 **`app/window-state.js`**：`idle / bubble / menu / dragging / cutout` 五态机，
 主进程持有唯一实例 `winState`；气泡、菜单、拖动、抠图四类事件全部过转移表，
@@ -92,7 +94,10 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 
 | 路径 | 行数 | 作用 |
 |---|---|---|
-| `app/main.js` | 564 | 主进程入口：窗口创建/设置生效/协议/装配（P1-1 阶段 1/2/3 已拆出 9 个模块） |
+| `app/main.js` | 226 | 主进程入口：只做装配（P1-1 阶段 1/2/3/4 已拆出 12 个模块） |
+| `app/main/windows.js`（新） | 297 | 五窗口工厂：桌宠/设置/编辑器/抠图/引导 + 单例 + 设置副效应 |
+| `app/main/catalog.js`（新） | 106 | 角色与声音目录、`pet-role://`与`pet-sound://`协议、设置/角色广播 |
+| `app/main/boot.js`（新） | 81 | 数据目录候选与可写探测、日志落盘、单实例锁（不碰 `userData`） |
 | `app/main/ipc.js`（新） | 404 | 全部 `ipcMain` 通道（state/app/settings/roles/sounds/weather/cutout/pet/onboard），依赖全部注入 |
 | `app/main/weather-pump.js`（新） | 81 | 天气取数/缓存回退/定时刷新，时钟可注入；`refresh/schedule/current` |
 | `app/main/reminder.js`（新） | 67 | 喝水提醒：勿扰/勿扰时段/间隔/10 分钟限流，`tick()` 返回本次判定 |

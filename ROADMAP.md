@@ -19,10 +19,10 @@
 | 维度 | 分数 | 依据 | 主要缺口 |
 |---|---|---|---|
 | 功能完整度 | 8.5 / 10 | 8 大模块闭环，28 种气泡模块、24 条文案、离线抠图 | 无历史统计、无多日天气、无"稍后提醒" |
-| 稳定性 | 7 / 10 | 0.6.3→0.6.4 两次窗口回归均已修，有 50 项断言护树 | 时序仍靠 540ms/50ms 约定，无状态机 |
+| 稳定性 | 7 / 10 | 0.6.3→0.6.4 两次窗口回归均已修，有 57 项断言护树，P1-2 五态机替掉了 540ms/50ms 约定 | 托盘图标在本机不可见（`D:\project` 目录特性，见 M17-NOTES §8.1） |
 | 视觉与体验 | 8 / 10 | 统一 token、粉色系、fixed-aspect 气泡、动效克制、0.6.5 补上首次引导、0.6.6 修长文案 | 224px 常驻气泡带；长文案可读性 |
 | 无障碍 | 8.5 / 10 | 5 窗口 + 7 面板自动审计 86/0，静态断言 52，键盘流程 6/6 | NVDA/真实高对比度/200% 缩放未逐一手测 |
-| 工程化 | 7.5 / 10 | CI + 3 种测试 + 12 篇设计笔记 + 交接文档；P1-1 阶段 1/2/3 已拆出 9 个主进程模块（见 [`M18-NOTES.md`](M18-NOTES.md)） | `app/main.js` 已压到 564 行（目标 300）；无类型检查；CDP 脚本不入库 |
+| 工程化 | 8.5 / 10 | CI + 3 种测试 + 12 篇设计笔记 + 交接文档；P1-1 拆出 12 个主进程模块、`main.js` 226 行（见 [`M18-NOTES.md`](M18-NOTES.md)） | 无类型检查；CDP 脚本不入库；`ipc.js`/`windows.js` 仍近 300 行 |
 | 分发与信任 | 3.5 / 10 | portable + 图标/版本信息齐全，有签名工作流模板 | 未签名、无安装器、无自动更新、仓库私有、仅 x64 |
 | 跨平台 | 1 / 10 | 仅 Windows | macOS/Linux 未评估 |
 | 可维护性/文档 | 9 / 10 | HANDOFF/ROADMAP/CHANGELOG/Mxx-NOTES/A11Y-AUDIT 齐全 | 缺用户手册与 FAQ |
@@ -133,11 +133,11 @@
 
 ### P1 — 0.7.0（约 2 周）：把地基理顺，顺手补三类高频需求
 
-> 进度：P1-1 阶段 1/2/3 与 P1-2 已在 `main` 完成（未发版，见 [`M18-NOTES.md`](M18-NOTES.md)、[`M19-NOTES.md`](M19-NOTES.md)）；P1-1 只剩把 `app/main.js` 的窗口创建/设置生效/启动引导（~560 行）继续拆到 300 行以内。
+> 进度：P1-1 与 P1-2 已在 `main` 完成（未发版，见 [`M18-NOTES.md`](M18-NOTES.md)、[`M19-NOTES.md`](M19-NOTES.md)）；`app/main.js` 1451 → **226 行**（≤300 目标达成）。
 
 | 编号 | 做什么 | 为什么 | 验收标准 | 量 |
 |---|---|---|---|---|
-| P1-1 🟡 | **拆 `app/main.js`** → `app/main/*.js`，`main.js` 只做装配。**阶段 1/2/3 已完成**：`log/geometry/tray/diagnostics/window-layout/ipc/weather-pump/reminder/cutout-service` 九模块（`app/main/`），`main.js` 1451→**564** | L21 | 单文件 ≤300 行（当前 564，差启动/窗口段）；行为零变化（57+57+86+6 全绿） | 1.5d（剩 0.5 段） |
+| P1-1 ✅ | **拆 `app/main.js`** → `app/main/*.js`，`main.js` 只做装配。十二个模块：`log/geometry/tray/diagnostics/window-layout/ipc/weather-pump/reminder/cutout-service/windows/catalog/boot`（`app/main/`），`main.js` 1451→**226** | L21 | 已验收：main.js 226 行（≤300）；行为零变化（57+57+86+6 全绿，运行时 stage3 17/17、stage4 12/12） | 1.5d |
 | P1-2 ✅ | **显式窗口状态机**：`idle / bubble / menu / dragging / cutout` 五态 + 转移表，替代 540ms/50ms 约定；加纯函数单测 | L7 | 已验收：全矩阵 165 组转移单测；连点 20 次 + 40 次连点·悬停混合，`window.illegal === 0`、无 resize/闪（详见 [`M19-NOTES.md`](M19-NOTES.md)） | 1.5d |
 | P1-3 | **纯函数单测框架**：`node:test`（零依赖）覆盖 `bubble-model` / `placement` / `weather.advice` / `cutout-math` | L24 | `npm run unit`，≥40 个用例；smoke 里文本断言逐步替换 | 1d |
 | P1-4 | **设置可用性**：面板搜索、每项一句话说明、`恢复默认`（按面板）、"城市最近使用" | L17 | 搜索能定位到项；恢复默认有二次确认 | 1d |
