@@ -7,6 +7,10 @@
 ## [Unreleased]
 
 ### 新增
+- **多语言：抠图窗口进语言包（ROADMAP P2-6 阶段三-E）**：`app/cutout.html` 的 42 处静态文案改成 `data-i18n*`，
+  `app/cutout.js` 的 52 处改成 `t()`（视图切换、模式标签、九种状态句、六种错误）；抠图窗口首次挂上 `i18n.js`，
+  启动时按当前语言把标记翻一遍。状态句改用带占位符的模板（`{message}` / `{degree}` / `{name}`），
+  不再靠字符串拼接。基线 **393 → 299**，en 下抠图窗口正文中文 **0** 处。
 - **多语言：天气文案进语言包（ROADMAP P2-6 阶段三-D）**：`lib/weather.js` 的 54 处中文（WMO 码表、AQI 分级、
   三天标签、九种建议句）改走字典键；`describe/advice/aqiGrade/parseDays/fetchWeather/fetchAirQuality` 显式接收 `t`，
   不传时退回键名（开发期能一眼看出漏翻）。基线 **448 → 393**。

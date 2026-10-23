@@ -261,3 +261,14 @@ WMO 码表、AQI 分级、三天标签、建议句都写成中文字面量，共
 
 基线 **448 → 393**。还没搬的：`app/bubble-model.js` 99、`app/editor.js` 54、`app/cutout.js` 52、
 `app/cutout.html` 42、`lib/store.js` 29（默认聊天气泡的设置项文案）。
+
+### 阶段三-E：抠图窗口（已完成）
+
+- `app/cutout.html`：42 处静态文案 → `data-i18n*`；`<title>`、`h1`、按钮、`aria-label`、`placeholder` 都走键。
+- `app/cutout.js`：`VIEW_LABEL` 常量删除，改用 `viewLabel(view)`（`cutout.view.*`）；模式标签用 `cutout.mode.<state>`
+  （状态值 `none/original/cutout/fallback/failed` 与键名一一对应，不必再写 switch）；状态句用 `t(key, vars)`。
+- 新增一个语言包键：`cutout.status.dropHint`（拖错文件时的提示）。
+- 抠图窗口原本没引 `app/i18n.js`，这次补上 `<script src="i18n.js">` 并在 boot 时 `applyStatic`，
+  这样静态文案不再需要 JS 二次赋值。
+- 验证：同一数据目录切换 `locale` 重启，zh 下 155 个汉字、en 下 0 个汉字；标题/按钮/`aria-label` 全部跟着变。
+

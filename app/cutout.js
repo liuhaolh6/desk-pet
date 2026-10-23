@@ -2,13 +2,17 @@
   'use strict'
 
   const api = window.deskPet
+  const i18nLib = window.deskPetI18n
+  const i18n = (api && api.i18n) || null
+  if (i18nLib && i18n) i18nLib.applyStatic(document, i18n)
+  const t = (key, vars) => (i18n && typeof i18n.t === 'function' ? i18n.t(key, vars) : key)
+  const viewLabel = (view) => t('cutout.view.' + view)
   const $ = (id) => document.getElementById(id)
   const stage = $('stage')
   const canvas = $('canvas')
   const ctx = canvas.getContext('2d')
   const SIZE = 610
   const MAX = SIZE * 0.94
-  const VIEW_LABEL = { result: '结果', original: '原图', mask: '蒙版' }
 
   const state = {
     original: '',
@@ -60,7 +64,7 @@
     state.confirmFallback = false
     state.confirmAt = 0
     if (state.confirmTimer) { clearTimeout(state.confirmTimer); state.confirmTimer = 0 }
-    $('saveBtn').textContent = '就它了，保存'
+    $('saveBtn').textContent = t('cutout.saveBtn')
   }
 
   function setBusy(value) {
@@ -75,7 +79,7 @@
     return new Promise((resolve, reject) => {
       const image = new Image()
       image.onload = () => resolve(image)
-      image.onerror = () => reject(new Error('这张图打不开呢'))
+      image.onerror = () => reject(new Error(t('cutout.error.openImage')))
       image.src = dataUrl
     })
   }
@@ -146,15 +150,13 @@
       btn.classList.toggle('is-on', on)
       btn.setAttribute('aria-pressed', on ? 'true' : 'false')
     })
-    stage.setAttribute('aria-label', '角色预览：' + (VIEW_LABEL[state.view] || ''))
-    const modeText = state.mode === 'cutout' ? '已抠图'
-      : state.mode === 'fallback' ? '整张照片'
-        : state.mode === 'original' ? '还没抠的原图' : '等你的照片'
+    stage.setAttribute('aria-label', t('cutout.stage.labelWith', { view: viewLabel(state.view) }))
+    const modeText = t('cutout.mode.' + state.mode)
     const el = $('previewAlt')
     if (el) {
       el.textContent = state.resultImage || state.originalImage
-        ? '当前视图：' + (VIEW_LABEL[state.view] || '') + '；' + modeText + '。'
-        : '还没有选照片哦。'
+        ? t('cutout.preview.current', { view: viewLabel(state.view), mode: modeText })
+        : t('cutout.preview.empty')
     }
   }
 
@@ -210,11 +212,9 @@
       updateViewButtons()
       draw()
       stage.focus()
-      status(next === 'erase'
-        ? '擦一擦：在画面上拖动，去掉多余的地方；再点一次「擦一擦」，或者按 Esc 就退出。'
-        : '找回来：在画面上拖动，把不小心擦掉的部分补回来；再点一次，或者按 Esc 就退出。', '')
+      status(t(next === 'erase' ? 'cutout.edit.eraseOn' : 'cutout.edit.restoreOn'), '')
     } else {
-      status('退出修补啦。挪一挪、放大缩小摆好位置，再保存吧。', '')
+      status(t('cutout.edit.off'), '')
       // Keep keyboard focus on the tool that was just turned off.
       const back = was === 'restore' ? $('restoreBtn') : $('eraseBtn')
       if (back && typeof back.focus === 'function') back.focus()
@@ -290,7 +290,7 @@
     state.stroke = null
     draw()
     updateEditButtons()
-    status('刚才那一下撤销啦。', '')
+    status(t('cutout.undoDone'), '')
   }
 
   function selectView(view) {
@@ -306,7 +306,7 @@
   async function setSource(dataUrl, name, token) {
     state.original = dataUrl
     state.token = token || ''
-    state.name = name || state.name || '照片角色'
+    state.name = name || state.name || t('cutout.defaultName')
     $('name').value = state.name
     state.originalImage = await loadImage(dataUrl)
     state.resultUrl = ''
@@ -327,12 +327,12 @@
     $('saveBtn').disabled = true
     stage.classList.add('has-image')
     stage.classList.remove('is-fallback')
-    mode('原图')
+    mode(t('cutout.view.original'))
     updateViewButtons()
     draw()
     $('runBtn').disabled = false
     $('fallbackBtn').disabled = false
-    status('照片收到啦。点「开始抠图」，我在你电脑里把人像留下来（不上传）；也可以选「不用抠，直接用整张」。', '')
+    status(t('cutout.status.picked'), '')
   }
 
   async function setResult(resultUrl, maskUrl, nextMode, label) {
@@ -363,14 +363,14 @@
   async function pick() {
     if (state.busy) return
     $('pickBtn').disabled = true
-    status('等你挑照片…')
+    status(t('cutout.status.picking'))
     try {
       const result = await api.pickCutoutPhoto()
-      if (!result || result.canceled) { status('好，那不选了'); return }
-      if (!result.ok) { status(result.error || '这张照片读不进来呢', 'error'); return }
+      if (!result || result.canceled) { status(t('cutout.status.pickCanceled')); return }
+      if (!result.ok) { status(result.error || t('cutout.error.readPhoto'), 'error'); return }
       await setSource(result.dataUrl, result.name, result.token)
     } catch (err) {
-      status('这张照片读不进来呢', 'error')
+      status(t('cutout.error.readPhoto'), 'error')
     } finally {
       $('pickBtn').disabled = state.busy
     }
@@ -379,26 +379,26 @@
   async function run() {
     if (state.busy || !state.original) return
     setBusy(true)
-    status('在认真抠图啦～第一次会慢一点点，等我一下下')
-    mode('忙一会儿')
+    status(t('cutout.status.running'))
+    mode(t('cutout.mode.busy'))
     try {
       const result = await api.runCutout(state.token)
       if (result && result.ok) {
-        await setResult(result.dataUrl, result.maskDataUrl, 'cutout', '已抠图')
-        status('抠好啦。可以切到「蒙版」看看边缘，或者点「修一修」擦掉多余的地方。', 'ok')
+        await setResult(result.dataUrl, result.maskDataUrl, 'cutout', t('cutout.mode.cutout'))
+        status(t('cutout.status.done'), 'ok')
       } else {
         const fallback = result && result.fallbackDataUrl
         if (fallback) {
-          await setResult(fallback, '', 'fallback', '整张照片')
-          status((result.error || '没找到人像呢') + '。现在显示的是整张原图，不是抠好的；保存前我会再问你一次。', 'error')
+          await setResult(fallback, '', 'fallback', t('cutout.mode.fallback'))
+          status(t('cutout.status.fallback', { message: result.error || t('cutout.error.noPortrait') }), 'error')
         } else {
-          status((result && result.error) || '这次没抠成', 'error')
-          mode('这次没处理成功')
+          status((result && result.error) || t('cutout.error.runFailed'), 'error')
+          mode(t('cutout.mode.failed'))
         }
       }
     } catch (err) {
-      status('抠图的时候出了点小状况，可以改用「不用抠，直接用整张」。', 'error')
-      mode('这次没处理成功')
+      status(t('cutout.status.runError'), 'error')
+      mode(t('cutout.mode.failed'))
     } finally {
       setBusy(false)
     }
@@ -406,8 +406,8 @@
 
   async function fallback() {
     if (!state.original) return
-    await setResult(state.original, '', 'fallback', '整张照片')
-    status('这次跳过抠图，用的就是整张照片。保存前我会再确认一次，角色库里也会标成「整张照片」。', '')
+    await setResult(state.original, '', 'fallback', t('cutout.mode.fallback'))
+    status(t('cutout.status.fallbackUsed'), '')
     $('fallbackBtn').disabled = true
   }
 
@@ -429,28 +429,28 @@
     if (state.mode === 'fallback' && !state.confirmFallback) {
       state.confirmFallback = true
       state.confirmAt = Date.now()
-      $('saveBtn').textContent = '再确认一次：保存整张照片'
-      status('现在是「不用抠，直接用整张」，保存下来会带着原来的背景。再点一次才会保存哦。', 'error')
+      $('saveBtn').textContent = t('cutout.saveBtnConfirm')
+      status(t('cutout.status.confirmFallback'), 'error')
       state.confirmTimer = setTimeout(() => resetFallbackConfirm(), 10000)
       return
     }
     // A stray double click must not count as the second confirmation.
     if (state.mode === 'fallback' && Date.now() - state.confirmAt < 600) return
     setBusy(true)
-    status('在收好这张啦…')
+    status(t('cutout.status.saving'))
     try {
-      const name = ($('name').value || state.name || '照片角色').trim().slice(0, 30) || '照片角色'
+      const name = ($('name').value || state.name || t('cutout.defaultName')).trim().slice(0, 30) || t('cutout.defaultName')
       const payload = { dataUrl: captureResult(), name, mode: state.mode === 'fallback' ? 'fallback' : 'cutout' }
       if (payload.mode === 'fallback') payload.confirmFallback = true
       const result = await api.saveCutout(payload)
       if (!result || !result.ok) {
-        status((result && result.error) || '没保存成功，再试一次？', 'error')
+        status((result && result.error) || t('cutout.error.saveFailed'), 'error')
         return
       }
-      status('收好啦，已经换成：' + result.role.name, 'ok')
+      status(t('cutout.status.saved', { name: result.role.name }), 'ok')
       setTimeout(() => api.closeCutout(), 700)
     } catch (err) {
-      status('没保存成功，再试一次？', 'error')
+      status(t('cutout.error.saveFailed'), 'error')
     } finally {
       setBusy(false)
     }
@@ -516,20 +516,20 @@
   stage.addEventListener('drop', (ev) => {
     ev.preventDefault()
     const file = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]
-    if (!file || !/^image\//.test(file.type)) { status('把图片拖进来就可以啦', 'error'); return }
+    if (!file || !/^image\//.test(file.type)) { status(t('cutout.status.dropHint'), 'error'); return }
     const name = file.name.replace(/\.[^.]+$/, '')
     const reader = new FileReader()
     reader.onload = async () => {
-      status('在打开照片啦…')
+      status(t('cutout.status.opening'))
       try {
         const result = await api.loadCutoutPhoto(String(reader.result), name)
-        if (!result || !result.ok) { status((result && result.error) || '这张图读不进来呢', 'error'); return }
+        if (!result || !result.ok) { status((result && result.error) || t('cutout.error.readImage'), 'error'); return }
         await setSource(result.dataUrl, result.name, result.token)
       } catch (err) {
-        status('这张图读不进来呢', 'error')
+        status(t('cutout.error.readImage'), 'error')
       }
     }
-    reader.onerror = () => status('这张图读不进来呢', 'error')
+    reader.onerror = () => status(t('cutout.error.readImage'), 'error')
     reader.readAsDataURL(file)
   })
 
@@ -550,20 +550,20 @@
   $('resetEditBtn').addEventListener('click', () => {
     resetEdits()
     draw()
-    status('修补都清空啦，回到最初的样子。', '')
+    status(t('cutout.status.editsReset'), '')
   })
 
   function rotateBy(delta) {
     state.rotation = (state.rotation + delta + 360) % 360
     draw()
-    status('转了一下，现在是 ' + state.rotation + '°', '')
+    status(t('cutout.status.rotated', { degree: state.rotation }), '')
   }
 
   function toggleFlip() {
     state.flipX = !state.flipX
     $('flipBtn').setAttribute('aria-pressed', state.flipX ? 'true' : 'false')
     draw()
-    status(state.flipX ? '照过镜子啦' : '不照镜子了', '')
+    status(t(state.flipX ? 'cutout.flip.on' : 'cutout.flip.off'), '')
   }
 
   $('rotateLeftBtn').addEventListener('click', () => rotateBy(270))

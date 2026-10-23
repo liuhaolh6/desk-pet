@@ -536,7 +536,8 @@
       "runError": "Something went wrong while cutting out — you can use “Skip cutting, use the whole photo”.",
       "running": "Cutting it out… the first run takes a moment, hang on.",
       "saved": "Saved — now using: {name}",
-      "saving": "Saving this one…"
+      "saving": "Saving this one…",
+      "dropHint": "Drop an image here and I will take it"
     },
     "step": {
       "edit": "3. Touch up",
