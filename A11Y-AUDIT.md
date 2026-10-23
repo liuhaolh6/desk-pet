@@ -82,14 +82,83 @@ CI（`.github/workflows/ci.yml`）跑 `node tools/check-a11y.js`；`tools/a11y-a
 
 ## 6. 本环境**无法**验证的部分（不要当成已通过）
 
-1. **真实屏幕阅读器**（NVDA / Narrator / VoiceOver）：只验证了无障碍树里的角色与名称，没有听读顺序、重复朗读、虚拟光标导航的实测。
-2. **真实高对比度主题**：只做了 `forced-colors: active` 的 CDP 模拟；Windows 高对比度主题下系统色替换、图片/阴影可见性未实机确认。
-3. **系统级缩放与非整数 DPI**：只验证了 320 CSS px 回流；125%/150% 系统缩放、多显示器混合 DPI 未在本轮覆盖。
-4. **触摸 + 读屏组合、语音输入**：未测。
-5. **气泡文字的实际可读性**：气泡背景是透明的，最终对比度取决于桌面壁纸；本轮只保证默认色对白 ≥4.5（`#5d6a86`），深色壁纸下仍可能需要阴影/底色（现有 `text-shadow` 是缓解而非保证）。
-6. **动画内容**：`prefers-reduced-motion` 下已无 >50ms 过渡，但拖拽、flip、气泡出现是否在真实使用中引起不适，需要人工体验。
-7. **自动化对比度算法的近似**：渐变/半透明背景按最近不透明祖先色估算；实际渲染可能有小幅差异。
+> P1-8 补上了其中三条的**可自动化部分**（200% 缩放实测、`forced-colors` 计算色、无障碍树走查），
+> 详见 §7；下面保留的是仍然必须人工做的事。
 
-## 7. 回滚
+1. **真实屏幕阅读器的朗读效果**（NVDA / Narrator / VoiceOver）：§7.3 证明了"每个可交互节点在无障碍树里都有名字"，
+   但没有听读顺序、重复朗读、虚拟光标导航的实测。NVDA 未安装在本机，手工清单见 §7.3。
+2. **真实高对比度主题**：§7.2 用的是 Chromium 的 `--force-high-contrast`（媒体查询命中、系统色替换生效），
+   但**没有**切换 Windows 的"高对比度"开关（那会改用户系统设置，需要重启资源管理器）。
+   阴影/图片可见性在真主题下的观感仍需人工确认。
+3. **触摸 + 读屏组合、语音输入**：未测。
+4. **气泡文字的实际可读性**：气泡背景是透明的，最终对比度取决于桌面壁纸；本轮只保证默认色对白 ≥4.5（`#5d6a86`），深色壁纸下仍可能需要阴影/底色（现有 `text-shadow` 是缓解而非保证）。
+5. **动画内容**：`prefers-reduced-motion` 下已无 >50ms 过渡，但拖拽、flip、气泡出现是否在真实使用中引起不适，需要人工体验。
+6. **自动化对比度算法的近似**：渐变/半透明背景按最近不透明祖先色估算；实际渲染可能有小幅差异。
+
+## 7. 真机检查（P1-8）
+
+### 7.1 200% 缩放
+
+`--force-device-scale-factor=2` 启动（`devicePixelRatio === 2`，四窗口同一次运行），
+用 `tools/a11y-real.js 9229 docs/a11y-shots -scale2` 量每个窗口的横向溢出：
+
+| 窗口 | 视口（CSS px） | 横向溢出 | 截图 |
+|---|---|---|---|
+| 设置 | 509×632 | 0 | [settings-scale2-normal.png](docs/a11y-shots/settings-scale2-normal.png) |
+| 编辑器 | 949×636 | 0 | [editor-scale2-normal.png](docs/a11y-shots/editor-scale2-normal.png) |
+| 抠图 | 769×636 | 0 | [cutout-scale2-normal.png](docs/a11y-shots/cutout-scale2-normal.png) |
+| 桌宠 | 328×444 | 0 | [pet-scale2-normal.png](docs/a11y-shots/pet-scale2-normal.png) |
+
+判定口径：`document.documentElement.scrollWidth === innerWidth`，且任何元素 `getBoundingClientRect().right > innerWidth + 1` 都算溢出。
+设置页在 200% 下仍然是一列卡片 + 可滚动内容区，没有横向滚动条（截图右侧的竖条是内容滚动条）。
+
+### 7.2 高对比度
+
+用 `--force-high-contrast` 启动（`matchMedia('(forced-colors: active)').matches === true`），
+`node tools/a11y-real.js 9229` 会额外拍 `-forced-colors.png` 并打印关键计算值：
+
+| 窗口 | 检查 | 计算值 |
+|---|---|---|
+| 设置 | 当前分类高亮 | `outline: 2px solid Highlight`（截图里"外观"外面那圈蓝框） |
+| 设置 | 卡片分层 | `border: 1px CanvasText`（黑色边框），`background: Canvas` |
+| 桌宠 | 云朵框 | `forced-color-adjust: none` · `fill: rgb(255,255,255)`(Canvas) · `stroke: rgb(0,0,0)`(CanvasText) |
+| 抠图 | 舞台边框 | `border: 1px CanvasText`；回退态内阴影换成 `inset 0 0 0 2px CanvasText` |
+
+截图：[settings-forced-colors.png](docs/a11y-shots/settings-forced-colors.png) ·
+[pet-forced-colors.png](docs/a11y-shots/pet-forced-colors.png) ·
+[editor-forced-colors.png](docs/a11y-shots/editor-forced-colors.png) ·
+[cutout-forced-colors.png](docs/a11y-shots/cutout-forced-colors.png)
+
+为什么云朵框要单独钉色：SVG 的 `fill/stroke` 不受系统调色板保护，作者色（白底深蓝描边）在深色高对比主题下
+会和 `CanvasText` 撞成"黑底黑字"。`forced-color-adjust: none` + 系统色是唯一稳的写法（`app/pet.css` 末尾）。
+
+### 7.3 无障碍树走查（代替 NVDA 脚本）
+
+本机没有 NVDA（`C:\Program Files (x86)\NVDA\nvda.exe` 不存在），装了也无法在 CI 里"听"结果。
+读屏软件最终读的是 Chromium 的无障碍树，所以改用 `node tools/a11y-tree.js 9229` 直接走 CDP
+`Accessibility.getFullAXTree`：
+
+| 窗口 | 可交互节点 | 没有名字的 | 角色分布（前几） |
+|---|---|---|---|
+| 桌宠 | 3 | 0 | button×3 · image×1 · StaticText×12 |
+| 设置 | 15 | 0 | button×8 · LabelText×6 · paragraph×4 |
+| 编辑器 | 55 | 0 | button×55 · heading×2 |
+| 抠图 | 11 | 0 | button×9 · paragraph×4 · heading×3 |
+
+脚本退出码非 0 表示有可交互节点读不出名字。**NVDA 手工清单**（有读屏的机器上补做）：
+
+1. 启动 NVDA，`Ctrl+Alt+N` 读窗口标题，确认读作"桌宠设置"而不是"document"；
+2. 设置页 `Tab` 走一遍：每个控件应读出"名称 + 角色 + 状态"，滑杆读出当前值；
+3. 编辑器：`Tab` 到模块，听到"模块名 + 按钮"，`Ctrl+↑/↓` 应读出新位置；
+4. 抠图：`Tab` 到"挑一张照片"，回车能打开文件框（这是读屏用户唯一的入口）；
+5. 桌宠：`Tab` 应只到三个按钮（菜单/设置/退出），气泡出现时 `aria-live` 能读出新文案。
+
+### 7.4 遗留
+
+- 真高对比度主题（系统开关）下的观感、阴影/图片可见性；
+- 深色壁纸上的气泡可读性（§6.4）；
+- NVDA 的实际朗读顺序（§7.3 清单）。
+
+## 8. 回滚
 
 本次改动彼此独立：`--muted` 令牌、`bubble-model.js` 默认色、各窗口 `min-height`/`aria-label`、四个 CSS 的 reduced-motion、编辑器窄屏媒体查询、桌宠 `:focus-within`。逐项回滚即可；`tools/a11y-audit.js` 与 `tools/check-a11y.js` 是新增文件，删除即回滚审计能力。

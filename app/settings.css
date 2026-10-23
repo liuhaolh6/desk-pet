@@ -1040,3 +1040,22 @@ button:disabled {
   color: var(--ink, #2b2622);
   font-weight: 600;
 }
+
+/* 高对比度：卡片靠 1px 边框分层（背景色会被系统抹平），当前页高亮走系统 Highlight。 */
+@media (forced-colors: active) {
+  .card,
+  .confirm-card,
+  .search-box {
+    background: Canvas;
+    border: 1px solid CanvasText;
+  }
+
+  .nav-item.active {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+
+  .field-flash {
+    outline: 2px solid Highlight;
+  }
+}

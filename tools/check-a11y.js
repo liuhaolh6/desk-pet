@@ -212,6 +212,21 @@ for (const file of ['app/cutout.css', 'app/pet.css', 'app/settings.css', 'app/ed
   const css = read(file)
   check(file + ' 支持 prefers-reduced-motion', /@media\s*\(prefers-reduced-motion:\s*reduce\)/.test(css))
 }
+
+// 高对比度（forced-colors）：系统会把背景/阴影抹平，靠系统色与边框分层。
+for (const file of ['app/cutout.css', 'app/pet.css', 'app/settings.css', 'app/editor.css', 'app/onboard.css']) {
+  const css = read(file)
+  const at = css.indexOf('@media (forced-colors: active)')
+  check(file + ' 有 forced-colors 分支', at >= 0)
+  const branch = at < 0 ? '' : css.slice(at, css.indexOf('\n}', at) + 2)
+  check(file + ' forced-colors 用系统色', /CanvasText|ButtonText|Highlight|Canvas/.test(branch))
+}
+{
+  const petCss = read('app/pet.css')
+  const fc = petCss.indexOf('@media (forced-colors: active)')
+  const rule = fc < 0 ? '' : petCss.slice(fc)
+  check('高对比度下云朵框不再被刷成黑底', rule.includes('forced-color-adjust: none') && rule.includes('fill: Canvas'))
+}
 {
   const settingsCss = read('app/settings.css')
   const cutoutCss = read('app/cutout.css')

@@ -450,3 +450,25 @@ body[data-bubble-side="below"] .bubble-shape ellipse {
     --pet-scale-y: 1;
   }
 }
+
+/* 高对比度模式（Windows 高对比度主题）：系统会把 SVG 的 fill 也刷成 CanvasText，
+   云朵框就会变成"黑底黑字"。这里显式钉到系统色上，并关掉自动改写。 */
+@media (forced-colors: active) {
+  .bubble-bshape,
+  .bubble-b1,
+  .bubble-b2 {
+    forced-color-adjust: none;
+    fill: Canvas;
+    stroke: CanvasText;
+    stroke-width: 18;
+  }
+
+  .menu-btn,
+  .pet-menu button {
+    border: 1px solid ButtonText;
+  }
+
+  .pet-menu-sep {
+    border-top: 1px solid ButtonText;
+  }
+}

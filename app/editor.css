@@ -231,3 +231,17 @@ details.advanced[open] > summary { margin-bottom: 4px; }
     animation-iteration-count: 1 !important;
   }
 }
+
+/* 高对比度：模块框靠边框分层，选中态用系统 Highlight 而不是半透明阴影。 */
+@media (forced-colors: active) {
+  .panel,
+  .row {
+    border: 1px solid CanvasText;
+  }
+
+  .chip.selected {
+    outline: 2px solid Highlight;
+    outline-offset: 1px;
+    box-shadow: none;
+  }
+}
