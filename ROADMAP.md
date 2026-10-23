@@ -1,6 +1,6 @@
 # 路线图与现状评估（ROADMAP）
 
-> 版本 `0.6.6` · 2026-10-23 · 配套 [`HANDOFF.md`](HANDOFF.md)（怎么接着干）、[`CHANGELOG.md`](CHANGELOG.md)（做过什么）。
+> 版本 `0.6.7` · 2026-10-23 · 配套 [`HANDOFF.md`](HANDOFF.md)（怎么接着干）、[`CHANGELOG.md`](CHANGELOG.md)（做过什么）。
 > 本文回答三个问题：**现在到哪一步了**、**还差什么**、**接着往哪走**。每条不足都尽量给出证据（文件/行/命令），
 > 每条方向都给出验收标准与粗略工作量，方便直接排期。工作量按"熟悉本项目的一个人"估算，单位 `d`（天）。
 
@@ -133,7 +133,7 @@
 
 ### P1 — 0.7.0（约 2 周）：把地基理顺，顺手补三类高频需求
 
-> 进度：**P1-1〜P1-9 全部在 `main` 完成**（未发版，见 [`M18-NOTES.md`](M18-NOTES.md) … [`M26-NOTES.md`](M26-NOTES.md)）；`app/main.js` 1451 → **226 行**（≤300 目标达成），`npm run unit` 100 例，`npm run test:e2e` 3 用例。
+> 进度：**P1-1〜P1-9 全部完成，随 `0.6.7` 出包**（见 [`M18-NOTES.md`](M18-NOTES.md) … [`M26-NOTES.md`](M26-NOTES.md)）；`app/main.js` 1451 → **226 行**（≤300 目标达成），`npm run unit` 100 例，`npm run test:e2e` 3 用例；`dist/DeskPet-0.6.7-portable.exe` 已在目录外实测 15/15。
 
 | 编号 | 做什么 | 为什么 | 验收标准 | 量 |
 |---|---|---|---|---|
