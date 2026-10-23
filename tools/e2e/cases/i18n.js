@@ -149,6 +149,43 @@ async function run(ctx) {
       `语言下拉应同时有 zh-CN 与 en-US，实际 ${JSON.stringify(zhSettings.options)}`
     )
 
+    // 静态标记的实证：每个 data-i18n 元素都该被字典填上，且不能把键名当文案显示出来。
+    const statics = await settingsWin.evaluateJson(`JSON.stringify((() => {
+      const nodes = Array.from(document.querySelectorAll('[data-i18n],[data-i18n-html]'))
+      const attrNames = [
+        ['data-i18n-placeholder', 'placeholder'],
+        ['data-i18n-title', 'title'],
+        ['data-i18n-aria-label', 'aria-label'],
+        ['data-i18n-alt', 'alt'],
+      ]
+      const empty = []
+      const raw = []
+      const KEYLIKE = /^[a-z][A-Za-z0-9]*(\\.[A-Za-z0-9]+){1,4}$/
+      nodes.forEach((n) => {
+        const text = String(n.textContent || '').trim()
+        const key = n.dataset.i18n || n.dataset.i18nHtml || '?'
+        if (!text) empty.push(key)
+        else if (KEYLIKE.test(text)) raw.push(key + '=' + text)
+      })
+      attrNames.forEach(([attr, prop]) => {
+        document.querySelectorAll('[' + attr + ']').forEach((n) => {
+          const value = String(n.getAttribute(prop) || '').trim()
+          if (!value || KEYLIKE.test(value)) raw.push(n.getAttribute(attr) + '=' + value)
+        })
+      })
+      return { total: nodes.length, empty, raw }
+    })())`)
+    check(statics.total >= 60, `设置页应有大量 data-i18n 标记，实际 ${statics.total}`)
+    check(
+      statics.empty.length === 0,
+      `设置页有 ${statics.empty.length} 个标记没填上文案：${JSON.stringify(statics.empty.slice(0, 5))}`
+    )
+    check(
+      statics.raw.length === 0,
+      `设置页把键名显示出来了：${JSON.stringify(statics.raw.slice(0, 5))}`
+    )
+    notes.push(`设置页静态标记 ${statics.total} 处`)
+
     const picked = await pickLocale(settingsWin, 'en-US')
     check(picked, '设置窗口的语言下拉应能响应 change（页面脚本可能还没绑定）')
     const saved = (await waitForLocale(dir, 'en-US')) || {}

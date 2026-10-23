@@ -29,13 +29,13 @@
       </div>
 
       <nav class="nav" aria-label="设置分类">
-        <button type="button" class="nav-item active" data-panel="appearance" data-title="外观" data-hint="它叫什么、多大一只，平时怎么待在桌面上"><span class="nav-icon">◐</span>外观</button>
-        <button type="button" class="nav-item" data-panel="role" data-title="角色" data-hint="换一张喜欢的图，或者用照片做一个它"><span class="nav-icon">◉</span>角色</button>
-        <button type="button" class="nav-item" data-panel="bubble" data-title="气泡" data-hint="气泡留多久、说什么话、长什么样"><span class="nav-icon">◌</span>气泡</button>
-        <button type="button" class="nav-item" data-panel="reminder" data-title="提醒" data-hint="多久提醒你喝水，什么时候别吵你"><span class="nav-icon">◔</span>提醒</button>
-        <button type="button" class="nav-item" data-panel="weather" data-title="天气" data-hint="你在哪座城市，多久看一眼天气"><span class="nav-icon">☁</span>天气</button>
-        <button type="button" class="nav-item" data-panel="sound" data-title="声音" data-hint="要不要出声、什么时候响、用哪段音"><span class="nav-icon">♪</span>声音</button>
-        <button type="button" class="nav-item" data-panel="other" data-title="其他" data-hint="东西都存在哪里，以及怎么让它先休息一下"><span class="nav-icon">⚙</span>其他</button>
+        <button type="button" class="nav-item active" data-panel="appearance"><span class="nav-icon">◐</span><span class="nav-label" data-i18n="panel.appearance.title"></span></button>
+        <button type="button" class="nav-item" data-panel="role"><span class="nav-icon">◉</span><span class="nav-label" data-i18n="panel.role.title"></span></button>
+        <button type="button" class="nav-item" data-panel="bubble"><span class="nav-icon">◌</span><span class="nav-label" data-i18n="panel.bubble.title"></span></button>
+        <button type="button" class="nav-item" data-panel="reminder"><span class="nav-icon">◔</span><span class="nav-label" data-i18n="panel.reminder.title"></span></button>
+        <button type="button" class="nav-item" data-panel="weather"><span class="nav-icon">☁</span><span class="nav-label" data-i18n="panel.weather.title"></span></button>
+        <button type="button" class="nav-item" data-panel="sound"><span class="nav-icon">♪</span><span class="nav-label" data-i18n="panel.sound.title"></span></button>
+        <button type="button" class="nav-item" data-panel="other"><span class="nav-icon">⚙</span><span class="nav-label" data-i18n="panel.other.title"></span></button>
       </nav>
 
       <div class="sidebar-foot">
@@ -50,8 +50,8 @@
     <main class="content">
       <header class="topbar">
         <div>
-          <h2 id="panelTitle">外观</h2>
-          <p id="panelHint" class="panel-hint">它叫什么、多大一只，平时怎么待在桌面上</p>
+          <h2 id="panelTitle"></h2>
+          <p id="panelHint" class="panel-hint"></p>
         </div>
         <div class="topbar-actions">
           <span class="pill">改完就生效</span>
@@ -74,31 +74,31 @@
         <section class="panel active" data-panel="appearance">
           <div class="card">
             <div class="field">
-              <label class="field-label" for="name">它叫什么</label>
+              <label class="field-label" for="name" data-i18n="appearance.name"></label>
               <div class="field-body">
-                <input id="name" type="text" maxlength="20" placeholder="小芳">
-                <p class="field-hint">气泡落款、托盘提示和提醒标题都会用这个名字</p>
+                <input id="name" type="text" maxlength="20" data-i18n-placeholder="appearance.namePlaceholder">
+                <p class="field-hint" data-i18n="appearance.nameHint"></p>
               </div>
             </div>
 
             <div class="field">
-              <label class="field-label" for="size">多大一只</label>
+              <label class="field-label" for="size" data-i18n="appearance.size"></label>
               <div class="field-body">
                 <div class="control-line">
                   <input id="size" type="range" min="120" max="360" step="10">
                   <b id="sizeVal" class="value-pill">220px</b>
                 </div>
-                <p class="field-hint">拖动就能改，脚底会乖乖留在原处</p>
+                <p class="field-hint" data-i18n="appearance.sizeHint"></p>
               </div>
             </div>
 
             <div class="field">
-              <span class="field-label">平时怎么待着</span>
+              <span class="field-label" data-i18n="appearance.place"></span>
               <div class="field-body stack">
-                <label class="check-row"><input id="alwaysOnTop" type="checkbox"><span>一直看得见</span><em>不会被别的窗口盖住</em></label>
-                <label class="check-row"><input id="autostart" type="checkbox"><span>开机就出现</span><em>登录以后自己跑出来</em></label>
-                <label class="check-row"><input id="snapEnabled" type="checkbox"><span>靠边停好</span><em>拖到屏幕边缘会轻轻吸住</em></label>
-                <label class="inline-row"><span>离边多远开始吸</span><input id="snapGap" type="number" min="0" max="80"><em>px（0 就是关掉）</em></label>
+                <label class="check-row"><input id="alwaysOnTop" type="checkbox"><span data-i18n="appearance.alwaysOnTop"></span><em data-i18n="appearance.alwaysOnTopHint"></em></label>
+                <label class="check-row"><input id="autostart" type="checkbox"><span data-i18n="appearance.autostart"></span><em data-i18n="appearance.autostartHint"></em></label>
+                <label class="check-row"><input id="snapEnabled" type="checkbox"><span data-i18n="appearance.snap"></span><em data-i18n="appearance.snapHint"></em></label>
+                <label class="inline-row"><span data-i18n="appearance.snapGap"></span><input id="snapGap" type="number" min="0" max="80"><em data-i18n="appearance.snapGapUnit"></em></label>
               </div>
             </div>
           </div>
@@ -411,6 +411,7 @@
     </main>
   </div>
 
+  <script src="i18n.js"></script>
   <script src="sound-model.js"></script>
   <script src="settings.js"></script>
 </body>

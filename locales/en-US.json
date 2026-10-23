@@ -60,5 +60,51 @@
     "editor": "Bubble layout",
     "cutout": "Make me from a photo",
     "onboard": "Welcome"
+  },
+  "panel": {
+    "appearance": {
+      "title": "Appearance",
+      "hint": "Its name, how big it is, and how it sits on your desktop"
+    },
+    "role": {
+      "title": "Character",
+      "hint": "Swap in a picture you like, or make one from a photo"
+    },
+    "bubble": {
+      "title": "Bubble",
+      "hint": "How long it stays, what it says, how it looks"
+    },
+    "reminder": {
+      "title": "Reminders",
+      "hint": "How often to nudge you about water, and when to stay quiet"
+    },
+    "weather": {
+      "title": "Weather",
+      "hint": "Which city you are in, and how often to check"
+    },
+    "sound": {
+      "title": "Sound",
+      "hint": "Whether to make noise, when, and which clip"
+    },
+    "other": {
+      "title": "Other",
+      "hint": "Where things live, and how to let it rest"
+    }
+  },
+  "appearance": {
+    "name": "Its name",
+    "namePlaceholder": "Xiaofang",
+    "nameHint": "Used in bubble signatures, the tray tooltip and reminder titles",
+    "size": "How big",
+    "sizeHint": "Drag to resize; its feet stay where they are",
+    "place": "How it sits",
+    "alwaysOnTop": "Always visible",
+    "alwaysOnTopHint": "Never covered by other windows",
+    "autostart": "Start with Windows",
+    "autostartHint": "Comes back after you sign in",
+    "snap": "Snap to edges",
+    "snapHint": "Sticks gently when you drag it to a screen edge",
+    "snapGap": "Snap distance",
+    "snapGapUnit": "px (0 turns it off)"
   }
 }

@@ -6,6 +6,16 @@
   const api = window.deskPet
   const sound = window.DeskPetSound
   const $ = (id) => document.getElementById(id)
+  // P2-6 stage 3: this window's copy comes from the dictionary too.
+  const i18nLib = window.deskPetI18n
+  const i18nBridge = (api && api.i18n) || null
+  const t = (key) => (i18nBridge ? i18nBridge.t(key) : key)
+  /** Dictionary value, or the markup's own text when the key is not translated. */
+  const tOr = (key, fallback) => {
+    const value = t(key)
+    return value && value !== key ? value : fallback
+  }
+  if (i18nLib && i18nBridge) i18nLib.applyStatic(document, i18nBridge)
 
   const state = { settings: null, roles: [], sounds: [], saveTimer: 0 }
 
@@ -49,8 +59,9 @@
     if (panelId === 'reminder') refreshWaterStats()
     const title = $('panelTitle')
     const hint = $('panelHint')
-    if (title) title.textContent = target.dataset.title || ''
-    if (hint) hint.textContent = target.dataset.hint || ''
+    // Titles/hints live in the dictionary; the markup carries no Chinese any more.
+    if (title) title.textContent = tOr('panel.' + panelId + '.title', target.dataset.title || '')
+    if (hint) hint.textContent = tOr('panel.' + panelId + '.hint', '')
     // Focus the first control so keyboard users don't have to tab through the
     // whole sidebar after switching sections.
     const first = document.querySelector('.panel.active input, .panel.active select, .panel.active textarea, .panel.active button')
@@ -971,6 +982,9 @@
   async function boot() {
     wireNav()
     wire()
+    // The header follows the active section; before, it was baked into the markup.
+    const firstPanel = document.querySelector('.nav-item.active')
+    if (firstPanel) selectPanel(firstPanel.dataset.panel)
     try {
       try { state.defaults = await api.getDefaults() } catch (err) { state.defaults = null }
       const state0 = await api.getState()

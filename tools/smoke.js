@@ -1291,7 +1291,7 @@ const PAD = 54
   panelChunks.forEach((chunk) => {
     chunk.split('<div class="field">').slice(1).forEach((field) => {
       const label = (field.match(/class="field-label"[^>]*>([^<]+)</) || [])[1] || '?'
-      if (!/class="field-hint"|<em>/.test(field)) withoutHint.push(label.trim())
+      if (!/class="field-hint"|<em[\s>]/.test(field)) withoutHint.push(label.trim())
     })
   })
   assert.deepEqual(withoutHint, [], '每个设置项都有一句话说明')

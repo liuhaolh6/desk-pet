@@ -60,5 +60,51 @@
     "editor": "气泡布置",
     "cutout": "用照片做个我",
     "onboard": "欢迎使用桌宠"
+  },
+  "panel": {
+    "appearance": {
+      "title": "外观",
+      "hint": "它叫什么、多大一只，平时怎么待在桌面上"
+    },
+    "role": {
+      "title": "角色",
+      "hint": "换一张喜欢的图，或者用照片做一个它"
+    },
+    "bubble": {
+      "title": "气泡",
+      "hint": "气泡留多久、说什么话、长什么样"
+    },
+    "reminder": {
+      "title": "提醒",
+      "hint": "多久提醒你喝水，什么时候别吵你"
+    },
+    "weather": {
+      "title": "天气",
+      "hint": "你在哪座城市，多久看一眼天气"
+    },
+    "sound": {
+      "title": "声音",
+      "hint": "要不要出声、什么时候响、用哪段音"
+    },
+    "other": {
+      "title": "其他",
+      "hint": "东西都存在哪里，以及怎么让它先休息一下"
+    }
+  },
+  "appearance": {
+    "name": "它叫什么",
+    "namePlaceholder": "小芳",
+    "nameHint": "气泡落款、托盘提示和提醒标题都会用这个名字",
+    "size": "多大一只",
+    "sizeHint": "拖动就能改，脚底会乖乖留在原处",
+    "place": "平时怎么待着",
+    "alwaysOnTop": "一直看得见",
+    "alwaysOnTopHint": "不会被别的窗口盖住",
+    "autostart": "开机就出现",
+    "autostartHint": "登录以后自己跑出来",
+    "snap": "靠边停好",
+    "snapHint": "拖到屏幕边缘会轻轻吸住",
+    "snapGap": "离边多远开始吸",
+    "snapGapUnit": "px（0 就是关掉）"
   }
 }

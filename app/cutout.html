@@ -3,91 +3,92 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>用照片做个我</title>
+  <title data-i18n="window.cutout"></title>
   <link rel="stylesheet" href="tokens.css">
   <link rel="stylesheet" href="cutout.css">
 </head>
 <body>
   <header class="topbar">
     <div>
-      <h1>用照片做个我</h1>
-      <p>照片只在你电脑里处理，不会上传</p>
+      <h1 data-i18n="window.cutout"></h1>
+      <p data-i18n="cutout.subtitle"></p>
     </div>
-    <button id="closeBtn" class="ghost compact" type="button">关闭</button>
+    <button id="closeBtn" class="ghost compact" type="button" data-i18n="cutout.close"></button>
   </header>
 
   <main class="layout">
     <section class="stage-card">
-      <div id="stage" class="stage" tabindex="0" aria-label="角色预览" aria-describedby="previewAlt">
+      <div id="stage" class="stage" tabindex="0" data-i18n-aria-label="cutout.stage.label" aria-describedby="previewAlt">
         <canvas id="canvas" width="610" height="610"></canvas>
         <div id="empty" class="empty">
-          <strong>挑一张人像照片</strong>
-          <span>JPG / PNG / WebP 都行，我会把人像留下来</span>
+          <strong data-i18n="cutout.empty.title"></strong>
+          <span data-i18n="cutout.empty.hint"></span>
         </div>
       </div>
-      <p id="previewAlt" class="sr-only" aria-live="polite">还没有照片呢</p>
+      <p id="previewAlt" class="sr-only" aria-live="polite" data-i18n="cutout.preview.empty"></p>
       <div id="viewRow" class="view-row" hidden>
-        <div class="seg-group" role="group" aria-label="看看什么样">
-          <button type="button" class="seg is-on" data-view="result" aria-pressed="true">结果</button>
-          <button type="button" class="seg" data-view="original" aria-pressed="false">原图</button>
-          <button id="maskViewBtn" type="button" class="seg" data-view="mask" aria-pressed="false" hidden>蒙版</button>
+        <div class="seg-group" role="group" data-i18n-aria-label="cutout.view.group">
+          <button type="button" class="seg is-on" data-view="result" aria-pressed="true" data-i18n="cutout.view.result"></button>
+          <button type="button" class="seg" data-view="original" aria-pressed="false" data-i18n="cutout.view.original"></button>
+          <button id="maskViewBtn" type="button" class="seg" data-view="mask" aria-pressed="false" hidden data-i18n="cutout.view.mask"></button>
         </div>
       </div>
       <div class="stage-tools">
-        <span id="modeLabel" class="pill">等你的照片</span>
-        <button id="resetBtn" class="ghost compact" type="button">摆回原位</button>
+        <span id="modeLabel" class="pill" data-i18n="cutout.mode.none"></span>
+        <button id="resetBtn" class="ghost compact" type="button" data-i18n="cutout.resetView"></button>
       </div>
     </section>
 
     <aside class="side">
       <section class="card">
-        <h2>1. 先挑张照片</h2>
-        <button id="pickBtn" class="primary" type="button">挑一张照片</button>
-        <button id="runBtn" class="ghost" type="button" disabled>帮我抠出来吧</button>
+        <h2 data-i18n="cutout.step.pick"></h2>
+        <button id="pickBtn" class="primary" type="button" data-i18n="cutout.pickBtn"></button>
+        <button id="runBtn" class="ghost" type="button" disabled data-i18n="cutout.runBtn"></button>
         <label class="field" for="name">
-          <span>给它起个名</span>
-          <input id="name" type="text" maxlength="30" placeholder="照片角色">
+          <span data-i18n="cutout.nameLabel"></span>
+          <input id="name" type="text" maxlength="30" data-i18n-placeholder="cutout.defaultName">
         </label>
-        <p id="status" class="status" role="status">挑好照片以后，我会在这里说进度</p>
+        <p id="status" class="status" role="status" data-i18n="cutout.status.idle"></p>
       </section>
 
       <section class="card">
-        <h2>2. 摆好位置</h2>
+        <h2 data-i18n="cutout.step.place"></h2>
         <label class="range" for="zoom">
-          <span>缩放 <em id="zoomVal">100%</em></span>
+          <span><span data-i18n="cutout.zoomLabel"></span><em id="zoomVal">100%</em></span>
           <input id="zoom" type="range" min="60" max="160" value="100">
         </label>
-        <p class="hint">拖着画面挪一挪，滚轮能放大缩小</p>
-        <div class="chip-row" role="group" aria-label="转一转">
-          <button id="rotateLeftBtn" class="ghost compact" type="button" title="往左转" aria-keyshortcuts="Q">↺ 往左</button>
-          <button id="rotateRightBtn" class="ghost compact" type="button" title="往右转" aria-keyshortcuts="W">↻ 往右</button>
-          <button id="flipBtn" class="ghost compact" type="button" title="照镜子" aria-pressed="false" aria-keyshortcuts="F">⇋ 照镜子</button>
+        <p class="hint" data-i18n="cutout.zoomHint"></p>
+        <div class="chip-row" role="group" data-i18n-aria-label="cutout.rotate.group">
+          <button id="rotateLeftBtn" class="ghost compact" type="button" data-i18n="cutout.rotate.left" data-i18n-title="cutout.rotate.leftTitle" aria-keyshortcuts="Q"></button>
+          <button id="rotateRightBtn" class="ghost compact" type="button" data-i18n="cutout.rotate.right" data-i18n-title="cutout.rotate.rightTitle" aria-keyshortcuts="W"></button>
+          <button id="flipBtn" class="ghost compact" type="button" data-i18n="cutout.rotate.flip" data-i18n-title="cutout.rotate.flipTitle" aria-pressed="false" aria-keyshortcuts="F"></button>
         </div>
         <div class="button-row">
-          <button id="fallbackBtn" class="ghost" type="button" disabled>不用抠，直接用整张</button>
-          <button id="saveBtn" class="primary" type="button" disabled>就它了，保存</button>
+          <button id="fallbackBtn" class="ghost" type="button" disabled data-i18n="cutout.fallbackBtn"></button>
+          <button id="saveBtn" class="primary" type="button" disabled data-i18n="cutout.saveBtn"></button>
         </div>
       </section>
 
       <section class="card" id="editCard" hidden>
-        <h2>3. 修一修</h2>
-        <div class="chip-row" role="group" aria-label="修一修">
-          <button id="eraseBtn" class="ghost compact" type="button" aria-pressed="false" aria-keyshortcuts="E">擦一擦</button>
-          <button id="restoreBtn" class="ghost compact" type="button" aria-pressed="false" aria-keyshortcuts="R">找回来</button>
-          <button id="undoBtn" class="ghost compact" type="button" disabled aria-keyshortcuts="Control+Z">撤销</button>
-          <button id="resetEditBtn" class="ghost compact" type="button" disabled>重新来过</button>
+        <h2 data-i18n="cutout.step.edit"></h2>
+        <div class="chip-row" role="group" data-i18n-aria-label="cutout.edit.group">
+          <button id="eraseBtn" class="ghost compact" type="button" aria-pressed="false" aria-keyshortcuts="E" data-i18n="cutout.erase"></button>
+          <button id="restoreBtn" class="ghost compact" type="button" aria-pressed="false" aria-keyshortcuts="R" data-i18n="cutout.restore"></button>
+          <button id="undoBtn" class="ghost compact" type="button" disabled aria-keyshortcuts="Control+Z" data-i18n="cutout.undo"></button>
+          <button id="resetEditBtn" class="ghost compact" type="button" disabled data-i18n="cutout.resetEdit"></button>
         </div>
         <label class="range" for="brush">
-          <span>笔刷大小 <em id="brushVal">24px</em></span>
-          <input id="brush" type="range" min="8" max="80" value="24" aria-label="笔刷粗细（8 到 80 像素）">
+          <span><span data-i18n="cutout.brushLabel"></span><em id="brushVal">24px</em></span>
+          <input id="brush" type="range" min="8" max="80" value="24" data-i18n-aria-label="cutout.brushAria">
         </label>
-        <p class="hint">E 擦一擦 / R 找回来 / [ ] 笔刷 / Ctrl+Z 撤销；Q / W 旋转、F 照镜子；修补时先暂停拖动。</p>
+        <p class="hint" data-i18n="cutout.editHint"></p>
       </section>
 
-      <p class="privacy">照片和角色图都只存在你自己的电脑里，抠图也是离线跑的。</p>
+      <p class="privacy" data-i18n="cutout.privacy"></p>
     </aside>
   </main>
 
+  <script src="i18n.js"></script>
   <script src="cutout.js"></script>
 </body>
 </html>
