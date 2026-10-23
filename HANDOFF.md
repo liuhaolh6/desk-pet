@@ -13,7 +13,7 @@
 | 是什么 | Windows x64 桌面宠物（Electron 44 + 离线 ONNX 人像抠图），悬浮在桌面上，点击看天气 / 喝水 / 温馨话 |
 | 本地目录 | `D:\project\deskpet` |
 | 仓库 | `ssh://git@ssh.github.com:443/liuhaolh6/desk-pet.git`，分支 `main`，**当前是私有仓库** |
-| 版本 | `0.6.6`，**已出包** `dist\DeskPet-0.6.6-portable.exe`（153.7 MB，未签名）与 `dist\win-unpacked\`；tag 只推到 `v0.6.0`，`0.6.1`–`0.6.6` 仅在 `main` |
+| 版本 | `0.6.6`，**已出包** `dist\DeskPet-0.6.6-portable.exe`（153.7 MB，未签名）与 `dist\win-unpacked\`；tag 推到 `v0.6.6`（`0.6.1`–`0.6.5` 按用户决定不补 tag，只在 `main` 历史里） |
 | 最近提交 | `12176d2` = 0.6.6 重新打包 + 托盘收口 + 真按键验证；`5be8c4d` = 0.6.6 长文案/托盘兜底/手册/诊断导出；再往前 `adbe033` 0.6.5 首次引导、`63ae453 docs(0.6.4)` |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js` |
@@ -321,7 +321,7 @@ node node_modules/electron-builder/cli.js --win portable --x64
 ## 10. 新对话开场白（直接粘贴）
 
 > 继续 `D:\project\deskpet` 的 Windows 桌面宠物项目，先读 `HANDOFF.md`（§0 速览、§4 不变量、§6 坑）
-> 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.6`，`main` 已同步，tag 只到 `v0.6.0`。
+> 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.6`，`main` 已同步，tag 到 `v0.6.6`。
 > 验证基线：`npm run check` + `npm test`（52 项）+ `node tools/check-a11y.js`（57 项）全部通过；
 > 带界面的还要跑 `a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
 > 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。
