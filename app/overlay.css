@@ -1,0 +1,170 @@
+/* P2-4: 独立气泡窗口。窗口只有气泡那么大，所以气泡铺满整窗。
+   视觉规则与 app/pet.css 里的那一份保持一致（这一份是它的派生：没有桌宠、
+   没有菜单，只有鲸鱼气泡 + 一行行文字 + 可选的行动按钮）。 */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: var(--font-ui);
+  color: var(--ink);
+}
+
+.bubble {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  background: transparent;
+  pointer-events: none;
+  cursor: pointer;
+}
+
+.bubble.show {
+  pointer-events: auto;
+}
+
+/* 气泡在桌宠下方时尾巴指向不对，直接藏掉（与 pet.css 同规则）。 */
+body[data-bubble-side="below"] .bubble-shape ellipse {
+  display: none;
+}
+
+.bubble-shape {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bubble-bshape,
+.bubble-b1,
+.bubble-b2 {
+  opacity: 0;
+  transform: scale(0.7);
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.bubble.show .bubble-bshape,
+.bubble.show .bubble-b1,
+.bubble.show .bubble-b2 {
+  opacity: 1;
+  transform: none;
+}
+
+.bubble.show .bubble-b2 { transition-delay: 0s; }
+.bubble.show .bubble-b1 { transition-delay: 0.13s; }
+.bubble.show .bubble-bshape { transition-delay: 0.26s; }
+.bubble .bubble-bshape { transition-delay: 0.1s; }
+.bubble .bubble-b1 { transition-delay: 0.2s; }
+.bubble .bubble-b2 { transition-delay: 0.3s; }
+
+.bubble-content {
+  position: absolute;
+  left: var(--bubble-vx, 44.25%);
+  top: var(--bubble-vy, 36%);
+  width: 66%;
+  height: 64%;
+  box-sizing: border-box;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u, 0.2807px) * 8);
+  color: #536ba9;
+  font-size: calc(var(--u, 0.2807px) * 52 * var(--bubble-fit, 1));
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: break-word;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+  opacity: 0;
+  transition: opacity 0.16s ease;
+  z-index: 1;
+}
+
+.bubble.show .bubble-content {
+  opacity: 1;
+  transition: opacity 0.16s ease 0.36s;
+}
+
+.bubble-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--u, 0.2807px) * 7);
+  align-items: baseline;
+  justify-content: center;
+  margin: 0;
+}
+
+.bubble-mod {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+/* 行动按钮（喝水卡的“喝过了 / 稍后 10 分钟”）。点完由桌宠窗口处理业务。 */
+.actions {
+  display: flex;
+  gap: calc(var(--u, 0.2807px) * 10);
+  justify-content: center;
+  margin-top: calc(var(--u, 0.2807px) * 6);
+}
+
+.actions button {
+  font: inherit;
+  font-size: calc(var(--u, 0.2807px) * 38);
+  padding: calc(var(--u, 0.2807px) * 8) calc(var(--u, 0.2807px) * 22);
+  border: 1px solid rgba(32, 49, 112, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #203170;
+  cursor: pointer;
+}
+
+.actions button.primary {
+  background: #203170;
+  border-color: #203170;
+  color: #fff;
+}
+
+.actions button:focus-visible {
+  outline: 2px solid #203170;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble-bshape,
+  .bubble-b1,
+  .bubble-b2,
+  .bubble-content {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .bubble-bshape,
+  .bubble-b1,
+  .bubble-b2 {
+    forced-color-adjust: none;
+    fill: Canvas;
+    stroke: CanvasText;
+    stroke-width: 18;
+  }
+
+  .actions button {
+    border: 1px solid ButtonText;
+  }
+}

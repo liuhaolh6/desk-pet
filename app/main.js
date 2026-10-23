@@ -34,6 +34,7 @@ const { createPrivacy } = require('./main/privacy')
 const { createUpdater } = require('./main/updater')
 const { createWindowState } = require('./window-state')
 const { createWindowLayout } = require('./main/window-layout')
+const { createOverlay } = require('./main/overlay')
 const { createWeatherPump } = require('./main/weather-pump')
 const { createReminders } = require('./main/reminder')
 const { createCutoutService } = require('./main/cutout-service')
@@ -60,6 +61,7 @@ log('boot electron=' + process.versions.electron + ' packaged=' + app.isPackaged
 
 let store = null
 let windows = null
+let overlay = null
 let catalog = null
 let weatherPump = null
 let reminders = null
@@ -166,6 +168,14 @@ app.whenReady().then(() => {
     onCutoutClosed: () => { if (cutoutService) cutoutService.clearInputs() },
   })
 
+  // P2-4: the bubble gets its own transparent window. It follows the pet and
+  // never forces the pet window to reserve a strip above the sprite.
+  overlay = createOverlay({
+    BrowserWindow, screen, store, log,
+    getPetWin: () => windows.pet(),
+    getLayout: () => layout,
+  })
+
   protocol.handle('pet-role', catalog.handleRoleProtocol)
   protocol.handle('pet-sound', catalog.handleSoundProtocol)
   const { session } = require('electron')
@@ -196,7 +206,7 @@ app.whenReady().then(() => {
   registerIpc({
     ipcMain, dialog, shell, app, nativeImage, path, fs,
     store, version: VERSION, weatherPump, layout, winState, trayHost, diagnostics, updater, privacy,
-    cutoutService, cutout, placement, clamp, winPad: WIN_PAD, log, nudges,
+    cutoutService, cutout, placement, clamp, winPad: WIN_PAD, log, nudges, overlay,
     windows: {
       pet: () => windows.pet(),
       settings: () => windows.settings(),

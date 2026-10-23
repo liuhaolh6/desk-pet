@@ -100,4 +100,28 @@ function createNudgePump(options) {
   return { touch, probe, tick, start, stop, snapshot }
 }
 
-module.exports = { createNudgePump }
+
+/**
+ * P1-7：探针通道（设置页与 CDP 验证用）。只读，除非显式传 send。
+ * 放在这里而不是 ipc.js，是因为它只跟泵的状态有关。
+ */
+function registerNudgeIpc({ ipcMain, nudges, getPet }) {
+  ipcMain.handle('nudge:probe', (ev, opts) => {
+    if (!nudges) return null
+    const out = nudges.probe(opts && opts.now, opts || {})
+    if (opts && opts.send) {
+      try {
+        const pet = getPet && getPet()
+        if (pet) {
+          pet.webContents.send('pet:nudge', {
+            kind: (out.decision && out.decision.kind) || 'manual',
+            text: opts.text || '试一下，看看我能不能冒个泡',
+          })
+        }
+      } catch (err) {}
+    }
+    return out
+  })
+}
+
+module.exports = { registerNudgeIpc,  createNudgePump }

@@ -788,29 +788,36 @@ const PAD = 54
   const petCss = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.css'), 'utf8')
   const petJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.js'), 'utf8')
   const petHtml = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.html'), 'utf8')
+  // P2-4: 气泡本体搬到 app/overlay.*，排版相关的断言改看那边
+  const overlayJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'overlay.js'), 'utf8')
+  const overlayCss = fs.readFileSync(path.join(__dirname, '..', 'app', 'overlay.css'), 'utf8')
+  const overlayHtml = fs.readFileSync(path.join(__dirname, '..', 'app', 'overlay.html'), 'utf8')
   const mainJs = mainSource()
   const modelJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'bubble-model.js'), 'utf8')
-  assert.ok(/aspect-ratio:\s*1026\s*\/\s*700/.test(petCss), '气泡框保持 1026:700 固定比例（不再拉伸）')
-  assert.ok(!/preserveAspectRatio="none"/.test(petHtml), 'SVG 不再用 preserveAspectRatio=none 拉伸云朵')
-  assert.ok(/left: var\(--bubble-vx/.test(petCss) && /top: var\(--bubble-vy/.test(petCss), '文字层按实测云朵中心定位')
-  assert.ok(/measureBubbleCentre/.test(petJs), '云朵中心由渲染矩形实测')
-  assert.ok(/--bubble-fit/.test(petCss) && /fitBubbleText/.test(petJs), '文字超框时按比例收缩而不是溢出')
-  assert.ok(/white-space: normal/.test(petCss), '长文本先换行')
-  assert.ok(/FIT_FLOOR\s*=\s*0\.6/.test(petJs), '长文案字号下限 60%（P0-2，不再缩到 45%）')
-  assert.ok(!/Math\.max\(0\.45,/.test(petJs), '旧的 0.45 下限已移除')
-  assert.ok(/function overflowAmount/.test(petJs) && /firstElementChild/.test(petJs), '溢出用渲染矩形实测（居中安全区两端溢出的内容也要算）')
-  assert.ok(/keepRatio/.test(petJs) && /over\.h \/ h/.test(petJs), '截断按实际超出比例整体收缩，而不是每次只剪 10%')
+  assert.ok(/aspect-ratio:\s*1026\s*\/\s*700/.test(petCss), '预留区保持 1026:700 固定比例（不再拉伸）')
+  assert.ok(/ASPECT\s*=\s*700\s*\/\s*1026/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'overlay.js'), 'utf8')), '气泡窗口按同一个比例定高')
+  assert.ok(!/preserveAspectRatio="none"/.test(overlayHtml), 'SVG 不再用 preserveAspectRatio=none 拉伸云朵')
+  assert.ok(/--bubble-fit/.test(overlayCss) && /bubble-content/.test(overlayCss), '气泡窗口按 --u 缩放排版')
+  const iifeAt = overlayJs.indexOf('(() => {')
+  assert.ok(iifeAt > 0 && overlayJs.slice(Math.max(0, iifeAt - 40), iifeAt).includes(';'), 'overlay.js 的 IIFE 前有分号（避免 ASI 把 use strict 当函数调用）')
+  assert.ok(/syncMetrics/.test(overlayJs), '气泡窗口按实际宽度算 --u')
+  assert.ok(/--bubble-fit/.test(overlayCss) && /function fitText/.test(overlayJs), '文字超框时按比例收缩而不是溢出')
+  assert.ok(/white-space: normal/.test(overlayCss), '长文本先换行')
+  assert.ok(/FIT_FLOOR\s*=\s*0\.6/.test(overlayJs), '长文案字号下限 60%（P0-2，不再缩到 45%）')
+  assert.ok(!/Math\.max\(0\.45,/.test(overlayJs), '旧的 0.45 下限已移除')
+  assert.ok(/function overflowAmount/.test(overlayJs) && /firstElementChild/.test(overlayJs), '溢出用渲染矩形实测（居中安全区两端溢出的内容也要算）')
+  assert.ok(/keepRatio/.test(overlayJs) && /over\.h \/ h/.test(overlayJs), '截断按实际超出比例整体收缩，而不是每次只剪 10%')
   assert.ok(
     /if \(clickTimer\) \{[\s\S]{0,60}clearTimeout\(clickTimer\)/.test(petJs),
     '真拖动开始时取消待触发的单击计时（否则 dragging 里会冒出 bubble-show）',
   )
-  assert.ok(/function clampBubbleText/.test(petJs) && /dataset\.full/.test(petJs), '到下限后逐字截断，并将全文存在 data-full 供重渲染还原')
-  assert.ok(/span\.title = full/.test(petJs) && /setAttribute\('aria-label', full\)/.test(petJs), '截断后的全文仍留在 title / aria-label')
-  assert.ok(/clampBubbleText\(\)[\s\S]{0,40}\}/.test(petJs), '每次排版都先还原再截断（换卡不叠加省略）')
+  assert.ok(/function clampText/.test(overlayJs) && /dataset\.full/.test(overlayJs), '到下限后逐字截断，并将全文存在 data-full 供重渲染还原')
+  assert.ok(/span\.title = full/.test(overlayJs) && /setAttribute\('aria-label', full\)/.test(overlayJs), '截断后的全文仍留在 title / aria-label')
+  assert.ok(/clampText\(\)[\s\S]{0,40}\}/.test(overlayJs), '每次排版都先还原再截断（换卡不叠加省略）')
   assert.ok(/bubbleReserve\(\)/.test(petJs), '同一串气泡内用固定空间，卡片切换不 resize')
   assert.ok(!/resizeForBubble\(0\)/.test(petJs), '运行中不再把窗口缩成 0，杜绝透明窗口 resize 频闪')
-  assert.ok(/wireBubbleClick/.test(petJs) && /bubble\.addEventListener\('click'/.test(petJs), '点击气泡收起')
-  assert.ok(/band\(0\.05/.test(petJs) && /bubble-bshape/.test(petJs), '气泡命中区跟随绘制出的云朵，而不是矩形框')
+  assert.ok(/bubble\.addEventListener\('click'/.test(overlayJs) && /overlayClick/.test(overlayJs), '点击气泡转发回桌宠窗口再收起')
+  assert.ok(/if \(state\.menuOpen\) \{ push\(petMenu\); push\(menuBtn\) \}/.test(petJs) && /bubble-bshape/.test(overlayHtml), '预留区不再上报命中矩形（气泡自身在独立窗口里可点）')
   assert.ok(/setIgnoreMouseEvents\(true, \{ forward: true \}\)/.test(mainJs), '固定预留区默认鼠标穿透')
   assert.ok(/sendRects/.test(petJs) && /pet:rects/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')) && /function updateInteractive/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'window-layout.js'), 'utf8')), '渲染层上报命中区、主进程轮询光标决定可交互')
 
@@ -950,7 +957,7 @@ const PAD = 54
     assert.ok(fs.existsSync(path.join(repo, 'docs/PRIVACY.md')), 'docs/PRIVACY.md 存在')
   }
 
-  assert.deepEqual(mods, ['boot.js', 'catalog.js', 'cutout-service.js', 'diagnostics.js', 'fullscreen.js', 'geometry.js', 'ipc.js', 'log.js', 'nudge-pump.js', 'privacy.js', 'reminder.js', 'tray.js', 'updater.js', 'water-ipc.js', 'weather-pump.js', 'window-layout.js', 'windows.js'], 'app/main/ 下的模块名单')
+  assert.deepEqual(mods, ['boot.js', 'catalog.js', 'cutout-service.js', 'diagnostics.js', 'fullscreen.js', 'geometry.js', 'ipc.js', 'log.js', 'nudge-pump.js', 'overlay.js', 'privacy.js', 'reminder.js', 'tray.js', 'updater.js', 'water-ipc.js', 'weather-pump.js', 'window-layout.js', 'windows.js'], 'app/main/ 下的模块名单')
   const mainJs = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
   for (const name of mods) {
     const file = path.join(modDir, name)
@@ -958,7 +965,8 @@ const PAD = 54
     assert.ok(/module\.exports = \{/.test(text), name + ' 有导出')
     // ipc.js is a flat list of ~40 handlers; it gets its own (looser) cap so
     // the rest stay small.
-    const cap = name === 'ipc.js' ? 430 : 320
+    // ipc.js 是所有窗口的通道总表；P2-4 加了气泡窗口的通道，上限 430 → 450。
+    const cap = name === 'ipc.js' ? 450 : 320
     assert.ok(text.split('\n').length <= cap, name + ' 不超过 ' + cap + ' 行')
   }
   assert.ok(/require\('\.\/main\/log'\)/.test(mainJs), 'main.js 引用 log 模块')
@@ -1137,7 +1145,7 @@ const PAD = 54
   const preloadReserve = fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')
   assert.ok(/setReserve: \(height\) => ipcRenderer\.invoke\('pet:reserve'/.test(preloadReserve), 'preload 暴露 setReserve')
   const petJsStage2 = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.js'), 'utf8')
-  assert.ok(/async function reserveSpace/.test(petJsStage2) && /async function showBubbleFrame/.test(petJsStage2), '保留量/可见性拆成两个函数')
+  assert.ok(/async function reserveSpace/.test(petJsStage2) && /renderBubble\(payload\)/.test(petJsStage2), '保留量与卡片渲染分开（P2-4 后渲染走 overlay）')
   assert.ok(!/let petPos/.test(mainJs3) && !/function applyBubbleHeight/.test(mainJs3), '旧的布局状态与函数已移出 main.js')
   ok('P1-1 阶段 2：命中纯函数、预留增长/收缩、贴边下推、拖动可交互')
 }
@@ -1415,9 +1423,9 @@ const PAD = 54
   assert.equal(store.readSettings().nudge.enabled, true, '默认开启主动说话')
   assert.equal(store.readSettings().nudge.longUse, true, '默认开启久坐提醒')
 
-  for (const ch of ['pet:activity', 'nudge:probe']) {
-    assert.ok(ipcJs.includes(ch), 'ipc 注册 ' + ch)
-  }
+  assert.ok(ipcJs.includes('pet:activity'), 'ipc 注册 pet:activity')
+  // P2-4 把探针通道挪到了 nudge-pump.js（和泵的状态放一起）
+  assert.ok(fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'nudge-pump.js'), 'utf8').includes('nudge:probe'), 'ipc 注册 nudge:probe')
   for (const fn of ['reportActivity', 'onNudge', 'probeNudge']) {
     assert.ok(preloadJs.includes(fn + ':'), 'preload 暴露 ' + fn)
   }
@@ -1444,6 +1452,34 @@ const PAD = 54
   assert.equal(nudges.decide({ now, lastInteraction: now - 150 * MIN }).kind, 'away')
   assert.equal(nudges.decide({ now, cfg: { away: false }, lastInteraction: now - 150 * MIN }), null)
   ok('P1-7 主动说话：久坐/深夜/久未互动三触发器 + 全屏闭嘴 + 设置开关')
+}
+
+{
+  // P2-4 stage 1: the bubble lives in its own transparent window.
+  const root = path.join(__dirname, '..')
+  const ovMain = fs.readFileSync(path.join(root, 'app', 'main', 'overlay.js'), 'utf8')
+  const ovHtml = fs.readFileSync(path.join(root, 'app', 'overlay.html'), 'utf8')
+  const ovCss = fs.readFileSync(path.join(root, 'app', 'overlay.css'), 'utf8')
+  const petHtmlP24 = fs.readFileSync(path.join(root, 'app', 'pet.html'), 'utf8')
+  const petJsP24 = fs.readFileSync(path.join(root, 'app', 'pet.js'), 'utf8')
+  const preloadP24 = fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')
+  const ipcP24 = fs.readFileSync(path.join(root, 'app', 'main', 'ipc.js'), 'utf8')
+  const mainP24 = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
+
+  assert.ok(/function createOverlay/.test(ovMain) && /showInactive/.test(ovMain), 'overlay 窗口：独立、不抢焦点')
+  assert.ok(/focusable: false/.test(ovMain) && /transparent: true/.test(ovMain), 'overlay 窗口透明且不可聚焦')
+  assert.ok(/function follow/.test(ovMain) && /overlay\.follow\(\)/.test(ipcP24), '桌宠移动后气泡窗口跟随')
+  assert.ok(/did-finish-load/.test(ovMain) && /lastRender/.test(ovMain), '窗口首次加载后补发 render（懒建窗不会丢首帧）')
+  assert.ok(/setAlwaysOnTop/.test(ovMain), '气泡窗口跟随始终置顶设置')
+  assert.ok(/id="bubble"/.test(ovHtml) && /id="bubbleContent"/.test(ovHtml), 'overlay.html 里有气泡骨架')
+  assert.ok(!/id="bubble"/.test(petHtmlP24), '桌宠窗口不再自己画气泡')
+  assert.ok(/api\.renderBubble\(payload\)/.test(petJsP24), '桌宠窗口只把卡片整包发出去')
+  assert.ok(/renderBubble: \(payload\) => ipcRenderer\.send\('bubble:render'/.test(preloadP24), 'preload 暴露 renderBubble')
+  assert.ok(/onOverlayRender: \(cb\)/.test(preloadP24) && /overlayClick: \(\)/.test(preloadP24), 'preload 暴露气泡窗口的渲染/点击通道')
+  assert.ok(/ipcMain\.on\('bubble:render'/.test(ovMain) && /ipcMain\.on\('bubble:hide'/.test(ovMain), '主进程接 bubble:render / bubble:hide')
+  assert.ok(/overlay = createOverlay\(/.test(mainP24), 'main.js 创建 overlay 实例')
+  assert.ok(/inset: 0/.test(ovCss), 'overlay.css 铺满整窗')
+  ok('P2-4 气泡独立窗口：懒建、不抢焦点、跟随、首帧补发、点击转发')
 }
 
 console.log('\n' + pass + ' checks passed')

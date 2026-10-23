@@ -38,11 +38,15 @@ const { registerWaterIpc } = require('./water-ipc.js')
  * @param {object} deps.privacy    createPrivacy 的实例（P2-4）
  * @param {Function} deps.setQuitting
  */
+const { registerOverlayIpc } = require('./overlay')
+
+const { registerNudgeIpc } = require('./nudge-pump')
+
 function registerIpc(deps) {
   const {
     ipcMain, dialog, shell, app, nativeImage, path, fs,
     store, version, weatherPump, layout, winState, trayHost, diagnostics, cutoutService, cutout, nudges, updater, privacy,
-    placement, clamp, winPad, windows, actions, lists, setQuitting,
+    placement, clamp, winPad, windows, actions, lists, setQuitting, overlay,
   } = deps
   const { roleList, soundList, roleUrl, broadcastSettings, broadcastRoles, sendMirror, applySettingsSideEffects } = lists
   const MAX_IMAGE_BYTES = cutoutService.MAX_IMAGE_BYTES
@@ -344,6 +348,8 @@ function registerIpc(deps) {
     layout.petPos = { x: next.x, y: next.y }
     petWin.setBounds(layout.windowBoundsForPet(next.x, next.y, size, extra))
     sendMirror()
+    // P2-4: the bubble lives in its own window now, so it has to follow.
+    if (overlay) overlay.follow()
   })
 
   ipcMain.on('pet:drag-end', () => {
@@ -395,23 +401,36 @@ function registerIpc(deps) {
     winState.transition('bubble-hide')
   })
 
-  ipcMain.on('pet:hide', () => { const win = windows.pet(); if (win) win.hide() })
+  ipcMain.on('pet:hide', () => {
+    if (overlay) overlay.hide()
+    const win = windows.pet()
+    if (win) win.hide()
+  })
+
+  // P2-4：气泡窗口的通道（渲染/收起/点击转发）在 app/main/overlay.js 里注册，
+  // 这里只把"出现/收起"翻译成状态机事件。
+  registerOverlayIpc({
+    ipcMain,
+    overlay,
+    getPet: () => windows.pet(),
+    onShow: () => {
+      if (bubbleVisible) return
+      bubbleVisible = true
+      winState.transition('bubble-show')
+    },
+    onHide: () => {
+      if (!bubbleVisible) return
+      bubbleVisible = false
+      winState.transition('bubble-hide')
+    },
+  })
+
   ipcMain.on('pet:open-settings', () => actions.openSettings())
   ipcMain.on('pet:open-editor', () => actions.openEditor())
   // P1-7：宠物上的任何动作都算「人还在」。
   ipcMain.on('pet:activity', () => { if (nudges) nudges.touch() })
-  // 只读探针，给设置页与 CDP 验证用：不改状态；带 send 时才真的冒一句。
-  ipcMain.handle('nudge:probe', (ev, opts) => {
-    if (!nudges) return null
-    const out = nudges.probe(opts && opts.now, opts || {})
-    if (opts && opts.send) {
-      try {
-        const pet = windows.pet()
-        pet.webContents.send('pet:nudge', { kind: (out.decision && out.decision.kind) || 'manual', text: opts.text || '试一下，看看我能不能冒个泡' })
-      } catch (err) {}
-    }
-    return out
-  })
+  // P1-7：探针（只读，可选真的冒一句）在 nudges 模块里登记。
+  registerNudgeIpc({ ipcMain, nudges, getPet: () => windows.pet() })
   ipcMain.on('onboard:open', () => actions.openOnboard(true))
   ipcMain.on('onboard:dismiss', () => actions.dismissOnboard())
   registerWaterIpc({ ipcMain, store, path, fs, shell, clamp, log })

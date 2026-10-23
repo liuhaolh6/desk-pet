@@ -13,8 +13,6 @@
   const petFlip = document.getElementById('petFlip')
   const menuBtn = document.getElementById('menuBtn')
   const petMenu = document.getElementById('petMenu')
-  const bubble = document.getElementById('bubble')
-  const bubbleContent = document.getElementById('bubbleContent')
   const menuActions = Array.from(petMenu.querySelectorAll('button[data-action]'))
 
   const state = {
@@ -135,6 +133,10 @@
   }
 
   // --------------------------------------------------------------- bubble
+  // P2-4：气泡画在独立窗口（app/overlay.js）里。这一侧只负责算出卡片
+  // 内容（上下文、行、按钮），整包发给主进程，由它摆好那扇小窗。
+  const BUBBLE_MIN_W = 220
+  const BUBBLE_MAX_W = 340
   function clearTimer() {
     if (state.timer) { clearTimeout(state.timer); state.timer = 0 }
   }
@@ -154,19 +156,8 @@
       if (r.width > 0 && r.height > 0) rects.push({ x: r.left, y: r.top, w: r.width, h: r.height })
     }
     push(petWrap)
-    if (bubble.classList.contains('show')) {
-      // The cloud is an ellipse-ish shape inside a rectangular SVG box. Three
-      // stacked bands approximate it, so the empty corners stay click-through
-      // while the body of the bubble is a solid target.
-      const r = bubble.getBoundingClientRect()
-      const band = (topF, hF, wF) => {
-        const w = r.width * wF
-        rects.push({ x: r.left + (r.width - w) / 2, y: r.top + r.height * topF, w, h: r.height * hF })
-      }
-      band(0.05, 0.26, 0.74)
-      band(0.30, 0.26, 0.92)
-      band(0.55, 0.20, 0.70)
-    }
+    // P2-4: the bubble lives in app/overlay.html now, so this window only
+    // reports the pet and the hover menu.
     if (state.menuOpen) { push(petMenu); push(menuBtn) }
     try { api.sendRects(rects) } catch (err) {}
   }
@@ -188,25 +179,6 @@
     return res
   }
 
-  async function showBubbleFrame(height, stale) {
-    const extra = Math.max(0, Math.round(height))
-    // A drag can start between `showBubble()` and this call; the reservation is
-    // per pet size (0.6.1), so when the card is already stale we skip the IPC
-    // instead of telling the main process "a bubble is visible" mid-drag.
-    if (stale && stale()) return { reserve: extra, side: 'above' }
-    if (window.DESKPET_TRACE_BUBBLE && extra !== state.lastReserve) {
-      state.lastReserve = extra
-      console.log('bubble-resize', extra)
-    }
-    let res = { reserve: extra, side: 'above' }
-    try {
-      const granted = await api.setBubble(true, extra)
-      if (granted && typeof granted === 'object') res = granted
-    } catch (err) {}
-    applyBubbleRoom(res)
-    return res
-  }
-
   function applyBubbleRoom(res) {
     const side = res && res.side === 'below' ? 'below' : 'above'
     const reserve = Math.max(0, Math.round(Number(res && res.reserve) || 0))
@@ -214,171 +186,31 @@
     document.body.style.setProperty('--bubble-room', reserve + 'px')
   }
 
-  // ------------------------------------------------- bubble geometry (0.6.1)
-  // Contract borrowed from dsh-whale-widget: one fixed-aspect SVG frame, one
-  // scale unit (--u), text inside the frame's safe area. Font sizes authored in
-  // the editor are px at BUBBLE_REF_W, and are re-expressed in --u at render
-  // time, so shape and text always scale together and text cannot overflow.
-  const BUBBLE_REF_W = 300
-  const BUBBLE_MIN_W = 220
-  const BUBBLE_MAX_W = 340
-
-  function syncBubbleMetrics() {
+  function bubbleReserve() {
     const avail = Math.round(window.innerWidth) - 12
     const w = Math.max(BUBBLE_MIN_W, Math.min(BUBBLE_MAX_W, avail))
-    document.body.style.setProperty('--bubble-w', w + 'px')
-    document.body.style.setProperty('--u', (w / 1026).toFixed(4) + 'px')
-    measureBubbleCentre()
-  }
-
-  /**
- * Centre the text on where the cloud is actually painted, not on the viewBox
- * geometry: the frame has a wide arc plus an 18-unit stroke, so the geometric
- * bbox centre and the painted centre differ by ~6% (that was the "text sits to
- * the left" bug). Measured in screen space against the bubble box.
- */
-  function measureBubbleCentre() {
-    try {
-      const shape = bubble.querySelector('.bubble-bshape')
-      if (!shape) return
-      const br = bubble.getBoundingClientRect()
-      const sr = shape.getBoundingClientRect()
-      if (!br.width || !br.height || !sr.width || !sr.height) return
-      const vx = ((sr.left + sr.width / 2 - br.left) / br.width) * 100
-      const vy = ((sr.top + sr.height / 2 - br.top) / br.height) * 100
-      if (!isFinite(vx) || !isFinite(vy)) return
-      bubble.style.setProperty('--bubble-vx', vx.toFixed(2) + '%')
-      bubble.style.setProperty('--bubble-vy', vy.toFixed(2) + '%')
-    } catch (err) {}
-  }
-
-  /** Editor px -> --u multiples (1026 design units per frame width). */
-  function scaleModuleCss(css) {
-    if (!css) return ''
-    const k = 1026 / BUBBLE_REF_W
-    return css
-      .replace(/font-size:\s*([\d.]+)px/g, (m, n) => 'font-size:calc(var(--u) * ' + (Number(n) * k).toFixed(2) + ')')
-      .replace(/border-radius:\s*([\d.]+)px/g, (m, n) => 'border-radius:calc(var(--u) * ' + (Number(n) * k).toFixed(2) + ')')
-      .replace(/padding:\s*0\s+([\d.]+)px/g, (m, n) => 'padding:0 calc(var(--u) * ' + (Number(n) * k).toFixed(2) + ')')
-  }
-
-  /** Shrink the text layer until it fits its safe area (never grows past 1). */
-  // Shrinking stops here (P0-2, 0.6.6): below 60% of the base size the text turns
-  // into unreadable mush, so past the floor we drop words instead of pixels and
-  // keep the full string on the span (title + aria-label) for hover and AT.
-  const FIT_FLOOR = 0.6
-
-  // Overflow is measured from the rendered child's rect so it covers spill on
-  // either end (the safe area is centred with `justify-content: center`). The
-  // earlier "long text never truncated" report was NOT this metric: a module is
-  // capped at 200 chars by bubble-model.js, so a single 500-char test module was
-  // silently cut to 200 and fit fine. Long cards need several modules to test.
-  function overflowAmount() {
-    const frame = bubbleContent.firstElementChild
-    if (!frame) return { w: 0, h: 0 }
-    const box = bubbleContent.getBoundingClientRect()
-    const inner = frame.getBoundingClientRect()
-    return {
-      w: Math.max(0, inner.width - box.width),
-      h: Math.max(0, box.top - inner.top, inner.bottom - box.bottom),
-    }
-  }
-
-  /**
-   * Trim the longest module until the card fits the cloud's safe area.
-   *
-   * Runs after the font-size fit. Re-entrant on purpose: every call restores the
-   * original text from `data-full` first, so switching cards (or a settings
-   * broadcast that re-renders) never truncates twice.
-   */
-  function clampBubbleText() {
-    const spans = Array.from(bubbleContent.querySelectorAll('.bubble-mod'))
-    if (!spans.length) return
-    spans.forEach((span) => {
-      if (span.dataset.full == null) span.dataset.full = span.textContent || ''
-      else span.textContent = span.dataset.full
-      const full = span.dataset.full
-      if (full) {
-        span.title = full
-        span.setAttribute('aria-label', full)
-      }
-    })
-    // Proportional trim: the first implementation shaved 10% off the longest
-    // module per pass, which needs ~80 passes for a genuinely long card and ran
-    // into the guard while still 35px too tall (P0-2 CDP check). Estimate the
-    // overshoot from the actual box and shorten every module by that ratio.
-    for (let guard = 0; guard < 40; guard++) {
-      const over = overflowAmount()
-      if (!over.w && !over.h) return
-      const h = bubbleContent.clientHeight || 1
-      const w = bubbleContent.clientWidth || 1
-      const ratio = Math.max(over.h / h, over.w / w, 0.05)
-      const keepRatio = Math.max(0.5, 1 - ratio * 1.1)
-      let changed = false
-      for (const span of spans) {
-        const text = span.textContent || ''
-        if (text.length <= 1) continue
-        const keep = Math.max(1, Math.floor(text.length * keepRatio))
-        if (keep >= text.length) continue
-        span.textContent = text.slice(0, keep).replace(/[\s，、,。.!！?？;；:：]+$/u, '') + '…'
-        changed = true
-      }
-      if (!changed) return
-    }
-  }
-
-  function fitBubbleText() {
-    let fit = 1
-    for (let i = 0; i < 4; i++) {
-      document.body.style.setProperty('--bubble-fit', fit.toFixed(3))
-      const cw = bubbleContent.clientWidth
-      const ch = bubbleContent.clientHeight
-      if (!cw || !ch) break
-      const need = Math.min(1, cw / Math.max(bubbleContent.scrollWidth, 1), ch / Math.max(bubbleContent.scrollHeight, 1))
-      if (need >= 0.995) break
-      fit = Math.max(FIT_FLOOR, fit * need * 0.97)
-    }
-    document.body.style.setProperty('--bubble-fit', fit.toFixed(3))
-    clampBubbleText()
-  }
-
-  function bubbleReserve() {
-    return Math.ceil(bubble.getBoundingClientRect().height) + 8
+    return Math.ceil((w * 700) / 1026) + 8
   }
 
   /** Re-measure after a size change. The strip stays reserved (0.6.4). */
   async function syncBubbleSpace() {
-    syncBubbleMetrics()
-    fitBubbleText()
     if (state.menuOpen) return reserveSpace(Math.max(bubbleReserve(), measureMenu()))
     return reserveSpace(bubbleReserve())
   }
 
-  async function showBubble(node) {
+  async function showBubble(payload) {
     state.wantBubble = true
     clearTimer()
     clearTimeout(state.showTimer)
     if (state.menuOpen) closeMenu(true)
     const token = ++state.bubbleToken
-    bubble.classList.remove('show')
-    bubbleContent.innerHTML = ''
-    bubbleContent.appendChild(node)
-    // The space is constant per pet size (see 0.6.1 fixed reserve), so this
-    // call never resizes the window between two cards: it only re-decides which
-    // side of the pet can host the bubble.
-    syncBubbleMetrics()
-    fitBubbleText()
-    const reserve = bubbleReserve()
-    if (window.DESKPET_TRACE_BUBBLE) console.log('bubble-reserve', reserve, 'w=' + bubble.offsetWidth, 'h=' + bubble.offsetHeight, 'inner=' + window.innerWidth)
-    await showBubbleFrame(reserve, () => state.bubbleToken !== token)
+    // The overlay does the drawing; this window only reserves the strip (still
+    // reserved in P2-4 stage 1) and keeps the card state.
+    try { api.renderBubble(payload) } catch (err) {}
+    await reserveSpace(bubbleReserve())
     if (state.bubbleToken !== token) return
-    void bubble.offsetHeight
-    state.showTimer = setTimeout(() => {
-      if (state.bubbleToken !== token) return
-      bubble.classList.add('show')
-      scheduleRectReport()
-      setTimeout(scheduleRectReport, 520)
-    }, 50)
+    scheduleRectReport()
+    setTimeout(scheduleRectReport, 520)
     const sec = Number(state.settings.bubble && state.settings.bubble.autoHideSeconds) || 0
     if (sec > 0) state.timer = setTimeout(hideBubble, sec * 1000)
   }
@@ -390,11 +222,8 @@
     state.bubbleToken += 1
     state.currentCard = null
     state.weatherMarked = false
-    bubble.classList.remove('show')
-    // 0.6.4: no shrink here. Resizing the transparent window is what produced
-    // the flicker; the strip is click-through instead (main-process hit poll).
-    // P1-2: the machine still has to leave `bubble` — tell it without resizing.
-    try { api.bubbleHidden() } catch (err) {}
+    // P2-4: the card is drawn by the overlay window; hiding it is one IPC.
+    try { api.hideBubbleCard() } catch (err) {}
     scheduleRectReport()
   }
 
@@ -402,14 +231,11 @@
   // 12 秒后自己收起来；点气泡或点它一下会立刻收起。
   function showNudge(data) {
     if (state.menuOpen) closeMenu(true)
-    const frame = el('div')
-    const line = el('div', 'bubble-row')
-    const span = el('span', 'bubble-mod', (data && data.text) || '')
-    span.setAttribute('style', 'font-size: 13px; color: #3b4254;')
-    line.appendChild(span)
-    frame.appendChild(line)
     state.currentCard = 'nudge'
-    showBubble(frame).then(() => {
+    showBubble({
+      rows: [[{ text: (data && data.text) || '', css: 'font-size:13px;color:#3b4254;' }]],
+      actions: [],
+    }).then(() => {
       clearTimer()
       state.timer = setTimeout(hideBubble, 12000)
     }).catch(() => {})
@@ -430,19 +256,8 @@
     }
   }
 
-  function wireBubbleClick() {
-    // Clicking the bubble puts it away (0.6.3). The action chips inside it do
-    // their own thing first and the click bubbles up to here afterwards.
-    bubble.addEventListener('click', (ev) => {
-      if (!bubble.classList.contains('show')) return
-      const btn = ev.target && ev.target.closest ? ev.target.closest('.bubble-act') : null
-      void btn
-      hideBubble()
-    })
-  }
-
   function advance() {
-    if (!bubble.classList.contains('show')) {
+    if (!state.wantBubble) {
       state.queue = buildQueue()
       state.queueIndex = 0
       renderCurrent()
@@ -502,23 +317,15 @@
     const opts = options || {}
     state.currentCard = cardId
     const ctx = contextFor(card)
-    const frame = el('div')
     let rows = model.pruneRows(model.resolveCard(card, ctx))
     if (!rows.length) rows = [[{ text: '…', css: '' }]]
-
-    rows.forEach((row) => {
-      const line = el('div', 'bubble-row')
-      row.forEach((item) => {
-        const span = el('span', 'bubble-mod', item.text)
-        const css = scaleModuleCss(item.css)
-        if (css) span.setAttribute('style', css)
-        line.appendChild(span)
-      })
-      frame.appendChild(line)
-    })
-
-    if (card.action) frame.appendChild(actionButtons())
-    showBubble(frame)
+    const payload = {
+      rows: rows.map((row) => row.map((item) => ({ text: item.text, css: item.css || '' }))),
+      actions: card.action
+        ? [{ id: 'water-done', label: '喝过了', primary: true }, { id: 'water-later', label: '稍后 10 分钟' }]
+        : [],
+    }
+    showBubble(payload)
 
     if (opts.playSound !== false) playSound(cardId === 'water' ? 'water' : 'bubble')
 
@@ -535,29 +342,11 @@
       api.refreshWeather().then((data) => {
         if (!data || !data.ok) return
         state.weather = data
-        if (state.currentCard === 'weather' && bubble.classList.contains('show')) {
+        if (state.currentCard === 'weather' && state.wantBubble) {
           renderCard(card, cardId, { playSound: false, markWeather: false })
         }
       }).catch(() => {})
     }
-  }
-
-  function actionButtons() {
-    const actions = el('div', 'actions')
-    const done = el('button', 'primary', '喝过了')
-    done.onclick = () => {
-      api.drinkDone()
-      hideBubble()
-      playSound('water')
-    }
-    const later = el('button', '', '稍后 10 分钟')
-    later.onclick = () => {
-      api.waterSnooze(10)
-      hideBubble()
-    }
-    actions.appendChild(done)
-    actions.appendChild(later)
-    return actions
   }
 
   // ----------------------------------------------------------------- hover
@@ -594,7 +383,7 @@
 
   function openMenu() {
     if (state.menuOpen) return
-    if (bubble.classList.contains('show')) hideBubble()
+    if (state.wantBubble) hideBubble()
     clearTimeout(state.showTimer)
     state.menuOpen = true
     api.setMenu(true)
@@ -625,7 +414,7 @@
     const finish = () => {
       if (state.menuOpen) return
       petMenu.hidden = true
-      if (!bubble.classList.contains('show')) reserveSpace(bubbleReserve())
+      if (!state.wantBubble) reserveSpace(bubbleReserve())
     }
     if (immediate) finish()
     else setTimeout(finish, 180)
@@ -754,7 +543,7 @@
         }
         // Drop the bubble only once a real drag starts. Hiding it on every
         // pointerdown used to reset the click queue before `advance()` ran.
-        if (bubble.classList.contains('show')) hideBubble()
+        if (state.wantBubble) hideBubble()
         petWrap.classList.remove('pressing')
         petWrap.classList.add('dragging')
         try { api.setDragging(true) } catch (err) {}
@@ -813,11 +602,15 @@
     wireMenu()
     wirePet()
     wireActivity()
-    wireBubbleClick()
+    // P2-4: the overlay forwards "clicked the cloud" and the water-card buttons
+    // back here — the business state still only lives in this window.
+    api.onBubbleClick(() => { if (state.wantBubble) hideBubble() })
+    api.onBubbleAction((id) => {
+      if (id === 'water-done') { api.drinkDone(); hideBubble(); playSound('water') }
+      else if (id === 'water-later') { api.waterSnooze(10); hideBubble() }
+    })
     // 0.6.1: reserve the bubble strip once and keep it; content swaps never
     // resize the transparent window again.
-    syncBubbleMetrics()
-    fitBubbleText()
     reserveSpace(bubbleReserve()).catch(() => {})
     window.addEventListener('resize', () => { syncBubbleSpace().catch(() => {}) })
     reportHitRects()
@@ -846,11 +639,11 @@
       // our own weather bookkeeping must not trigger another render/sound.
       const changed = JSON.stringify(state.layout) !== prevLayout || settings.name !== prevName
       if (!changed) return
-      if (bubble.classList.contains('show')) {
+      if (state.wantBubble) {
         const id = state.currentCard
         const card = id ? cardById(id) : null
         if (card) renderCard(card, id, { playSound: false, markWeather: false })
-        else reserveSpace(measureBubble())
+        else reserveSpace(bubbleReserve())
       }
     })
     // Role list can change without a settings write (import/cutout/delete).
@@ -863,14 +656,14 @@
 
     api.onWeather((w) => {
       state.weather = w
-      if (state.currentCard === 'weather' && bubble.classList.contains('show')) {
+      if (state.currentCard === 'weather' && state.wantBubble) {
         const card = cardById('weather')
         if (card) renderCard(card, 'weather', { playSound: false, markWeather: false })
       }
     })
     api.onNudge((data) => showNudge(data))
     api.onRemind(() => {
-      if (bubble.classList.contains('show')) return
+      if (state.wantBubble) return
       const card = cardById('water')
       if (!card) return
       state.queue = ['water']

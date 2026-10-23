@@ -77,6 +77,19 @@ contextBridge.exposeInMainWorld('deskPet', {
   // P1-2: the hover menu is a renderer overlay, so the main-process state
   // machine learns about it from here (it gates bubble/drag and the reserve).
   setMenu: (open) => ipcRenderer.send('pet:menu', !!open),
+
+  // P2-4：气泡画在独立窗口里。桌宠窗口算好卡片 → 这里把"行 + 按钮"送过去。
+  renderBubble: (payload) => ipcRenderer.send('bubble:render', payload),
+  hideBubbleCard: () => ipcRenderer.send('bubble:hide'),
+  onBubbleClick: (cb) => ipcRenderer.on('bubble:click', () => cb()),
+  onBubbleAction: (cb) => ipcRenderer.on('bubble:action', (_ev, id) => cb(id)),
+  // 气泡窗口侧：收渲染指令，把点击/按钮转发回主进程。
+  onOverlayRender: (cb) => ipcRenderer.on('overlay:render', (_ev, payload) => cb(payload)),
+  onOverlayClear: (cb) => ipcRenderer.on('overlay:clear', () => cb()),
+  onOverlaySide: (cb) => ipcRenderer.on('overlay:side', (_ev, side) => cb(side)),
+  overlayClick: () => ipcRenderer.send('overlay:click'),
+  overlayAction: (id) => ipcRenderer.send('overlay:action', id),
+
   hidePet: () => ipcRenderer.send('pet:hide'),
   openSettings: () => ipcRenderer.send('pet:open-settings'),
   openEditor: () => ipcRenderer.send('pet:open-editor'),
