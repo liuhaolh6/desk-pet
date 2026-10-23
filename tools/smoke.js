@@ -1168,5 +1168,92 @@ const PAD = 54
   ok('P1-1 阶段 3：天气回退/夹取，喝水提醒的到点、限流、勿扰与跨午夜')
 }
 
+{
+  // P1-4: settings usability — search, one-line hints, per-panel reset, recent cities.
+  const root = path.join(__dirname, '..')
+  const settingsHtml = fs.readFileSync(path.join(root, 'app', 'settings.html'), 'utf8')
+  const settingsJs = fs.readFileSync(path.join(root, 'app', 'settings.js'), 'utf8')
+  const settingsCss = fs.readFileSync(path.join(root, 'app', 'settings.css'), 'utf8')
+  const preloadJs = fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')
+  const mainJs = mainSource()
+
+  // Defaults are a public, read-only contract now.
+  const snapshot = store.defaults()
+  assert.equal(snapshot.name, '小芳')
+  assert.deepEqual(snapshot.weather.recent, [], '最近城市默认空')
+  snapshot.name = '被改坏了'
+  snapshot.weather.recent.push('深圳')
+  assert.equal(store.defaults().name, '小芳', 'defaults() 每次给一份新副本')
+  assert.deepEqual(store.defaults().weather.recent, [], '副本里改数组不影响默认值')
+  assert.ok(/DEFAULT_SETTINGS\.weather\.recent/.test(fs.readFileSync(path.join(root, 'lib', 'store.js'), 'utf8')) ||
+    /recent: \[\]/.test(fs.readFileSync(path.join(root, 'lib', 'store.js'), 'utf8')), '默认设置里带 recent')
+
+  const deduped = store.writeSettings({ weather: { recent: ['深圳', ' 深圳 ', '', '杭州', '深圳', '成都', '西安', '重庆'] } })
+  assert.deepEqual(deduped.weather.recent, ['深圳', '杭州', '成都', '西安', '重庆'], '手写进 settings.json 的重复/空城市会被规整')
+  assert.deepEqual(store.readSettings().weather.recent, ['深圳', '杭州', '成都', '西安', '重庆'], '读回来也是规整过的')
+  store.writeSettings({ weather: { recent: [] } })
+
+  assert.ok(/ipcMain\.handle\('settings:defaults'/.test(mainJs), '主进程提供只读默认值')
+  assert.ok(/getDefaults: \(\) => ipcRenderer\.invoke\('settings:defaults'\)/.test(preloadJs), 'preload 暴露 getDefaults')
+
+  // Search box + results container.
+  assert.ok(/id="settingSearch"/.test(settingsHtml) && /type="search"/.test(settingsHtml), '侧边栏有搜索框')
+  assert.ok(/id="searchResults"/.test(settingsHtml) && /aria-label="设置项搜索结果"/.test(settingsHtml), '有结果列表且带名称')
+  assert.ok(/aria-describedby="searchHint"/.test(settingsHtml) && /id="searchHint"/.test(settingsHtml), '搜索框连着示例提示')
+
+  // Every indexed target must still exist in the page.
+  const ids = new Set(Array.from(settingsHtml.matchAll(/id="([A-Za-z0-9_-]+)"/g)).map((m) => m[1]))
+  const indexed = Array.from(settingsJs.matchAll(/\{ panel: '([a-z]+)', id: '([A-Za-z0-9_-]+)'/g))
+  assert.ok(indexed.length >= 20, '搜索索引覆盖主要设置项（' + indexed.length + ' 项）')
+  const missing = indexed.filter((m) => !ids.has(m[2])).map((m) => m[2])
+  assert.deepEqual(missing, [], '索引里的控件都还在页面上')
+  const panelsSeen = new Set(indexed.map((m) => m[1]))
+  assert.deepEqual(Array.from(panelsSeen).sort(), ['appearance', 'bubble', 'other', 'reminder', 'role', 'sound', 'weather'], '七个面板都能被搜到')
+
+  // Matching: label beats aliases beats panel name.
+  assert.ok(/if \(label\.includes\(q\)\) score = 3/.test(settingsJs) && /else if \(keys\.includes\(q\)\) score = 2/.test(settingsJs), '打分：标题 > 同义词 > 面板名')
+  assert.ok(/scored\.slice\(0, 8\)/.test(settingsJs), '结果最多 8 条')
+  assert.ok(/function revealSetting/.test(settingsJs) && /scrollIntoView\(\{ block: 'center'/.test(settingsJs) && /field-flash/.test(settingsJs), '点结果会切面板、滚动定位、闪一下')
+  assert.ok(/prefers-reduced-motion: reduce/.test(settingsJs), '减少动效时不平滑滚动')
+  assert.ok(/addEventListener\('keydown'[\s\S]{0,400}ArrowDown/.test(settingsJs) && /Escape/.test(settingsJs), '搜索框支持方向键和 Esc')
+
+  // Per-panel reset.
+  assert.ok(/id="resetPanelBtn"/.test(settingsHtml) && /id="resetConfirm"/.test(settingsHtml), '顶栏有恢复默认按钮和确认层')
+  assert.ok(/role="alertdialog"/.test(settingsHtml) && /aria-labelledby="resetConfirmText"/.test(settingsHtml), '确认层是带名称的告警对话框')
+  assert.ok(/id="resetCancel"/.test(settingsHtml) && /id="resetOk"/.test(settingsHtml), '确认层有取消和确认')
+  const patchBody = (settingsJs.match(/function panelResetPatch\(panel\) \{([\s\S]*?)\n  \}\n/) || [])[1] || ''
+  for (const panel of ['appearance', 'bubble', 'reminder', 'weather', 'sound']) {
+    assert.ok(patchBody.includes("'" + panel + "'"), '能恢复「' + panel + '」这一页')
+  }
+  assert.ok(!/panel === 'role'/.test(patchBody), '角色页是图片，不提供恢复默认')
+  assert.ok(/save\(patch, true,/.test(settingsJs), '恢复后立即写盘')
+  assert.ok(/if \(!panelResetPatch\(panel\)\) \{ setStatus\('这一页没有可以恢复的默认值'/.test(settingsJs), '没有默认值时明确告知')
+
+  // One-line hints on every field.
+  const panelChunks = settingsHtml.split('<section class="panel').slice(1)
+  const withoutHint = []
+  panelChunks.forEach((chunk) => {
+    chunk.split('<div class="field">').slice(1).forEach((field) => {
+      const label = (field.match(/class="field-label"[^>]*>([^<]+)</) || [])[1] || '?'
+      if (!/class="field-hint"|<em>/.test(field)) withoutHint.push(label.trim())
+    })
+  })
+  assert.deepEqual(withoutHint, [], '每个设置项都有一句话说明')
+
+  // Recent cities.
+  assert.ok(/id="recentCities"/.test(settingsHtml) && /aria-label="最近用过的城市"/.test(settingsHtml), '天气页有最近城市一行')
+  assert.ok(/function noteRecentCity/.test(settingsJs) && /\.slice\(0, 5\)/.test(settingsJs), '最近城市最多记 5 个')
+  assert.ok(/\[clean\]\.concat\(\(weather\.recent \|\| \[\]\)\.filter\(\(item\) => item !== clean\)\)/.test(settingsJs), '重复城市提到最前而不是重复出现')
+  assert.ok(/noteRecentCity\(item\.name\)/.test(settingsJs), '选中城市后记一笔')
+  assert.ok(/setAttribute\('aria-pressed', String\(name === current\)\)/.test(settingsJs), '当前城市在最近列表里是按下态')
+
+  // Styles exist for the new pieces.
+  for (const cls of ['.search-result', '.reset-confirm', '.chip-city', '.field-flash', '.ghost-small']) {
+    assert.ok(settingsCss.includes(cls), '样式里有 ' + cls)
+  }
+  assert.ok(/@media \(prefers-reduced-motion: reduce\)/.test(settingsCss), '减少动效的兜底还在')
+  ok('P1-4 设置可用性：搜索、每项一句说明、按页恢复默认、最近城市')
+}
+
 console.log('\n' + pass + ' checks passed')
 fs.rmSync(dir, { recursive: true, force: true })

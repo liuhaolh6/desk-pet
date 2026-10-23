@@ -22,7 +22,7 @@
 | 稳定性 | 7 / 10 | 0.6.3→0.6.4 两次窗口回归均已修，有 57 项断言护树，P1-2 五态机替掉了 540ms/50ms 约定 | 托盘图标在本机不可见（`D:\project` 目录特性，见 M17-NOTES §8.1） |
 | 视觉与体验 | 8 / 10 | 统一 token、粉色系、fixed-aspect 气泡、动效克制、0.6.5 补上首次引导、0.6.6 修长文案 | 224px 常驻气泡带；长文案可读性 |
 | 无障碍 | 8.5 / 10 | 5 窗口 + 7 面板自动审计 86/0，静态断言 52，键盘流程 6/6 | NVDA/真实高对比度/200% 缩放未逐一手测 |
-| 工程化 | 9 / 10 | CI + 4 种测试（smoke 57 / unit 60 / a11y 静态 57 / 运行时 86）+ 13 篇设计笔记 + 交接文档；P1-1 拆出 12 个主进程模块、`main.js` 226 行；P1-3 纯函数单测 60 例（见 [`M18-NOTES.md`](M18-NOTES.md)、[`M20-NOTES.md`](M20-NOTES.md)） | 无类型检查；CDP 脚本不入库；`ipc.js`/`windows.js` 仍近 300 行；smoke 仍有文本断言待替换 |
+| 工程化 | 9 / 10 | CI + 4 种测试（smoke 58 / unit 60 / a11y 静态 76 / 运行时 86）+ 13 篇设计笔记 + 交接文档；P1-1 拆出 12 个主进程模块、`main.js` 226 行；P1-3 纯函数单测 60 例（见 [`M18-NOTES.md`](M18-NOTES.md)、[`M20-NOTES.md`](M20-NOTES.md)） | 无类型检查；CDP 脚本不入库；`ipc.js`/`windows.js` 仍近 300 行；smoke 仍有文本断言待替换 |
 | 分发与信任 | 3.5 / 10 | portable + 图标/版本信息齐全，有签名工作流模板 | 未签名、无安装器、无自动更新、仓库私有、仅 x64 |
 | 跨平台 | 1 / 10 | 仅 Windows | macOS/Linux 未评估 |
 | 可维护性/文档 | 9 / 10 | HANDOFF/ROADMAP/CHANGELOG/Mxx-NOTES/A11Y-AUDIT 齐全 | 缺用户手册与 FAQ |
@@ -133,14 +133,14 @@
 
 ### P1 — 0.7.0（约 2 周）：把地基理顺，顺手补三类高频需求
 
-> 进度：P1-1 / P1-2 / P1-3 已在 `main` 完成（未发版，见 [`M18-NOTES.md`](M18-NOTES.md)、[`M19-NOTES.md`](M19-NOTES.md)、[`M20-NOTES.md`](M20-NOTES.md)）；`app/main.js` 1451 → **226 行**（≤300 目标达成），`npm run unit` 60 例。
+> 进度：P1-1 / P1-2 / P1-3 / P1-4 已在 `main` 完成（未发版，见 [`M18-NOTES.md`](M18-NOTES.md)、[`M19-NOTES.md`](M19-NOTES.md)、[`M20-NOTES.md`](M20-NOTES.md)、[`M21-NOTES.md`](M21-NOTES.md)）；`app/main.js` 1451 → **226 行**（≤300 目标达成），`npm run unit` 60 例。
 
 | 编号 | 做什么 | 为什么 | 验收标准 | 量 |
 |---|---|---|---|---|
 | P1-1 ✅ | **拆 `app/main.js`** → `app/main/*.js`，`main.js` 只做装配。十二个模块：`log/geometry/tray/diagnostics/window-layout/ipc/weather-pump/reminder/cutout-service/windows/catalog/boot`（`app/main/`），`main.js` 1451→**226** | L21 | 已验收：main.js 226 行（≤300）；行为零变化（57+57+86+6 全绿，运行时 stage3 17/17、stage4 12/12） | 1.5d |
 | P1-2 ✅ | **显式窗口状态机**：`idle / bubble / menu / dragging / cutout` 五态 + 转移表，替代 540ms/50ms 约定；加纯函数单测 | L7 | 已验收：全矩阵 165 组转移单测；连点 20 次 + 40 次连点·悬停混合，`window.illegal === 0`、无 resize/闪（详见 [`M19-NOTES.md`](M19-NOTES.md)） | 1.5d |
 | P1-3 ✅ | **纯函数单测框架**：`node:test`（零依赖）覆盖 `bubble-model` / `placement` / `weather.advice` / `cutout-math`，四个文件 60 例；`npm test` = smoke + unit | L24 | 已验收：`npm run unit` 60 例全绿（目标 ≥40）；smoke 里与纯函数重复的断言逐步让位给单测 | 1d |
-| P1-4 | **设置可用性**：面板搜索、每项一句话说明、`恢复默认`（按面板）、"城市最近使用" | L17 | 搜索能定位到项；恢复默认有二次确认 | 1d |
+| P1-4 ✅ | **设置可用性**：面板搜索（标题/同义词/面板名三档打分、键盘可达）、每项一句话说明、顶栏「恢复这页默认」（按面板 + 二次确认 `role="alertdialog"`）、天气页「最近用过的城市」（≤5、去重） | L17 | 已验收：CDP 17/17（搜「音量」落到音量滑杆、恢复默认只改外观页、最近城市按下态与回填）；smoke 58 / check-a11y 76 / audit 86 | 1d |
 | P1-5 | **喝水增强**：`稍后 10 分钟`、今日时间轴、本周杯数（本地 json）、导出 CSV | L19/L16 | 三条都能用；数据只在本机 | 1.5d |
 | P1-6 | **天气增强**：空气质量（Open-Meteo air-quality，免 key）、未来 3 天、日出日落卡 | L12 | 卡片可选模块 +1；断网降级正常 | 1d |
 | P1-7 | **气泡时机**：连续使用 50 分钟 / 深夜 23 点后 / 久未互动 → 主动冒一条（本地规则，可在设置关） | L15 的一半 | 三个触发器可单独关；不打扰全屏应用 | 1d |

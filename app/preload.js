@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('deskPet', {
   getAppStatus: () => ipcRenderer.invoke('app:status'),
   exportDiagnostics: () => ipcRenderer.invoke('app:diagnostics'),
   setSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
+  getDefaults: () => ipcRenderer.invoke('settings:defaults'),
 
   // characters
   listRoles: () => ipcRenderer.invoke('roles:list'),
