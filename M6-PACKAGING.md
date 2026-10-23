@@ -215,3 +215,13 @@ npm run dist:installer      # 内含 predist:installer → npm run clean:dist
 3. **`%TEMP%` 不可写**：报 `NSIS Error: Error writing temporary file…`，见 §5.2。
 4. **构建产物复用**：见 §7.2 的 `clean:dist`。
 5. **`/D=` 只在向导模式可靠**：一键安装固定装到 `%LOCALAPPDATA%\Programs\desk-pet`，想换位置就用便携版。
+
+## 8. 打包时容易漏的两类目录（0.6.10 实测）
+
+`build.files` 是白名单：写了 `app/**/* lib/**/* assets/**/*` 之后，仓库根下新加的目录**不会自动进去**。0.6.10 打包验证时发现安装版里 `themes/` 与 `locales/` 都不存在——界面能起，但主题下拉是空的、多语言字典是空的。已补成显式规则：
+
+```json
+"files": ["app/**/*", "lib/**/*", "assets/**/*", "locales/**/*", "themes/**/*", ...]
+```
+
+**验收方式**：装完之后跑 `window.deskPet.getThemes()`（应返回 ≥2 个包）与 `window.deskPet.i18n.t("tray.toggle")`（应返回当前语言文案）。开发态发现不了，因为开发态读的是仓库根目录。
