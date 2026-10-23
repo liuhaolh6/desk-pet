@@ -545,6 +545,7 @@
     if (bubble.classList.contains('show')) hideBubble()
     clearTimeout(state.showTimer)
     state.menuOpen = true
+    api.setMenu(true)
     petMenu.hidden = false
     scheduleRectReport()
     petWrap.classList.add('hover', 'menu-open')
@@ -564,6 +565,7 @@
   function closeMenu(immediate) {
     if (!state.menuOpen) return
     state.menuOpen = false
+    api.setMenu(false)
     scheduleRectReport()
     clearTimeout(state.menuShowTimer)
     petMenu.classList.remove('open')

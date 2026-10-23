@@ -27,6 +27,7 @@ const { createLogger } = require('./main/log')
 const { clamp, WIN_PAD, windowWidth, bubbleReserveFor } = require('./main/geometry')
 const { createTrayHost } = require('./main/tray')
 const { createDiagnostics } = require('./main/diagnostics')
+const { createWindowState } = require('./window-state')
 
 const logger = createLogger()
 const { breadcrumb, log } = logger
@@ -88,6 +89,16 @@ const diagnostics = createDiagnostics({
   log,
 })
 
+// P1-2: one explicit machine owns "what is the pet doing". Every IPC that used to
+// flip a local boolean now goes through it, so an impossible order (drag during
+// cutout, menu while dragging) is counted and logged instead of half-applied.
+const winState = createWindowState({
+  log,
+  onChange: ({ prev, next, event }) => {
+    log('window-state', prev + '->' + next, event)
+    updatePetInteractive()
+  },
+})
 // The pet window is the only consumer of role images, but a custom scheme keeps
 // file paths out of the renderer entirely.
 protocol.registerSchemesAsPrivileged([
@@ -98,14 +109,13 @@ log('schemes registered')
 
 // ---------------------------------------------------------- mouse passthrough
 let hitRects = []
-let petDragging = false
 let petInteractive = false
 let petHitTimer = 0
 
 /** Flip click-through based on where the OS cursor is right now. */
 function updatePetInteractive() {
   if (!petWin || petWin.isDestroyed()) return
-  let inside = petDragging
+  let inside = winState.is('dragging')
   if (!inside) {
     let p
     try { p = screen.getCursorScreenPoint() } catch (err) { return }
@@ -476,7 +486,8 @@ function openCutout() {
     },
   })
   cutoutWin.loadFile(path.join(__dirname, 'cutout.html'))
-  cutoutWin.on('closed', () => { cutoutWin = null; cutoutInputs.clear() })
+  winState.transition('cutout-open')
+  cutoutWin.on('closed', () => { cutoutWin = null; cutoutInputs.clear(); winState.transition('cutout-close') })
 }
 
 /**
@@ -878,6 +889,9 @@ function registerIpc() {
     // `isRegistered` re-reads the OS state instead of trusting the register()
     // return value, which is what a bug report should record.
     shortcut: trayHost.shortcutReport(),
+    // P1-2: which interaction mode the pet is in, plus how many impossible
+    // transitions were attempted since launch (a bug report should have both).
+    window: { state: winState.state, illegal: winState.illegal, lastIllegal: winState.lastIllegal },
   }))
 
   ipcMain.handle('settings:set', (ev, patch) => {
@@ -1164,12 +1178,21 @@ function registerIpc() {
     updatePetInteractive()
   })
   ipcMain.on('pet:dragging', (ev, on) => {
-    petDragging = !!on
+    if (on) winState.transition('drag-start')
+    else if (winState.is('dragging')) winState.transition('drag-end')
     updatePetInteractive()
   })
 
+  // The menu is a renderer-side overlay; the machine needs to know whether it is
+  // open because it changes the reserved strip and gates bubble/drag events.
+  ipcMain.on('pet:menu', (ev, open) => {
+    winState.transition(open ? 'menu-open' : 'menu-close')
+  })
+
   ipcMain.handle('pet:bubble', (ev, payload) => {
-    return applyBubbleHeight(!!(payload && payload.visible), payload && payload.height)
+    const visible = !!(payload && payload.visible)
+    winState.transition(visible ? 'bubble-show' : 'bubble-hide')
+    return applyBubbleHeight(visible, payload && payload.height)
   })
 
   ipcMain.on('pet:hide', () => { if (petWin) petWin.hide() })

@@ -925,5 +925,66 @@ const PAD = 54
   ok('P1-1 模块：geometry 纯函数与 logger 工厂可直接 require')
 }
 
+{
+  // M19 P1-2: explicit window state machine (app/window-state.js).
+  const ws = require(path.join(__dirname, '..', 'app', 'window-state.js'))
+  assert.deepEqual(ws.STATES, ['idle', 'bubble', 'menu', 'dragging', 'cutout'], '五态名单')
+
+  // The table is public on purpose: the matrix below is derived from it, so a new
+  // state/event cannot be added without this test noticing.
+  for (const from of ws.STATES) {
+    for (const event of ws.EVENTS) {
+      const machine = ws.createWindowState()
+      // Move into `from` along a legal path, then fire the event under test.
+      const path = { idle: [], bubble: ['bubble-show'], menu: ['menu-open'], dragging: ['drag-start'], cutout: ['cutout-open'] }[from]
+      for (const step of path) assert.equal(machine.transition(step).ok, true, from + ' 可由 ' + step + ' 到达')
+      assert.equal(machine.state, from)
+      const expected = (ws.TABLE[event] && ws.TABLE[event][from]) || null
+      const res = machine.transition(event)
+      assert.equal(res.ok, !!expected, from + ' + ' + event + ' 合法性')
+      if (expected) assert.equal(machine.state, expected, from + ' + ' + event + ' → ' + expected)
+      else assert.equal(machine.state, from, '非法事件不改状态')
+    }
+  }
+
+  // Illegal transitions are counted with context instead of throwing.
+  const m = ws.createWindowState()
+  const bad = m.transition('drag-end')
+  assert.equal(bad.ok, false)
+  assert.equal(bad.reason, 'illegal')
+  assert.equal(m.illegal, 1)
+  assert.equal(m.lastIllegal.from, 'idle')
+  assert.equal(m.transition('nope').reason, 'unknown-event')
+  assert.equal(m.illegal, 2)
+
+  // The sequences that used to regress in 0.6.3/0.6.4 must stay legal.
+  const seq = ws.createWindowState()
+  assert.equal(seq.transition('bubble-show').state, 'bubble')
+  assert.equal(seq.transition('menu-open').state, 'menu')
+  assert.equal(seq.transition('drag-start').state, 'dragging', '菜单里也能开始拖')
+  assert.equal(seq.transition('drag-end').state, 'idle')
+  assert.equal(seq.transition('bubble-show').state, 'bubble')
+  assert.equal(seq.transition('bubble-hide').state, 'idle')
+  assert.equal(seq.transition('cutout-open').state, 'cutout')
+  assert.equal(seq.transition('cutout-close').state, 'idle')
+  assert.equal(seq.illegal, 0, '正常路径零非法转移')
+  assert.equal(seq.history.length, 8, '历史最多留 20 条，本例 8 条')
+
+  // onChange fires only on real transitions (consumers react to it).
+  const seen = []
+  const cb = ws.createWindowState({ onChange: (c) => seen.push(c.prev + '>' + c.next) })
+  cb.transition('bubble-show')
+  cb.transition('bubble-hide')
+  cb.transition('bubble-hide') // illegal, no callback
+  assert.deepEqual(seen, ['idle>bubble', 'bubble>idle'], 'onChange 只在合法转移时触发')
+
+  const mainJs2 = fs.readFileSync(path.join(__dirname, '..', 'app', 'main.js'), 'utf8')
+  assert.ok(/createWindowState\(/.test(mainJs2), 'main.js 接入状态机')
+  assert.ok(!/let petDragging/.test(mainJs2), '旧的 petDragging 布尔已移交给状态机')
+  assert.ok(/winState\.is\('dragging'\)/.test(mainJs2), '点击穿透读状态机的 dragging')
+  assert.ok(/setMenu: \(open\) => ipcRenderer\.send\('pet:menu'/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')), 'preload 爆出 setMenu')
+  ok('P1-2 状态机：全矩阵转移、非法计数、菜单/拖动/抠图序列与接线')
+}
+
 console.log('\n' + pass + ' checks passed')
 fs.rmSync(dir, { recursive: true, force: true })
