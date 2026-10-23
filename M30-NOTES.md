@@ -158,8 +158,9 @@ app/editor.js 54 · lib/weather.js 54          共 30 个文件 / 880 处
 3. **窗口标题在 `createWindows` 里解一次**：`title(key, fallback)` 小助手，`main.js` 只多传一个 `i18n`。
    不把 i18n 泄到每个 `openXxx()` 里，是因为标题只在建窗时定一次，改语言本来就要重启。
 
-验证：`.tmp/cdp-p26s2.js`（zh 8/8、en 5/5）——真窗口里看 `document.title`、五个菜单项文本、
-`#petMenu` 的 `aria-label`、`alt`、以及字典里的 `water.later`；切 `locale` 后重启再看一遍。
+验证：`tools/e2e/cases/i18n.js`（`node tools/e2e/run.js i18n`）——真窗口里看 `document.title`、
+`.nav-*` 与菜单项文本、`#pet` 的 `alt`、字典里的 `water.later`；切 `locale` 后重启再看一遍。
+阶段二那次是先用一次性探针脚本量的（zh 8/8、en 5/5），探针没入库，**能复现的证据只有这条 e2e 用例**。
 
 ## 9. 已知限制与后续
 
@@ -168,9 +169,8 @@ app/editor.js 54 · lib/weather.js 54          共 30 个文件 / 880 处
    语言相关默认值（en 用 London / Sunny），留到阶段五一起处理。
 2. **长文案要看排版**：英文普遍比中文长 40%–80%，卡片里的「明天 6~15° 多云」这类拼接句在 en 下可能
    溢出。`pet.js` 的 60% 字号下限 + 截断机制能兜住，但**必须在 en 界面下真窗口复验一遍**（§10 的 e2e）。
-3. **运行时验证需要 danger-full-access**：`launch.js` 起 Electron 在本沙箱下会命中
+3. **运行时验证需要放开沙箱**：`launch.js` 起 Electron 在受限沙箱下会命中
    `mojo platform_channel.cc:108 Check failed: 拒绝访问 (0x5)`（HANDOFF §6.1 5.1），CDP 端口连不上。
-   所以 `tools/e2e/cases/i18n.js` 写好了但**本机无法执行**，需要在放开沙箱的会话里跑一次
-   `npm run test:e2e`。
+   放开文件策略（danger-full-access）后实测可跑：`node tools/e2e/run.js` 4/4 通过（i18n 用例 4.4s）。
 4. **打包未验证**：`locales/*.json` 需要进 asar。electron-builder 默认打包整个仓库（`files` 未显式收窄），
    所以预期会自动进去，但**没有实机装包验证过**，出包时要用 `npx asar list` 或直接跑装好的 exe 确认。

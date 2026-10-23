@@ -17,7 +17,7 @@
 | 最近提交 | 0.6.9 = 本提交（P2-3 更新提示 + P2-8 隐私文档）；`dba1115` P2-1 安装器 · `58f94b4` P2-2 签名准备；P1 全部落地：`e2952ca` P1-9 e2e 入库 · `6c7a4fb` P1-8 真机 a11y · `94358ae` P1-7 主动说话 · `cdb3531` P1-6 天气增强 · `469d343` P1-5 喝水记录 · `b106382` P1-4 设置可用性 · `6342b75` P1-3 单测 · `01de0b2` P1-2 状态机 · `80332c7` P1-1 完成；0.6.6 收尾 = `e01c1cb`/`12176d2`/`5be8c4d`；再往前 `adbe033` 0.6.5 首次引导 |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js`（`npm test` = smoke + `npm run unit`）；带窗口的再加 `npm run test:e2e` |
-| 自动化基线 | smoke **64 项** · unit **164 例** · check-a11y **95 项** · check-i18n **30 文件 / 859 处** · a11y-audit **86 项** · a11y-keyboard **6 项** · a11y-tree **4 窗口 / 0 无名** · e2e **3 用例**，全部通过 |
+| 自动化基线 | smoke **64 项** · unit **164 例** · check-a11y **95 项** · check-i18n **30 文件 / 859 处** · a11y-audit **86 项** · a11y-keyboard **6 项** · a11y-tree **4 窗口 / 0 无名** · e2e **4 用例**，全部通过 |
 | 最新产物 | 安装器 `dist/DeskPet-0.6.8-setup.exe` 165,558,348 字节，SHA-256 `2d5dfe47eb809af9e762b41b367d53da83c21d5634cfa31c9bfb0a82c9fff89c`；便携版 `dist/DeskPet-0.6.8-portable.exe` 153,882,861 字节，SHA-256 `668ba228f9f6c700a93fd1c48c0bfcabdefa910b21a74291c3c89ba62e777a16` |
 
 **能做什么**：换形象（照片抠图 / 导入 PNG）、点击看天气和喝水进度、按时提醒喝水、24 条内置温柔提示语、
@@ -228,7 +228,7 @@ token 表上限 3，窗口关闭即清空。
 | `tools/a11y-tree.js` | 无障碍树走查：四个窗口的每个可交互节点都必须有名字（代替"没装 NVDA"的读屏检查） | `node tools/a11y-tree.js 9229` | ✅ 4 窗口 / 0 无名 |
 | `tools/a11y-real.js` | 真机留证：四窗口截图 + 横向溢出计数 + 高对比度计算色（`docs/a11y-shots/`） | `node tools/a11y-real.js 9229 [outDir] [tag]` | ✅ 200% 缩放 0 溢出 |
 | `tools/cutout-diag.js` | 合成图 alpha/背景/主体/边缘指标 | `npm run diag:fixtures` | ✅ |
-| `tools/e2e/` | 真窗口 e2e：无 resize / 气泡与预留 / 城市搜索与存盘（自带本地桩，不依赖外网） | `npm run test:e2e` | ✅ 3 用例 |
+| `tools/e2e/` | 真窗口 e2e：无 resize / 气泡与预留 / 城市搜索与存盘 / 语言切换重启生效（自带本地桩，不依赖外网） | `npm run test:e2e` | ✅ 4 用例 |
 | CI | `ci.yml`：`test` job（check + a11y 静态 + test + 合成图 + 真模型正/负例）+ `e2e` job（真 Electron，headless） | push / PR | 配置在库，**私有仓库无法匿名查看** |
 
 起一个可被 CDP 连的开发实例：
@@ -419,6 +419,6 @@ node node_modules/electron-builder/cli.js --win nsis --x64   # → dist\DeskPet-
 
 > 继续 `D:\project\deskpet` 的 Windows 桌面宠物项目，先读 `HANDOFF.md`（§0 速览、§4 不变量、§6 坑）
 > 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.6`，`main` 已同步，tag 到 `v0.6.6`。
-> 验证基线：`npm run check` + `npm test`（smoke 62 项 + unit 105 例）+ `node tools/check-a11y.js`（95 项）全部通过；
-> 带界面的还要跑 `npm run test:e2e`（3 用例）、`a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
+> 验证基线：`npm run check` + `npm test`（smoke 64 项 + unit 164 例）+ `node tools/check-a11y.js`（95 项）全部通过；
+> 带界面的还要跑 `npm run test:e2e`（4 用例）、`a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
 > 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。
