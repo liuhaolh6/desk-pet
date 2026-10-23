@@ -220,7 +220,7 @@ token 表上限 3，窗口关闭即清空。
 |---|---|---|---|
 | 语法 | 49 个 JS 文件 | `npm run check` | ✅ |
 | `tools/smoke.js` | 存储/角色/天气码/`advice`/气泡模型/几何不变量/文案/首次引导/托盘兜底/诊断导出/主进程模块拆分/窗口状态机/预留-可见性分离/天气泵回退/提醒限流与勿扰/设置搜索与按页恢复默认/喝水记录与延后/主动说话/气泡独立窗口/多语言骨架与桌宠窗口 | `npm test` | ✅ 64 项 |
-| `tools/check-i18n.js` | 语言包键名对齐、空串、每个文件的内联中文数不得高于基线（剥注释后计数） | `node tools/check-i18n.js` | ✅ 30 文件 / 18 处 |
+| `tools/check-i18n.js` | 语言包键名对齐、空串、每个文件的内联中文数不得高于基线（剥注释后计数） | `node tools/check-i18n.js` | ✅ 30 文件 / 0 处 |
 | `tests/unit/` | 纯函数单测：气泡模型归一化/取值、多显示器放置与吸附、天气文案与 AQI、抠图数学、喝水记录、主动说话决策、便携数据目录候选、版本比较与更新决策、隐私清理边界、抠图模型解析与评测指标、多语言计数与静态覆盖 | `npm run unit` | ✅ 164 例 |
 | `tools/check-a11y.js` | 静态无障碍断言（对比度数学、24px、reduced-motion、forced-colors 分支、回流、aria、`lang`、引导卡、托盘/诊断行、搜索框与恢复默认确认层） | `node tools/check-a11y.js` | ✅ 95 项 |
 | `tools/a11y-audit.js` | 真实 DOM 审计（AX 名称、对比度、目标尺寸、焦点、320px 回流、forced-colors、reduced-motion） | `--port <调试端口>` | ✅ 86 项 / 0 失败 |
@@ -419,6 +419,6 @@ node node_modules/electron-builder/cli.js --win nsis --x64   # → dist\DeskPet-
 
 > 继续 `D:\project\deskpet` 的 Windows 桌面宠物项目，先读 `HANDOFF.md`（§0 速览、§4 不变量、§6 坑）
 > 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.6`，`main` 已同步，tag 到 `v0.6.6`。
-> 验证基线：`npm run check` + `npm test`（smoke 66 项 + unit 164 例）+ `node tools/check-a11y.js`（95 项）全部通过；
+> 验证基线：`npm run check` + `npm test`（smoke 67 项 + unit 166 例）+ `node tools/check-a11y.js`（95 项）全部通过；
 > 带界面的还要跑 `npm run test:e2e`（4 用例）、`a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
 > 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。
