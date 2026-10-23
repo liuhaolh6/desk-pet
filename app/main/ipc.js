@@ -33,12 +33,13 @@ const { registerWaterIpc } = require('./water-ipc.js')
  * @param {object} deps.windows     { pet, settings, editor, cutout } 返回当前窗口
  * @param {object} deps.actions     openSettings/openEditor/openCutout/openOnboard/dismissOnboard
  * @param {object} deps.lists       { roleList, soundList, roleUrl, broadcastSettings, broadcastRoles, sendMirror, applySettingsSideEffects }
+ * @param {object} deps.nudges     createNudgePump 的实例（P1-7）
  * @param {Function} deps.setQuitting
  */
 function registerIpc(deps) {
   const {
     ipcMain, dialog, shell, app, nativeImage, path, fs,
-    store, version, weatherPump, layout, winState, trayHost, diagnostics, cutoutService, cutout,
+    store, version, weatherPump, layout, winState, trayHost, diagnostics, cutoutService, cutout, nudges,
     placement, clamp, winPad, windows, actions, lists, setQuitting,
   } = deps
   const { roleList, soundList, roleUrl, broadcastSettings, broadcastRoles, sendMirror, applySettingsSideEffects } = lists
@@ -390,6 +391,20 @@ function registerIpc(deps) {
   ipcMain.on('pet:hide', () => { const win = windows.pet(); if (win) win.hide() })
   ipcMain.on('pet:open-settings', () => actions.openSettings())
   ipcMain.on('pet:open-editor', () => actions.openEditor())
+  // P1-7：宠物上的任何动作都算「人还在」。
+  ipcMain.on('pet:activity', () => { if (nudges) nudges.touch() })
+  // 只读探针，给设置页与 CDP 验证用：不改状态；带 send 时才真的冒一句。
+  ipcMain.handle('nudge:probe', (ev, opts) => {
+    if (!nudges) return null
+    const out = nudges.probe(opts && opts.now, opts || {})
+    if (opts && opts.send) {
+      try {
+        const pet = windows.pet()
+        pet.webContents.send('pet:nudge', { kind: (out.decision && out.decision.kind) || 'manual', text: opts.text || '试一下，看看我能不能冒个泡' })
+      } catch (err) {}
+    }
+    return out
+  })
   ipcMain.on('onboard:open', () => actions.openOnboard(true))
   ipcMain.on('onboard:dismiss', () => actions.dismissOnboard())
   registerWaterIpc({ ipcMain, store, path, fs, shell, clamp, log })

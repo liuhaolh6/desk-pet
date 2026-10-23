@@ -17,7 +17,7 @@
 | 最近提交 | `e01c1cb` = 0.6.6 托盘真相结案；`12176d2` = 0.6.6 重新打包 + 托盘收口 + 真按键验证；`5be8c4d` = 0.6.6 长文案/托盘兜底/手册/诊断导出；再往前 `adbe033` 0.6.5 首次引导 |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js`（`npm test` = smoke + `npm run unit`） |
-| 自动化基线 | smoke **60 项** · unit **85 例** · check-a11y **84 项** · a11y-audit **86 项** · a11y-keyboard **6 项**，全部通过 |
+| 自动化基线 | smoke **61 项** · unit **100 例** · check-a11y **84 项** · a11y-audit **86 项** · a11y-keyboard **6 项**，全部通过 |
 | 最新产物 | `dist/DeskPet-0.6.4-portable.exe`，153,754,785 字节，SHA-256 `22d173d4219b47e1e2df82de9c43f9a6777613668c0ec3e937ea09f9f206e82c`（0.6.5 还没打包，重打后再换这一行） |
 
 **能做什么**：换形象（照片抠图 / 导入 PNG）、点击看天气和喝水进度、按时提醒喝水、24 条内置温柔提示语、
@@ -105,6 +105,9 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `app/main/window-layout.js`（新） | 250 | 窗口几何与命中：`hitTest` 纯函数 + `createWindowLayout()`（预留/可见性分离，见 M18-NOTES §5） |
 | `app/window-state.js`（新） | 126 | 五态机：转移表 + `transition/can/is/reset` + 非法计数与历史；纯 Node，smoke 直接 require |
 | `app/main/water-ipc.js`（新） | 75 | 喝水四个通道：记一杯（写 log）、「稍后 10 分钟」、「今日/本周统计」、导出 CSV |
+| `lib/nudges.js`（新） | 86 | 主动说话的纯决策：`decide()`（久坐/深夜/久未互动/限流/勿扰）、`isNightHour`、`DEFAULTS` |
+| `app/main/nudge-pump.js`（新） | 102 | 说话泵：每分钟驱动 `decide()`，同一个气泡出口，全屏时跳过并记日志；`probe()` 可注入时间与状态 |
+| `app/main/fullscreen.js`（新） | 54 | 前台是否全屏：`execFile` 调 PowerShell 读前景窗口矩形与任务栏，2 秒缓存、失败按「不是全屏」 |
 | `lib/water-log.js`（新） | 109 | 喝水记录的纯函数：`dayKey/clockOf/cleanLog/summarize/toCsv`（本地时区、七天窗口、老 `today.cups` 升级路径） |
 | `app/main/log.js` | 60 | 呼吸日志：`createLogger()` → `log/breadcrumb/setFile/filePath/tail`（纯 Node，无 Electron） |
 | `app/main/geometry.js` | 25 | 窗口几何纯函数：`clamp/windowWidth/bubbleReserveFor`（与渲染层同一公式） |
@@ -124,7 +127,7 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `lib/placement.js` | 185 | 多显示器归属、吸附、启动还原（纯函数） |
 | `lib/cutout*.js` + `lib/png.js` | 359/320/438/161 | 离线抠图：入口、数学、像素管线、PNG 编解码 |
 | `tools/smoke.js` | 1350 | `npm test` 的第一段：存储/角色/天气/气泡/几何/文案/引导/托盘/诊断/模块拆分/窗口状态机/天气泵/提醒/设置搜索与恢复默认/喝水记录 59 项断言 |
-| `tests/unit/*.test.js`（新） | 60 例 | `npm run unit`（`node:test`，零依赖）：`bubble-model` 19 · `placement` 16 · `weather.advice` 10 · `cutout-math` 15（P1-3） |
+| `tests/unit/*.test.js`（新） | 100 例 | `npm run unit`（`node:test`，零依赖）：`bubble-model` 19 · `placement` 16 · `weather` 24 · `cutout-math` 15 · `water-log` 15 · `nudges` 11（P1-3/P1-7） |
 | `docs/USER-GUIDE.md` | 123 | 用户手册：三分钟上手 + 9 条 FAQ（0.6.6 / ROADMAP P0-4） |
 
 ### 3.3 气泡几何契约（0.6.1 起，改之前先读 `M14-NOTES.md`）
@@ -195,7 +198,7 @@ token 表上限 3，窗口关闭即清空。
 |---|---|---|---|
 | 语法 | 35 个 JS 文件 | `npm run check` | ✅ |
 | `tools/smoke.js` | 存储/角色/天气码/`advice`/气泡模型/几何不变量/文案/首次引导/托盘兜底/诊断导出/主进程模块拆分/窗口状态机/预留-可见性分离/天气泵回退/提醒限流与勿扰/设置搜索与按页恢复默认/喝水记录与延后 | `npm test` | ✅ 59 项 |
-| `tests/unit/` | 纯函数单测：气泡模型归一化/取值、多显示器放置与吸附、天气文案优先级、抠图数学（阈值/形态学/连通块/裁剪框） | `npm run unit` | ✅ 60 例 |
+| `tests/unit/` | 纯函数单测：气泡模型归一化/取值、多显示器放置与吸附、天气文案与 AQI、抠图数学、喝水记录、主动说话决策 | `npm run unit` | ✅ 100 例 |
 | `tools/check-a11y.js` | 静态无障碍断言（对比度数学、24px、reduced-motion、回流、aria、`lang`、引导卡、托盘/诊断行、搜索框与恢复默认确认层） | `node tools/check-a11y.js` | ✅ 76 项 |
 | `tools/a11y-audit.js` | 真实 DOM 审计（AX 名称、对比度、目标尺寸、焦点、320px 回流、forced-colors、reduced-motion） | `--port <调试端口>` | ✅ 86 项 / 0 失败 |
 | `tools/a11y-keyboard.js` | 键盘-only 抠图全流程 | `node tools/a11y-keyboard.js` | ✅ 6 项 |
@@ -358,6 +361,6 @@ node node_modules/electron-builder/cli.js --win portable --x64
 
 > 继续 `D:\project\deskpet` 的 Windows 桌面宠物项目，先读 `HANDOFF.md`（§0 速览、§4 不变量、§6 坑）
 > 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.6`，`main` 已同步，tag 到 `v0.6.6`。
-> 验证基线：`npm run check` + `npm test`（smoke 60 项 + unit 85 例）+ `node tools/check-a11y.js`（84 项）全部通过；
+> 验证基线：`npm run check` + `npm test`（smoke 61 项 + unit 100 例）+ `node tools/check-a11y.js`（84 项）全部通过；
 > 带界面的还要跑 `a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
 > 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。

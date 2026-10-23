@@ -398,6 +398,38 @@
     scheduleRectReport()
   }
 
+  // P1-7：主动说话。不占用卡片队列，也不改用户布局——就是临时冒一句，
+  // 12 秒后自己收起来；点气泡或点它一下会立刻收起。
+  function showNudge(data) {
+    if (state.menuOpen) closeMenu(true)
+    const frame = el('div')
+    const line = el('div', 'bubble-row')
+    const span = el('span', 'bubble-mod', (data && data.text) || '')
+    span.setAttribute('style', 'font-size: 13px; color: #3b4254;')
+    line.appendChild(span)
+    frame.appendChild(line)
+    state.currentCard = 'nudge'
+    showBubble(frame).then(() => {
+      clearTimer()
+      state.timer = setTimeout(hideBubble, 12000)
+    }).catch(() => {})
+  }
+
+  // 有互动 → 告诉主进程「人还在」。5 秒最多一次，避免 pointermove 刷 IPC。
+  let lastActivityAt = 0
+  function reportActivity() {
+    const t = Date.now()
+    if (t - lastActivityAt < 5000) return
+    lastActivityAt = t
+    try { api.reportActivity() } catch (err) {}
+  }
+
+  function wireActivity() {
+    for (const type of ['pointerdown', 'keydown', 'wheel', 'pointermove']) {
+      document.addEventListener(type, reportActivity, { passive: true })
+    }
+  }
+
   function wireBubbleClick() {
     // Clicking the bubble puts it away (0.6.3). The action chips inside it do
     // their own thing first and the click bubbles up to here afterwards.
@@ -780,6 +812,7 @@
   async function boot() {
     wireMenu()
     wirePet()
+    wireActivity()
     wireBubbleClick()
     // 0.6.1: reserve the bubble strip once and keep it; content swaps never
     // resize the transparent window again.
@@ -835,6 +868,7 @@
         if (card) renderCard(card, 'weather', { playSound: false, markWeather: false })
       }
     })
+    api.onNudge((data) => showNudge(data))
     api.onRemind(() => {
       if (bubble.classList.contains('show')) return
       const card = cardById('water')

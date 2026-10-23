@@ -35,6 +35,8 @@ const { createWindowLayout } = require('./main/window-layout')
 const { createWeatherPump } = require('./main/weather-pump')
 const { createReminders } = require('./main/reminder')
 const { createCutoutService } = require('./main/cutout-service')
+const { createNudgePump } = require('./main/nudge-pump')
+const { isForegroundFullscreen } = require('./main/fullscreen')
 const { createWindows } = require('./main/windows')
 const { createCatalog } = require('./main/catalog')
 const { bootDataDir } = require('./main/boot')
@@ -59,6 +61,7 @@ let windows = null
 let catalog = null
 let weatherPump = null
 let reminders = null
+let nudges = null
 let cutoutService = null
 let quitting = false
 
@@ -165,10 +168,16 @@ app.whenReady().then(() => {
     sendToPet: (channel) => { const pet = windows.pet(); if (pet && !pet.isDestroyed()) pet.webContents.send(channel) },
     notify: ({ title, body }) => { try { new Notification({ title, body }).show() } catch (err) {} },
   })
+  const fgCache = { at: 0, value: false }
+  nudges = createNudgePump({
+    store, log,
+    sendToPet: (channel, data) => { const pet = windows.pet(); if (pet && !pet.isDestroyed()) pet.webContents.send(channel, data) },
+    isBusy: () => isForegroundFullscreen({ cache: fgCache }),
+  })
   registerIpc({
     ipcMain, dialog, shell, app, nativeImage, path, fs,
     store, version: VERSION, weatherPump, layout, winState, trayHost, diagnostics,
-    cutoutService, cutout, placement, clamp, winPad: WIN_PAD, log,
+    cutoutService, cutout, placement, clamp, winPad: WIN_PAD, log, nudges,
     windows: {
       pet: () => windows.pet(),
       settings: () => windows.settings(),
@@ -203,6 +212,7 @@ app.whenReady().then(() => {
   weatherPump.refresh('boot')
   weatherPump.schedule()
   reminders.start()
+  nudges.start()
 
   if (process.env.DESKPET_OPEN_SETTINGS === '1') setTimeout(() => windows.openSettings(), 800)
   if (process.env.DESKPET_OPEN_EDITOR === '1') setTimeout(() => windows.openEditor(), 800)
@@ -219,8 +229,11 @@ app.whenReady().then(() => {
   screen.on('display-metrics-changed', () => layout.ensureOnScreen())
 }).catch((err) => log('whenReady failed', (err && err.stack) || String(err)))
 
+app.on('browser-window-focus', () => { if (nudges) nudges.touch() })
+
 app.on('before-quit', () => {
   quitting = true
+  if (nudges) nudges.stop()
   if (cutoutService) cutoutService.stopWorker()
   try { globalShortcut.unregisterAll() } catch (err) {}
 })

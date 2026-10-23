@@ -49,6 +49,10 @@ contextBridge.exposeInMainWorld('deskPet', {
   // weather
   getWeather: () => ipcRenderer.invoke('weather:get'),
   refreshWeather: () => ipcRenderer.invoke('weather:refresh'),
+  // P1-7 主动说话
+  reportActivity: () => ipcRenderer.send('pet:activity'),
+  onNudge: (cb) => ipcRenderer.on('pet:nudge', (_ev, data) => cb(data)),
+  probeNudge: (opts) => ipcRenderer.invoke('nudge:probe', opts || {}),
   geocode: (q) => ipcRenderer.invoke('geocode', q),
 
   // window behaviour

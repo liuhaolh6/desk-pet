@@ -903,7 +903,7 @@ const PAD = 54
   const root = path.join(__dirname, '..')
   const modDir = path.join(root, 'app', 'main')
   const mods = fs.readdirSync(modDir).filter((f) => f.endsWith('.js')).sort()
-  assert.deepEqual(mods, ['boot.js', 'catalog.js', 'cutout-service.js', 'diagnostics.js', 'geometry.js', 'ipc.js', 'log.js', 'reminder.js', 'tray.js', 'water-ipc.js', 'weather-pump.js', 'window-layout.js', 'windows.js'], 'app/main/ 下的模块名单')
+  assert.deepEqual(mods, ['boot.js', 'catalog.js', 'cutout-service.js', 'diagnostics.js', 'fullscreen.js', 'geometry.js', 'ipc.js', 'log.js', 'nudge-pump.js', 'reminder.js', 'tray.js', 'water-ipc.js', 'weather-pump.js', 'window-layout.js', 'windows.js'], 'app/main/ 下的模块名单')
   const mainJs = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
   for (const name of mods) {
     const file = path.join(modDir, name)
@@ -1348,6 +1348,54 @@ const PAD = 54
   assert.ok(flat.some((m) => m.type === 'weather.days'), '默认天气卡带未来两天行')
   assert.ok(weatherJs.length > 0 && editorJs.includes("mk('air.quality')"), '编辑器丰富预设含空气质量')
   ok('P1-6 天气增强：空气质量、未来三天、逐日日出日落')
+}
+
+// ------------------------------------------------- P1-7: 主动说话
+{
+  const nudges = require(path.join(__dirname, '..', 'lib', 'nudges.js'))
+  const ipcJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'ipc.js'), 'utf8')
+  const preloadJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')
+  const petJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'pet.js'), 'utf8')
+  const settingsHtml = fs.readFileSync(path.join(__dirname, '..', 'app', 'settings.html'), 'utf8')
+  const settingsJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'settings.js'), 'utf8')
+  const mainJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main.js'), 'utf8')
+  const pumpJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'nudge-pump.js'), 'utf8')
+  const fgJs = fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'fullscreen.js'), 'utf8')
+
+  assert.equal(typeof nudges.decide, 'function', 'lib/nudges 导出 decide')
+  assert.equal(typeof nudges.isNightHour, 'function', 'lib/nudges 导出 isNightHour')
+  assert.equal(store.readSettings().nudge.enabled, true, '默认开启主动说话')
+  assert.equal(store.readSettings().nudge.longUse, true, '默认开启久坐提醒')
+
+  for (const ch of ['pet:activity', 'nudge:probe']) {
+    assert.ok(ipcJs.includes(ch), 'ipc 注册 ' + ch)
+  }
+  for (const fn of ['reportActivity', 'onNudge', 'probeNudge']) {
+    assert.ok(preloadJs.includes(fn + ':'), 'preload 暴露 ' + fn)
+  }
+  assert.ok(/showNudge/.test(petJs) && /onNudge\(\(data\) => showNudge\(data\)\)/.test(petJs), '宠物渲染主动说话')
+  assert.ok(/reportActivity/.test(petJs) && /wireActivity/.test(petJs), '宠物上报互动')
+  for (const id of ['nudgeEnabled', 'nudgeLongUse', 'nudgeLateNight', 'nudgeAway']) {
+    assert.ok(settingsHtml.includes('id="' + id + '"'), '设置页有 ' + id)
+    assert.ok(settingsJs.includes("$('" + id + "')"), '设置页接线 ' + id)
+  }
+  assert.ok(/createNudgePump/.test(mainJs) && /nudges\.start\(\)/.test(mainJs), '主进程启动说话泵')
+  assert.ok(/isForegroundFullscreen/.test(mainJs), '全屏时不说话')
+
+  // 泵只做调度：决策全在纯函数里；全屏探测失败按“不是全屏”处理，不能永远不说话。
+  assert.ok(/require\('\.\.\/\.\.\/lib\/nudges\.js'\)/.test(pumpJs), '泵复用纯决策')
+  assert.ok(/isBusy/.test(pumpJs) && /nudge skipped: foreground is fullscreen/.test(pumpJs), '全屏时跳过并记录')
+  assert.ok(/ttl|TTL_MS/i.test(fgJs) && /execFile/.test(fgJs), '全屏探测有缓存且不阻塞')
+  assert.ok(/nudge skipped/.test(pumpJs), '跳过有日志')
+
+  // 三个触发器各自可关：任一关掉后 decide 不再返回该 kind。
+  const now = new Date(2026, 9, 23, 14, 0, 0).getTime()
+  const MIN = 60000
+  assert.equal(nudges.decide({ now, sessionStart: now - 60 * MIN, lastInteraction: now - MIN }).kind, 'long-use')
+  assert.equal(nudges.decide({ now, cfg: { longUse: false }, sessionStart: now - 60 * MIN, lastInteraction: now - MIN }), null)
+  assert.equal(nudges.decide({ now, lastInteraction: now - 150 * MIN }).kind, 'away')
+  assert.equal(nudges.decide({ now, cfg: { away: false }, lastInteraction: now - 150 * MIN }), null)
+  ok('P1-7 主动说话：久坐/深夜/久未互动三触发器 + 全屏闭嘴 + 设置开关')
 }
 
 console.log('\n' + pass + ' checks passed')
