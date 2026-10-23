@@ -111,6 +111,8 @@ const updater = createUpdater({
   patchSettings: (patch) => store.writeSettings(patch),
   isPackaged: () => app.isPackaged,
   openExternal: (url) => shell.openExternal(url),
+  t, // P2-6 阶段三-O：更新提示的文案也走语言包
+
   // windows 在 boot() 里才赋值；这里延后到真正通知时再取，避免启动顺序耦合。
   notify: (msg) => {
     const pet = windows && windows.pet && windows.pet()

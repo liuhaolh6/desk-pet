@@ -1269,5 +1269,10 @@
       "5": "Friday",
       "6": "Saturday"
     }
+  },
+  "update": {
+    "willInstall": "I'll install it",
+    "goDownload": "Click me to download",
+    "newVersion": "Version {version} is out (you have {current}) — {tail}"
   }
 }

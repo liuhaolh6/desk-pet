@@ -1269,5 +1269,10 @@
       "5": "周五",
       "6": "周六"
     }
+  },
+  "update": {
+    "willInstall": "我这就装上",
+    "goDownload": "点我去下载",
+    "newVersion": "有新版 {version} 了（现在是 {current}），{tail}"
   }
 }

@@ -388,3 +388,15 @@ WMO 码表、AQI 分级、三天标签、建议句都写成中文字面量，共
   `Friday` / `Saturday`；窗口标题 `Desk pet`；zh 同一份代码按 locale 转身。
 
 基线 **42 → 24**。
+
+### 阶段三-O：提醒文案与更新提示（已完成）
+
+- `lib/nudges.js` 3 条：`TEXTS` 清空成 `{}`——文案本来就由 `nudge-pump` 用 `t(`nudge.*`)` 传进来，
+  库里的中文只是"没人传时的兜底"，删掉后接口更诚实（缺文案就空串，测试必须显式给 texts）。
+- `lib/update-check.js` 2 处：`formatUpdateMessage(decision, current, t)` 改成三段式模板
+  `update.newVersion`（`{version}/{current}/{tail}`）+ `update.willInstall` / `update.goDownload`。
+- `app/main/updater.js` 与 `main.js` 把 `t` 透传到 `notify`。
+- 单测跟着改：nudges 用固定 `TEXTS` 断言结构而不是中文措辞；update-check 注入 `TV` 翻译器，
+  断 `DOWNLOAD` / `INSTALL` 这两种措辞——**测行为，不测文案**。
+
+基线 **24 → 18**。

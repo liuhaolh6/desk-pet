@@ -29,11 +29,11 @@
     "app/editor.html": 1,
     "app/bubble-model.js": 0,
     "app/sound-model.js": 0,
-    "lib/nudges.js": 3,
+    "lib/nudges.js": 0,
     "lib/weather.js": 0,
     "lib/store.js": 5,
     "lib/water-log.js": 0,
     "lib/cutout.js": 7,
-    "lib/update-check.js": 3
+    "lib/update-check.js": 0
   }
 }

@@ -65,14 +65,16 @@ test('decideUpdate：feed 缺字段或格式不对都不抛', () => {
   assert.equal(decideUpdate().reason, 'bad-current');
 });
 
+const TV = (k, vars) => (k === 'update.newVersion' ? `new ${vars.version} / ${vars.tail}` : (k === 'update.willInstall' ? 'INSTALL' : 'DOWNLOAD'))
+
 test('formatUpdateMessage：只在新版时说话，措辞随是否可安装变化', () => {
   assert.equal(formatUpdateMessage({ kind: 'none' }, '0.6.8'), '');
   assert.equal(formatUpdateMessage(null, '0.6.8'), '');
-  const avail = formatUpdateMessage({ kind: 'available', version: '0.6.9' }, '0.6.8');
+  const avail = formatUpdateMessage({ kind: 'available', version: '0.6.9' }, '0.6.8', TV);
   assert.match(avail, /0\.6\.9/);
-  assert.match(avail, /下载/);
-  const install = formatUpdateMessage({ kind: 'install', version: '0.6.9' }, '0.6.8');
-  assert.match(install, /装/);
+  assert.match(avail, /DOWNLOAD/);
+  const install = formatUpdateMessage({ kind: 'install', version: '0.6.9' }, '0.6.8', TV);
+  assert.match(install, /INSTALL/);
 });
 
 test('createUpdater：无 feed 时安静返回，不联网', async () => {

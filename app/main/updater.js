@@ -106,7 +106,7 @@ function createUpdater(deps) {
       setTimeout(() => {
         check().then((decision) => {
           if (decision.kind !== 'none' && typeof d.notify === 'function') {
-            d.notify(formatUpdateMessage(decision, d.version));
+            d.notify(formatUpdateMessage(decision, d.version, d.t));
           }
           resolve(decision);
         }, (err) => resolve({ kind: 'none', reason: 'error', error: String(err && err.message) }));
