@@ -92,3 +92,107 @@ jobs:
             Write-Host ("{0}: {1}" -f $_.Name, $sig.Status)
             if ($sig.Status -ne 'Valid') { throw ("Invalid signature: {0} ({1})" -f $_.Name, $sig.StatusMessage) }
           }
+
+# ── 路线 B：Azure Trusted Signing ────────────────────────────────────────────
+  # 配好仓库 vars/secrets 后推 v* tag 即生效；未配置时整个作业跳过，不影响 A。
+  # 需要的 vars: AZURE_TS_ENDPOINT / AZURE_TS_ACCOUNT / AZURE_TS_PROFILE
+  # 需要的 secrets: AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID（OIDC 联邦，无需密码）
+  build-sign-azure:
+    if: ${{ vars.AZURE_TS_ENDPOINT != '' && vars.AZURE_TS_ACCOUNT != '' && vars.AZURE_TS_PROFILE != '' }}
+    runs-on: windows-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
+      actions: read
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Read package version
+        id: pkg
+        shell: pwsh
+        run: |
+          $v = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build setup + portable
+        run: |
+          npm run dist:installer
+          npm run dist
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sign artifacts
+        uses: azure/trusted-signing-action@v0
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          endpoint: ${{ vars.AZURE_TS_ENDPOINT }}
+          trusted-signing-account-name: ${{ vars.AZURE_TS_ACCOUNT }}
+          certificate-profile-name: ${{ vars.AZURE_TS_PROFILE }}
+          files-folder: ${{ github.workspace }}\dist
+          files-folder-filter: exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+          exclude-environment-credentials: true
+
+      - name: Sign unpacked main executable
+        uses: azure/trusted-signing-action@v0
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          endpoint: ${{ vars.AZURE_TS_ENDPOINT }}
+          trusted-signing-account-name: ${{ vars.AZURE_TS_ACCOUNT }}
+          certificate-profile-name: ${{ vars.AZURE_TS_PROFILE }}
+          files-folder: ${{ github.workspace }}\dist\win-unpacked
+          files-folder-filter: exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+          exclude-environment-credentials: true
+
+      - name: Verify signatures
+        shell: pwsh
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify-signature.ps1 -Path "dist\DeskPet-*-setup.exe","dist\DeskPet-*-portable.exe","dist\win-unpacked\DeskPet.exe"
+
+      - name: Write SHA256SUMS
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path signed | Out-Null
+          Copy-Item "dist\DeskPet-${{ steps.pkg.outputs.version }}-setup.exe","dist\DeskPet-${{ steps.pkg.outputs.version }}-portable.exe" signed\
+          Get-ChildItem signed -Filter *.exe | ForEach-Object {
+            $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$h  $($_.Name)" | Out-File -FilePath signed\SHA256SUMS.txt -Append -Encoding ascii
+          }
+
+      - name: Upload signed artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deskpet-signed-azure
+          path: signed/*
+          archive: false
+          if-no-files-found: error

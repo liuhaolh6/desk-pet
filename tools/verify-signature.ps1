@@ -22,7 +22,12 @@ param(
 $ErrorActionPreference = 'Stop'
 if (-not $Path -or $Path.Count -eq 0) {
   $version = (Get-Content (Join-Path $PSScriptRoot '..\package.json') -Raw | ConvertFrom-Json).version
-  $Path = @("dist\DeskPet-$version-portable.exe")
+  # Verify both artifacts plus the unpacked main exe; missing ones are skipped.
+  $Path = @(
+    "dist\DeskPet-$version-setup.exe",
+    "dist\DeskPet-$version-portable.exe",
+    "dist\win-unpacked\DeskPet.exe"
+  )
 }
 $files = @()
 foreach ($pattern in $Path) {

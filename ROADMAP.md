@@ -149,12 +149,13 @@
 
 ### P2 — 0.8–0.9（约 1–2 月）：把"给别人用"这件事做完
 
-> 进度：P2-1 在 `0.6.8` 完成（安装器）；其余待做。
+> 进度：P2-1 在 `0.6.8` 完成（安装器）；P2-2 代码侧已就绪（`SIGNING.md` 三路线 + `sign-release.yml` 双作业），
+> 阻塞在**证书申请/采购需要人工身份核验**（Azure Trusted Signing 1–3 个工作日、SignPath 1–4 周）；其余待做。
 
 | 编号 | 做什么 | 为什么 | 验收标准 | 量 |
 |---|---|---|---|---|
 | P2-1 ✅ | **安装器**：NSIS x64 一键安装（无需管理员），装到 `%LOCALAPPDATA%\Programs\desk-pet`，开始菜单 + 桌面快捷方式 + 卸载入口；卸载保留数据 | L2 | 已验收：静默安装 15s、卸载 0.3s；安装目录/快捷方式/ARP 条目全清、`%APPDATA%\desk-pet` 保留；安装版 CDP 启动正常（`version 0.6.8`、点一下冒泡）。见 [`M6-PACKAGING.md`](M6-PACKAGING.md) §7 | 2d |
-| P2-2 | **代码签名**：Azure Trusted Signing 或 OV 证书，接 `sign-release.yml`；签名后开 SmartScreen 信誉积累 | L1 | `signtool verify /pa` 通过；Release 产物带签名 | 2–3d + 成本 |
+| P2-2 🔶 | **代码签名**：Azure Trusted Signing / OV 证书 / SignPath 三条路线已比较并接好 workflow；代码侧完成，等证书 | L1 | 阻塞：证书申请需人工身份核验与预算（见 `SIGNING.md` §0.3）；证书到位后推 tag 即签 | 2–3d + 成本 |
 | P2-3 | **自动更新**：`electron-updater` + 静态 feed（GitHub Releases 或自建），签名后才允许静默 | L3 | 旧版能提示并升级；失败可回滚 | 2d |
 | P2-4 | **独立气泡窗口**：桌宠窗口恢复为纯桌宠尺寸，气泡用第二个 `transparent` 窗口（跟随、点击穿透、独立动效） | L9 | 桌宠窗口无 224px 预留；气泡仍不闪、可点收起 | 3d |
 | P2-5 | **抠图升级**：评测 BiRefNet-lite / ISNet（体积、CPU 时延、发丝），保留 U2Net 兜底；可选 DirectML | L11 | 在 10 张 golden set 上 IoU/边缘优于现状；包体 ≤+30MB | 4–6d |

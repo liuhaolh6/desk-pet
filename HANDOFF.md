@@ -321,7 +321,14 @@ Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
 - 用户可见的变化要进 `CHANGELOG.md`（`新增` / `修复` / `变更` / `文档` / `打包`），
   机制性改动另开 `Mxx-NOTES.md`。
 
-### 7.3 版本与发布
+### 7.3 签名（P2-2）
+- 三条路线与各自阻塞写在 `SIGNING.md` §0（SignPath 免费但需先公开仓库；Azure Trusted Signing ≈$9.99/月、
+  1–3 天出证；OV 证书 ¥2000–5000/年 + 硬件 token）。
+- 仓库侧已就绪：`sign-release.yml` 有 `build-sign`（SignPath）与 `build-sign-azure` 两个作业，靠仓库
+  vars 开关，未配置自动跳过；`npm run verify:signature` 默认验 setup/portable/win-unpacked 三个 exe。
+- **不要再改回“把 pfx 塞进仓库”那种做法**：证书只能进 CI secret 或云 HSM。
+
+### 7.4 版本与发布
 - 版本号有**两处**：`package.json` 与 `package-lock.json`（含 `packages[""].version`）。
 - 本机构建 portable（64 位 NSIS 包装）与安装器：
 
