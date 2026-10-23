@@ -484,12 +484,12 @@
     "preset": {
       "ding": "Ding",
       "pop": "Pop",
-      "drop": "Droplet",
-      "chime": "Chime",
+      "drop": "Water drop",
+      "chime": "Three notes",
       "soft": "Soft chime"
     },
     "event": {
-      "click": "Pet click",
+      "click": "Clicking the character",
       "bubble": "Bubble appears",
       "water": "Drink reminder"
     },
@@ -522,7 +522,12 @@
     "preview": "Preview",
     "filesEmpty": "No audio of your own yet — the built-in sounds already work",
     "deleteTitle": "Delete this clip (places using it go back to built-in sounds)",
-    "deleted": "Clip deleted"
+    "deleted": "Clip deleted",
+    "pick": {
+      "none": "(none)",
+      "unknown": "(unknown sound)",
+      "deleted": "(file deleted)"
+    }
   },
   "cutout": {
     "brushAria": "Brush size (8 to 80 pixels)",

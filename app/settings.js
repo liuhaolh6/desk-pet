@@ -419,7 +419,7 @@
   function fragmentOptions(selected) {
     const select = document.createElement('select')
     const groups = [
-      { label: t('sound.builtinGroup'), items: sound.PRESETS.map((p) => ({ value: p.id, label: p.label })) },
+      { label: t('sound.builtinGroup'), items: sound.PRESETS.map((p) => ({ value: p.id, label: t(p.labelKey) })) },
       { label: t('sound.mineGroup'), items: state.sounds.map((f) => ({ value: 'file:' + f.id, label: f.name })) },
     ]
     groups.forEach((group) => {
@@ -475,18 +475,18 @@
       const check = document.createElement('input')
       check.type = 'checkbox'
       check.checked = !!event.enabled
-      check.setAttribute('aria-label', t('sound.toggleAria', { name: meta.label }))
+      check.setAttribute('aria-label', t('sound.toggleAria', { name: t(meta.labelKey) }))
       check.onchange = () => saveSoundEvent(meta.key, { enabled: check.checked })
       toggle.appendChild(check)
       row.appendChild(toggle)
 
       const name = document.createElement('span')
       name.className = 'name'
-      name.textContent = meta.label
+      name.textContent = t(meta.labelKey)
       row.appendChild(name)
 
       const select = fragmentOptions(event.fragment)
-      select.setAttribute('aria-label', t('sound.fragmentAria', { name: meta.label }))
+      select.setAttribute('aria-label', t('sound.fragmentAria', { name: t(meta.labelKey) }))
       select.onchange = () => saveSoundEvent(meta.key, { fragment: select.value })
       row.appendChild(select)
 
@@ -494,7 +494,7 @@
       vol.className = 'vol'
       const range = document.createElement('input')
       range.type = 'range'
-      range.setAttribute('aria-label', t('sound.volumeAria', { name: meta.label }))
+      range.setAttribute('aria-label', t('sound.volumeAria', { name: t(meta.labelKey) }))
       range.min = '0'
       range.max = '100'
       range.step = '5'

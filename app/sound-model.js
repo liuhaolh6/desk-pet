@@ -19,31 +19,31 @@
    */
   const PRESETS = [
     {
-      id: 'preset:ding', label: '叮', type: 'sine', gain: 0.22,
+      id: 'preset:ding', labelKey: 'sound.preset.ding', type: 'sine', gain: 0.22,
       notes: [[1320, 0.09, 0], [1760, 0.06, 0.05]],
     },
     {
-      id: 'preset:pop', label: '啵', type: 'sine', gain: 0.28,
+      id: 'preset:pop', labelKey: 'sound.preset.pop', type: 'sine', gain: 0.28,
       notes: [[520, 0.05, 0], [380, 0.07, 0.04]],
     },
     {
-      id: 'preset:drop', label: '水滴', type: 'sine', gain: 0.26,
+      id: 'preset:drop', labelKey: 'sound.preset.drop', type: 'sine', gain: 0.26,
       notes: [[880, 0.07, 0], [1180, 0.1, 0.09]],
     },
     {
-      id: 'preset:chime', label: '三音', type: 'triangle', gain: 0.2,
+      id: 'preset:chime', labelKey: 'sound.preset.chime', type: 'triangle', gain: 0.2,
       notes: [[660, 0.1, 0], [880, 0.1, 0.11], [1100, 0.14, 0.22]],
     },
     {
-      id: 'preset:soft', label: '轻提示', type: 'sine', gain: 0.18,
+      id: 'preset:soft', labelKey: 'sound.preset.soft', type: 'sine', gain: 0.18,
       notes: [[440, 0.16, 0]],
     },
   ]
 
   const EVENT_META = [
-    { key: 'click', label: '点击角色' },
-    { key: 'bubble', label: '气泡出现' },
-    { key: 'water', label: '喝水提醒' },
+    { key: 'click', labelKey: 'sound.event.click' },
+    { key: 'bubble', labelKey: 'sound.event.bubble' },
+    { key: 'water', labelKey: 'sound.event.water' },
   ]
 
   const DEFAULT_SOUND = {
@@ -96,16 +96,17 @@
     return PRESETS.find((p) => p.id === id) || null
   }
 
-  function fragmentLabel(fragment, files) {
-    if (typeof fragment !== 'string') return '（未选择）'
+  function fragmentLabel(fragment, files, t) {
+    const tr = (key, vars) => (typeof t === 'function' ? t(key, vars) : key)
+    if (typeof fragment !== 'string') return tr('sound.pick.none')
     if (fragment.startsWith('preset:')) {
       const preset = presetById(fragment)
-      return preset ? preset.label : '（未知音色）'
+      return preset ? tr(preset.labelKey) : tr('sound.pick.unknown')
     }
     if (fragment.startsWith('file:')) {
       const id = fragment.slice(5)
       const file = (files || []).find((f) => f.id === id)
-      return file ? file.name : '（文件已删除）'
+      return file ? file.name : tr('sound.pick.deleted')
     }
     return fragment
   }

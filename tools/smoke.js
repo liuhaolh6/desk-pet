@@ -267,9 +267,10 @@ const store = createStore(dir)
 
 {
   const files = [{ id: 's1', name: '我的提示音' }]
-  assert.equal(soundModel.fragmentLabel('preset:ding'), '叮')
-  assert.equal(soundModel.fragmentLabel('file:s1', files), '我的提示音')
-  assert.equal(soundModel.fragmentLabel('file:nope', files), '（文件已删除）')
+  const smokeT3 = (k) => (k === 'sound.preset.ding' ? '叮' : k === 'sound.pick.deleted' ? '（文件已删除）' : k)
+  assert.equal(soundModel.fragmentLabel('preset:ding', [], smokeT3), '叮')
+  assert.equal(soundModel.fragmentLabel('file:s1', files, smokeT3), '我的提示音')
+  assert.equal(soundModel.fragmentLabel('file:nope', files, smokeT3), '（文件已删除）')
   assert.equal(soundModel.isKnownFragment('preset:pop'), true)
   assert.equal(soundModel.isKnownFragment('file:s1', files), true)
   assert.equal(soundModel.isKnownFragment('file:nope', files), false)

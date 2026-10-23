@@ -325,3 +325,16 @@ WMO 码表、AQI 分级、三天标签、建议句都写成中文字面量，共
 - 验证：en 数据目录重启后 `loadCutoutPhoto` 返回 `Didn't receive the image data`；zh 目录返回原文。
 
 基线 **122 → 103**。
+
+### 阶段三-J：音效名与"当前选择"（已完成）
+
+- `app/sound-model.js` 11 处 → 0：5 个内置音色（叮/啵/水滴/三音/轻提示）、3 个触发点
+  （点击角色/气泡出现/喝水提醒）、3 个占位语（未选择/未知音色/文件已删除）。
+- 模式与 3-G 一致：`PRESETS[].label` → `labelKey`（`sound.preset.*`），`EVENTS[].label` → `labelKey`
+  （`sound.event.*`）；`fragmentLabel(fragment, files, t)` 多收一个翻译器，缺省退键名。
+- `app/settings.js` 改用 `t(meta.labelKey)` / `t(p.labelKey)`，并加了 `fragmentLabelT` 适配层，
+  这样调用点不用各自传 `t`。
+- **踩到一个真坑**：语言包里三段的键一开始被写成了扁平的 `sound["preset.ding"]`（拆分只按第一个点），
+  于是界面上直接把键名当文案显示。修为嵌套对象，并补了 en 面板实测（`Clicking the character` / `Water drop`）。
+
+基线 **103 → 92**。

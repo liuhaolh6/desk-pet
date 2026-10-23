@@ -522,7 +522,12 @@
     "preview": "听一下",
     "filesEmpty": "还没添加自己的音频，自带的声音已经能用啦",
     "deleteTitle": "删掉这段音频（用到它的地方会回到自带声音）",
-    "deleted": "删掉啦片段"
+    "deleted": "删掉啦片段",
+    "pick": {
+      "none": "（未选择）",
+      "unknown": "（未知音色）",
+      "deleted": "（文件已删除）"
+    }
   },
   "cutout": {
     "brushAria": "笔刷粗细（8 到 80 像素）",
