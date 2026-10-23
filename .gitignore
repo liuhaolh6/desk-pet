@@ -17,6 +17,7 @@ Thumbs.db
 .m11-*/
 .m12-*/
 .dev-*/
+.cutout-eval/
 signed/
 app.log
 pet-capture.png

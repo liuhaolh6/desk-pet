@@ -7,6 +7,13 @@
 ## [Unreleased]
 
 ### 新增
+- **抠图评测链路（ROADMAP P2-5 的前置部分）**：模型选择从代码变成数据（`lib/cutout-model.js`：
+  `DESKPET_CUTOUT_MODEL` 绝对路径 → 安装版 `resources/models` → 仓库 `assets/models`，小于 1MB 的文件视为没下载完）；
+  新增评测 CLI `npm run cutout:eval`（IoU / 边缘锐度 / 耗时 / 覆盖率，逐图 + 汇总，`--json` 可机读）与
+  10 张合成 golden set（`npm run cutout:golden`，真值蒙版随图生成）。基线：u2net-human 在合成集上
+  IoU 均值 0.987、P50 349ms；真实照片请放 `.cutout-eval/` 跑自己的基线。
+  ISNet / BiRefNet-lite 因体积（176/224MB）超预算、模型站当前不可达而**未随包**，换权重只需放文件 + 改 id，
+  详见 [`M29-NOTES.md`](M29-NOTES.md)。
 - **气泡独立窗口（ROADMAP P2-4 阶段一）**：气泡从桌宠窗口里搬出来，装进自己的透明小窗
   （`app/overlay.html` + `app/main/overlay.js`）——只有气泡那么大，跟着桌宠走，**不抢焦点**（`showInactive` +
   `focusable:false`），点一下收起，卡上的按钮（喝水卡「喝过了 / 稍后 10 分钟」）照旧转发回桌宠窗口处理。
