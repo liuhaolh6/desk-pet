@@ -122,10 +122,10 @@ const cutoutHtml = read('app/cutout.html')
 {
   const html = read('app/settings.html')
   const js = read('app/settings.js')
-  check('托盘/快捷键状态是纯文本说明', /<p id="trayStatus" class="field-hint">/.test(html) && /<p id="shortcutStatus" class="field-hint">/.test(html))
+  check('托盘/快捷键状态是纯文本说明', /<p id="trayStatus" class="field-hint"[^>]*>/.test(html) && /<p id="shortcutStatus" class="field-hint"[^>]*>/.test(html))
   check('状态说明不藏在 aria-hidden 里', !/id="trayStatus"[^>]*aria-hidden/.test(html) && !/id="shortcutStatus"[^>]*aria-hidden/.test(html))
   check('状态更新走 textContent（不会塞 HTML）', /trayEl\.textContent =/.test(js) && /keyEl\.textContent =/.test(js))
-  check('导出诊断是带名称的按钮', /<button id="diagBtn" type="button">[^<]+<\/button>/.test(html))
+  check('导出诊断是带名称的按钮', /<button id="diagBtn" type="button"[^>]*(data-i18n="[^"]+"|>[^<]+<\/button>)/.test(html))
   check('导出结果写在 aria-live 之外不打断读屏', !/id="diagStatus"[^>]*aria-live/.test(html))
 }
 
@@ -134,7 +134,11 @@ const cutoutHtml = read('app/cutout.html')
   const html = read('app/settings.html')
   const js = read('app/settings.js')
   const search = (html.match(/<input id="settingSearch"[^>]*>/i) || [''])[0]
-  check('搜索框有可访问名称', attr(search, 'aria-label') === '搜索设置项', attr(search, 'aria-label'))
+  check(
+    '搜索框有可访问名称',
+    attr(search, 'aria-label') === '搜索设置项' || attr(search, 'data-i18n-aria-label') === 'settings.searchAria',
+    attr(search, 'aria-label') || attr(search, 'data-i18n-aria-label')
+  )
   check('搜索框是 search 类型且无自动大写', attr(search, 'type') === 'search' && attr(search, 'autocomplete') === 'off')
   check('搜索框说明用 aria-describedby 关联', !!attr(search, 'aria-describedby') && /id="searchHint"/.test(html))
   check('结果区不是假的列表角色', !/id="searchResults"[^>]*role="list"/.test(html))
@@ -143,7 +147,7 @@ const cutoutHtml = read('app/cutout.html')
   check('搜索框报告展开状态', /setAttribute\('aria-expanded', 'true'\)/.test(js) && /setAttribute\('aria-expanded', 'false'\)/.test(js))
   check('搜索结果是真按钮', /const row = document\.createElement\('button'\)/.test(js) && /row\.type = 'button'/.test(js))
   check('键盘能进结果并回车选中', /ArrowDown/.test(js) && /ev\.key === 'Enter'/.test(js))
-  check('空结果给出文字提示而不是只有颜色', /没找到有关的设置/.test(js))
+  check('空结果给出文字提示而不是只有颜色', /settings\.findEmpty/.test(js) && /search-empty/.test(js))
   check('跳转后焦点落在目标控件', /node\.focus\(\{ preventScroll: true \}\)/.test(js))
   check('减少动效时取消平滑滚动', /prefers-reduced-motion: reduce/.test(js) && /'auto' : 'smooth'/.test(js))
 
@@ -152,10 +156,14 @@ const cutoutHtml = read('app/cutout.html')
   check('确认层有名称与说明', !!attr(confirm, 'aria-labelledby') && !!attr(confirm, 'aria-describedby'))
   check('确认层默认收起且报告展开状态', /id="resetConfirm"[\s\S]{0,200}hidden/.test(html) && /aria-haspopup="dialog"/.test(html))
   check('确认层拿到焦点后可按 Esc 退出', /resetOk'\)\.focus/.test(js) && /ev\.key === 'Escape'/.test(js))
-  check('确认按钮有明确文案', /id="resetOk"[^>]*>恢复默认</.test(html) && /id="resetCancel"[^>]*>先不动</.test(html))
+  check(
+    '确认按钮有明确文案',
+    (/id="resetOk"[^>]*>恢复默认</.test(html) || /id="resetOk"[^>]*data-i18n="settings\.resetConfirmOk"/.test(html)) &&
+      (/id="resetCancel"[^>]*>先不动</.test(html) || /id="resetCancel"[^>]*data-i18n="settings\.resetCancel"/.test(html))
+  )
 
   const chips = (html.match(/<div id="recentCities"[^>]*>/i) || [''])[0]
-  check('最近城市一行有名称', !!attr(chips, 'aria-label'))
+  check('最近城市一行有名称', !!attr(chips, 'aria-label') || !!attr(chips, 'data-i18n-aria-label'))
   check('最近城市标明当前选中', /setAttribute\('aria-pressed', String\(name === current\)\)/.test(js))
   check('每个设置项都有一句话说明', !/\n\s*<div class="field">(?:(?!<\/div>)[\s\S])*?class="field-label"(?:(?!<\/div>)[\s\S])*?<\/div>\s*<\/div>/.test(html) ||
     (html.match(/class="field-hint"/g) || []).length >= 10)
@@ -253,8 +261,15 @@ for (const file of ['app/cutout.css', 'app/pet.css', 'app/settings.css', 'app/ed
   const cup = (html.match(/<input id="cupMl"[^>]*>/i) || [''])[0]
   check('杯量输入有标签与说明', !!attr(cup, 'aria-describedby') && /for="cupMl"/.test(html))
   const exportBtn = (html.match(/<button id="exportWaterBtn"[^>]*>([^<]*)</i) || [])
-  check('导出按钮是带文案的真按钮', attr(html.match(/<button id="exportWaterBtn"[^>]*>/i)[0], 'type') === 'button' && /导出喝水记录/.test(exportBtn[1] || ''))
-  check('导出结果用文字说明而不是只弹窗', /waterExportHint/.test(html) && /textContent = '已导出 ' \+/.test(js))
+  check(
+    '导出按钮是带文案的真按钮',
+    attr(html.match(/<button id="exportWaterBtn"[^>]*>/i)[0], 'type') === 'button' &&
+      (/导出喝水记录/.test(exportBtn[1] || '') || /data-i18n="reminder\.exportCsv"/.test(html.match(/<button id="exportWaterBtn"[^>]*>/i)[0]))
+  )
+  check(
+    '导出结果用文字说明而不是只弹窗',
+    /waterExportHint/.test(html) && (/textContent = '已导出 ' \+/.test(js) || /waterExportHint'\)\.textContent = t\(/.test(js))
+  )
   check('时间轴不只靠颜色区分', !/\.water-timeline li\s*\{[^}]*color:/.test(read('app/settings.css')))
 }
 

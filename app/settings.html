@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <title>桌宠设置</title>
+  <title data-i18n="window.settings"></title>
   <link rel="stylesheet" href="tokens.css">
   <link rel="stylesheet" href="settings.css">
 </head>
@@ -12,7 +12,7 @@
       <div class="brand">
         <img class="brand-icon" src="../assets/icon.png" alt="">
         <div class="brand-text">
-          <h1>桌宠设置</h1>
+          <h1 data-i18n="window.settings"></h1>
           <span id="version" class="muted"></span>
         </div>
       </div>
@@ -21,14 +21,14 @@
         <div class="search-box">
           <span class="search-icon" aria-hidden="true">⌕</span>
           <input id="settingSearch" type="search" autocomplete="off" spellcheck="false"
-                 placeholder="搜设置项：音量、城市、喝水…" aria-label="搜索设置项"
+                 data-i18n-placeholder="settings.searchPlaceholder" data-i18n-aria-label="settings.searchAria"
                  aria-describedby="searchHint" aria-controls="searchResults" aria-expanded="false">
         </div>
-        <p id="searchHint" class="search-hint">输入两个字就能找，比如「音量」「城市」「几杯」</p>
-        <div id="searchResults" class="search-results" aria-label="设置项搜索结果" hidden></div>
+        <p id="searchHint" class="search-hint" data-i18n="settings.searchHint"></p>
+        <div id="searchResults" class="search-results" data-i18n-aria-label="settings.searchResultsAria" hidden></div>
       </div>
 
-      <nav class="nav" aria-label="设置分类">
+      <nav class="nav" data-i18n-aria-label="settings.navAria">
         <button type="button" class="nav-item active" data-panel="appearance"><span class="nav-icon">◐</span><span class="nav-label" data-i18n="panel.appearance.title"></span></button>
         <button type="button" class="nav-item" data-panel="role"><span class="nav-icon">◉</span><span class="nav-label" data-i18n="panel.role.title"></span></button>
         <button type="button" class="nav-item" data-panel="bubble"><span class="nav-icon">◌</span><span class="nav-label" data-i18n="panel.bubble.title"></span></button>
@@ -41,8 +41,8 @@
       <div class="sidebar-foot">
         <span class="save-dot" aria-hidden="true"></span>
         <div class="save-copy">
-          <div class="auto-save">改完就生效</div>
-          <div id="status" class="status">不用点保存就行</div>
+          <div class="auto-save" data-i18n="settings.autoSave"></div>
+          <div id="status" class="status" data-i18n="settings.statusDefault"></div>
         </div>
       </div>
     </aside>
@@ -54,16 +54,16 @@
           <p id="panelHint" class="panel-hint"></p>
         </div>
         <div class="topbar-actions">
-          <span class="pill">改完就生效</span>
+          <span class="pill" data-i18n="settings.autoSave"></span>
           <div class="reset-wrap">
-            <button id="resetPanelBtn" class="ghost-small" type="button" aria-haspopup="dialog" aria-expanded="false">恢复这页默认</button>
+            <button id="resetPanelBtn" class="ghost-small" type="button" aria-haspopup="dialog" aria-expanded="false" data-i18n="settings.resetPanel"></button>
             <div id="resetConfirm" class="reset-confirm" role="alertdialog" aria-modal="false"
                  aria-labelledby="resetConfirmText" aria-describedby="resetConfirmHint" hidden>
-              <p id="resetConfirmText" class="reset-title">把「<span id="resetPanelName">这一页</span>」恢复成默认？</p>
-              <p id="resetConfirmHint" class="reset-hint">只改这一页的设置，别的页面和你导入的图都不会动。</p>
+              <p id="resetConfirmText" class="reset-title"><span data-i18n="settings.resetConfirmPrefix"></span><span id="resetPanelName"></span><span data-i18n="settings.resetConfirmSuffix"></span></p>
+              <p id="resetConfirmHint" class="reset-hint" data-i18n="settings.resetConfirmHint"></p>
               <div class="reset-buttons">
-                <button id="resetOk" class="danger-small" type="button">恢复默认</button>
-                <button id="resetCancel" type="button">先不动</button>
+                <button id="resetOk" class="danger-small" type="button" data-i18n="settings.resetConfirmOk"></button>
+                <button id="resetCancel" type="button" data-i18n="settings.resetCancel"></button>
               </div>
             </div>
           </div>
@@ -108,16 +108,16 @@
           <div class="card">
             <div class="card-head">
               <div>
-                <h3>我的样子</h3>
-                <p class="field-hint">点一下就能换；删除只影响你自己导入的图</p>
+                <h3 data-i18n="role.title"></h3>
+                <p class="field-hint" data-i18n="role.hint"></p>
               </div>
-              <span class="pill soft">自动缩到 610px</span>
+              <span class="pill soft" data-i18n="role.resizePill"></span>
             </div>
             <div id="roles" class="roles"></div>
             <div class="button-row">
-              <button id="importBtn" class="primary" type="button">选张图当样子</button>
-              <button id="cutoutBtn" type="button">用照片做个我</button>
-              <button id="resetPosBtn" type="button">回到右下角</button>
+              <button id="importBtn" class="primary" type="button" data-i18n="role.import"></button>
+              <button id="cutoutBtn" type="button" data-i18n="window.cutout"></button>
+              <button id="resetPosBtn" type="button" data-i18n="role.resetPosition"></button>
             </div>
           </div>
         </section>
@@ -125,40 +125,40 @@
         <section class="panel" data-panel="bubble" hidden>
           <div class="card">
             <div class="field">
-              <label class="field-label" for="autoHide">气泡留多久</label>
+              <label class="field-label" for="autoHide" data-i18n="bubble.autoHide"></label>
               <div class="field-body">
                 <div class="control-line">
                   <input id="autoHide" type="number" min="0" max="120">
-                  <span class="unit">秒</span>
+                  <span class="unit" data-i18n="bubble.seconds"></span>
                 </div>
-                <p class="field-hint">写 0 就一直留着，等你再点一下才收起来</p>
+                <p class="field-hint" data-i18n="bubble.autoHideHint"></p>
               </div>
             </div>
 
             <div class="field">
-              <label class="field-label" for="cooldown">两次天气之间</label>
+              <label class="field-label" for="cooldown" data-i18n="bubble.cooldown"></label>
               <div class="field-body">
                 <div class="control-line">
                   <input id="cooldown" type="number" min="0" max="240">
-                  <span class="unit">分钟</span>
+                  <span class="unit" data-i18n="bubble.minutes"></span>
                 </div>
-                <p class="field-hint">免得你连着点，我一直报天气</p>
+                <p class="field-hint" data-i18n="bubble.cooldownHint"></p>
               </div>
             </div>
 
             <div class="field">
-              <label class="field-label" for="phrases">想对我说的话</label>
+              <label class="field-label" for="phrases" data-i18n="bubble.phrases"></label>
               <div class="field-body">
-                <textarea id="phrases" rows="4" placeholder="每行一句，已经给你写好 24 句啦"></textarea>
-                <p class="field-hint">每行一句，我会随机挑着说；改成你自己的话也行</p>
+                <textarea id="phrases" rows="4" data-i18n-placeholder="bubble.phrasesPlaceholder"></textarea>
+                <p class="field-hint" data-i18n="bubble.phrasesHint"></p>
               </div>
             </div>
 
             <div class="field">
-              <span class="field-label">气泡长什么样</span>
+              <span class="field-label" data-i18n="bubble.style"></span>
               <div class="field-body">
-                <button id="editorBtn" class="primary" type="button">布置一下气泡…</button>
-                <p class="field-hint">想让哪句话出现在哪一行，都可以自己排</p>
+                <button id="editorBtn" class="primary" type="button" data-i18n="bubble.edit"></button>
+                <p class="field-hint" data-i18n="bubble.styleHint"></p>
               </div>
             </div>
           </div>
@@ -167,92 +167,92 @@
         <section class="panel" data-panel="reminder" hidden>
           <div class="card">
             <div class="field">
-              <label class="field-label" for="mode">唠叨程度</label>
+              <label class="field-label" for="mode" data-i18n="reminder.mode"></label>
               <div class="field-body">
                 <select id="mode">
-                  <option value="quiet">安静一点（我不吵你）</option>
-                  <option value="normal">正常就好</option>
-                  <option value="chatty">多跟我说说话</option>
+                  <option value="quiet" data-i18n="reminder.modeQuiet"></option>
+                  <option value="normal" data-i18n="reminder.modeNormal"></option>
+                  <option value="chatty" data-i18n="reminder.modeChatty"></option>
                 </select>
-                <p class="field-hint">选「安静一点」的话，喝水和主动冒泡都会先停下</p>
+                <p class="field-hint" data-i18n="reminder.modeHint"></p>
               </div>
             </div>
 
             <div class="field">
-              <label class="field-label" for="interval">多久提醒喝水</label>
+              <label class="field-label" for="interval" data-i18n="reminder.interval"></label>
               <div class="field-body">
                 <select id="interval">
-                  <option value="30">每 30 分钟</option>
-                  <option value="45">每 45 分钟</option>
-                  <option value="60">每 60 分钟</option>
-                  <option value="90">每 90 分钟</option>
-                  <option value="120">每 120 分钟</option>
+                  <option value="30" data-i18n="reminder.interval30"></option>
+                  <option value="45" data-i18n="reminder.interval45"></option>
+                  <option value="60" data-i18n="reminder.interval60"></option>
+                  <option value="90" data-i18n="reminder.interval90"></option>
+                  <option value="120" data-i18n="reminder.interval120"></option>
                 </select>
-                <p class="field-hint">到点了会把气泡推到你面前，点一下「喝了」就重新计时</p>
+                <p class="field-hint" data-i18n="reminder.intervalHint"></p>
               </div>
             </div>
 
             <div class="field">
-              <span class="field-label">安静时间</span>
+              <span class="field-label" data-i18n="reminder.quiet"></span>
               <div class="field-body">
                 <div class="control-line">
-                  <input id="quietFrom" type="number" min="0" max="23" aria-label="安静时间开始的小时">
-                  <span class="unit">点到</span>
-                  <input id="quietTo" type="number" min="0" max="23" aria-label="安静时间结束的小时">
-                  <span class="unit">点</span>
+                  <input id="quietFrom" type="number" min="0" max="23" data-i18n-aria-label="reminder.quietFromAria">
+                  <span class="unit" data-i18n="reminder.quietFromUnit"></span>
+                  <input id="quietTo" type="number" min="0" max="23" data-i18n-aria-label="reminder.quietToAria">
+                  <span class="unit" data-i18n="reminder.quietToUnit"></span>
                 </div>
-                <p class="field-hint">跨过零点也可以，比如 23 点到 8 点</p>
+                <p class="field-hint" data-i18n="reminder.quietHint"></p>
               </div>
             </div>
           </div>
 
           <div class="card">
-            <h3>主动说话</h3>
+            <h3 data-i18n="reminder.nudgeTitle"></h3>
             <div class="field">
-              <span class="field-label">什么时候主动开口</span>
+              <span class="field-label" data-i18n="reminder.nudgeWhen"></span>
               <div class="field-body stack">
-                <label class="check-row"><input id="nudgeEnabled" type="checkbox"><span>偶尔主动说话</span><em>总开关，关了下面三个都不算</em></label>
-                <label class="check-row"><input id="nudgeLongUse" type="checkbox"><span>坐太久了</span><em>连着用满 50 分钟，提醒你起来走走</em></label>
-                <label class="check-row"><input id="nudgeLateNight" type="checkbox"><span>深夜还在忙</span><em>23 点之后你还在电脑前，劝你早点睡</em></label>
-                <label class="check-row"><input id="nudgeAway" type="checkbox"><span>好久没见你</span><em>两小时没互动，出来打个招呼</em></label>
+                <label class="check-row"><input id="nudgeEnabled" type="checkbox"><span data-i18n="reminder.nudgeEnabled"></span><em data-i18n="reminder.nudgeEnabledHint"></em></label>
+                <label class="check-row"><input id="nudgeLongUse" type="checkbox"><span data-i18n="reminder.nudgeLongUse"></span><em data-i18n="reminder.nudgeLongUseHint"></em></label>
+                <label class="check-row"><input id="nudgeLateNight" type="checkbox"><span data-i18n="reminder.nudgeLateNight"></span><em data-i18n="reminder.nudgeLateNightHint"></em></label>
+                <label class="check-row"><input id="nudgeAway" type="checkbox"><span data-i18n="reminder.nudgeAway"></span><em data-i18n="reminder.nudgeAwayHint"></em></label>
               </div>
-              <p class="field-hint">全屏看片或开会的时候它不会出声；两次说话之间至少隔 45 分钟</p>
+              <p class="field-hint" data-i18n="reminder.nudgeHint"></p>
             </div>
           </div>
 
           <div class="card">
-            <h3>喝水记录</h3>
+            <h3 data-i18n="reminder.waterTitle"></h3>
             <div class="field">
-              <span class="field-label" id="waterTodayLabel">今天</span>
+              <span class="field-label" id="waterTodayLabel" data-i18n="reminder.today"></span>
               <div class="field-body">
-                <p id="waterToday" class="field-hint">今天还没喝呢，等第一杯</p>
+                <p id="waterToday" class="field-hint" data-i18n="reminder.waterTodayEmpty"></p>
                 <ol id="waterTimeline" class="water-timeline" aria-labelledby="waterTodayLabel"></ol>
               </div>
             </div>
             <div class="field">
-              <span class="field-label" id="waterWeekLabel">最近七天</span>
+              <span class="field-label" id="waterWeekLabel" data-i18n="reminder.week"></span>
               <div class="field-body">
-                <p class="field-hint">从今天往前数七天，杯数最多的一天最满</p>
+                <p class="field-hint" data-i18n="reminder.weekHint"></p>
                 <ul id="waterWeek" class="water-week" aria-labelledby="waterWeekLabel"></ul>
               </div>
             </div>
             <div class="field">
-              <label class="field-label" for="cupMl">一杯大概多少毫升</label>
+              <label class="field-label" for="cupMl" data-i18n="reminder.cupMl"></label>
               <div class="field-body">
                 <div class="control-line">
                   <input id="cupMl" type="number" min="50" max="1000" step="10" aria-describedby="cupMlHint">
-                  <span class="unit">毫升</span>
+                  <span class="unit" data-i18n="reminder.ml"></span>
                 </div>
-                <p id="cupMlHint" class="field-hint">每杯按喝的时候的杯量记，改了只影响之后那几杯</p>
+                <p id="cupMlHint" class="field-hint" data-i18n="reminder.cupMlHint"></p>
               </div>
             </div>
             <div class="field">
-              <span class="field-label">导出</span>
+              <span class="field-label" data-i18n="reminder.export"></span>
               <div class="field-body">
                 <div class="control-line">
-                  <button id="exportWaterBtn" type="button" class="ghost-small">导出喝水记录（CSV）</button>
+                  <button id="exportWaterBtn" type="button" class="ghost-small" data-i18n="reminder.exportCsv"></button>
                 </div>
-                <p id="waterExportHint" class="field-hint">存到数据目录，里面只有时间和毫升数</p>
+                <p id="waterExportHint" class="field-hint" data-i18n="reminder.exportHint"></p>
               </div>
             </div>
           </div>
@@ -261,29 +261,29 @@
         <section class="panel" data-panel="weather" hidden>
           <div class="card">
             <div class="field">
-              <label class="field-label" for="city">你在哪座城市</label>
+              <label class="field-label" for="city" data-i18n="weather.city"></label>
               <div class="field-body">
                 <div class="control-line">
-                  <input id="city" type="text" placeholder="写下城市名，再点「找一找」">
-                  <button id="searchBtn" type="button">找一找</button>
-                  <button id="locateBtn" type="button">用我的位置</button>
+                  <input id="city" type="text" data-i18n-placeholder="weather.cityPlaceholder">
+                  <button id="searchBtn" type="button" data-i18n="weather.search"></button>
+                  <button id="locateBtn" type="button" data-i18n="weather.locate"></button>
                 </div>
-                <div id="recentCities" class="chips-inline recent-cities" aria-label="最近用过的城市" hidden></div>
+                <div id="recentCities" class="chips-inline recent-cities" data-i18n-aria-label="weather.recentAria" hidden></div>
                 <div id="results" class="results" hidden></div>
                 <p id="cityNow" class="field-hint"></p>
               </div>
             </div>
 
             <div class="field">
-              <label class="field-label" for="refreshMinutes">多久看一眼天气</label>
+              <label class="field-label" for="refreshMinutes" data-i18n="weather.refresh"></label>
               <div class="field-body">
                 <select id="refreshMinutes">
-                  <option value="5">每 5 分钟</option>
-                  <option value="15">每 15 分钟</option>
-                  <option value="30">每 30 分钟</option>
-                  <option value="60">每 60 分钟</option>
+                  <option value="5" data-i18n="weather.refresh5"></option>
+                  <option value="15" data-i18n="weather.refresh15"></option>
+                  <option value="30" data-i18n="weather.refresh30"></option>
+                  <option value="60" data-i18n="weather.refresh60"></option>
                 </select>
-                <p class="field-hint">断网的时候，我会拿上次记住的天气先顶着</p>
+                <p class="field-hint" data-i18n="weather.refreshHint"></p>
               </div>
             </div>
           </div>
@@ -292,31 +292,31 @@
         <section class="panel" data-panel="sound" hidden>
           <div class="card">
             <div class="field">
-              <span class="field-label">要不要出声</span>
+              <span class="field-label" data-i18n="sound.enabled"></span>
               <div class="field-body stack">
-                <label class="check-row"><input id="sound" type="checkbox"><span>让我出声</span><em>点我、冒泡和提醒喝水的时候</em></label>
+                <label class="check-row"><input id="sound" type="checkbox"><span data-i18n="sound.enable"></span><em data-i18n="sound.enableHint"></em></label>
                 <div class="control-line">
-                  <span class="inline-label">音量</span>
-                  <input id="soundVolume" type="range" min="0" max="100" step="5" aria-label="音量">
+                  <span class="inline-label" data-i18n="sound.volume"></span>
+                  <input id="soundVolume" type="range" min="0" max="100" step="5" data-i18n-aria-label="sound.volume">
                   <b id="soundVolumeVal" class="value-pill">45%</b>
                 </div>
               </div>
             </div>
 
             <div class="field">
-              <span class="field-label">什么时候响</span>
+              <span class="field-label" data-i18n="sound.events"></span>
               <div class="field-body">
                 <div id="soundEvents" class="sound-events"></div>
-                <p class="field-hint">点我、冒泡、提醒喝水各响哪段；不想听就选「静音」</p>
+                <p class="field-hint" data-i18n="sound.eventsHint"></p>
               </div>
             </div>
 
             <div class="field">
-              <span class="field-label">我的音效</span>
+              <span class="field-label" data-i18n="sound.files"></span>
               <div class="field-body">
                 <div id="soundFiles" class="chips-inline"></div>
-                <button id="soundImportBtn" type="button">添加一段音频…</button>
-                <p class="field-hint">wav / mp3 / ogg / m4a / flac 都行，单个别超过 8MB</p>
+                <button id="soundImportBtn" type="button" data-i18n="sound.import"></button>
+                <p class="field-hint" data-i18n="sound.filesHint"></p>
               </div>
             </div>
           </div>
@@ -325,84 +325,84 @@
         <section class="panel" data-panel="other" hidden>
           <div class="card">
             <div class="field">
-              <span class="field-label">界面语言</span>
+              <span class="field-label" data-i18n="other.locale"></span>
               <div class="field-body">
                 <div class="control-line">
-                  <select id="localeSelect" aria-label="界面语言" aria-describedby="localeHint">
-                    <option value="">跟随系统</option>
-                    <option value="zh-CN">简体中文</option>
-                    <option value="en-US">English</option>
+                  <select id="localeSelect" data-i18n-aria-label="other.locale" aria-describedby="localeHint">
+                    <option value="" data-i18n="other.localeSystem"></option>
+                    <option value="zh-CN" data-i18n="other.localeZh"></option>
+                    <option value="en-US" data-i18n="other.localeEn"></option>
                   </select>
                 </div>
-                <p class="field-hint" id="localeHint">改完要重开桌宠才会换语言；现在的语言：<span id="localeNow">—</span></p>
+                <p class="field-hint" id="localeHint"><span data-i18n="other.localeHintPrefix"></span><span id="localeNow">—</span></p>
               </div>
             </div>
             <div class="field">
-              <span class="field-label">东西放哪</span>
+              <span class="field-label" data-i18n="other.dataDir"></span>
               <div class="field-body">
                 <div class="control-line">
                   <code id="dataDir" class="path"></code>
-                  <button id="openDirBtn" type="button">打开文件夹</button>
+                  <button id="openDirBtn" type="button" data-i18n="other.openDir"></button>
                 </div>
-                <p class="field-hint">设置、角色图、天气缓存和音效都在这里，随时可以备份</p>
+                <p class="field-hint" data-i18n="other.dataDirHint"></p>
               </div>
             </div>
             <div class="field">
-              <span class="field-label">从头认识一下</span>
+              <span class="field-label" data-i18n="other.onboard"></span>
               <div class="field-body">
-                <button id="onboardBtn" type="button">再看一次欢迎引导</button>
-                <p class="field-hint">就是第一次打开时出现的那张三步小说明</p>
+                <button id="onboardBtn" type="button" data-i18n="other.onboardBtn"></button>
+                <p class="field-hint" data-i18n="other.onboardHint"></p>
               </div>
             </div>
             <div class="field">
-              <span class="field-label">托盘和快捷键</span>
+              <span class="field-label" data-i18n="other.tray"></span>
               <div class="field-body">
-                <p id="trayStatus" class="field-hint">正在看看托盘好不好用…</p>
-                <p id="shortcutStatus" class="field-hint">正在试着注册 Ctrl+Alt+P…</p>
-                <p class="field-hint">托盘图标找不到的时候，把鼠标放到桌宠身上也能叫出菜单；快捷键随时能把桌宠叫回来。</p>
+                <p id="trayStatus" class="field-hint" data-i18n="other.trayChecking"></p>
+                <p id="shortcutStatus" class="field-hint" data-i18n="other.shortcutChecking"></p>
+                <p class="field-hint" data-i18n="other.trayHint"></p>
               </div>
             </div>
             <div class="field">
-              <span class="field-label">遇到问题</span>
+              <span class="field-label" data-i18n="other.trouble"></span>
               <div class="field-body">
-                <button id="diagBtn" type="button">导出诊断信息</button>
-                <p id="diagStatus" class="field-hint">写一个 txt 到数据文件夹：版本、系统、托盘状态和日志尾巴。城市坐标会打码，也不会带上照片。</p>
+                <button id="diagBtn" type="button" data-i18n="other.diagnostics"></button>
+                <p id="diagStatus" class="field-hint" data-i18n="other.diagHint"></p>
               </div>
             </div>
             <div class="field wide">
-              <span class="field-label">数据与隐私</span>
+              <span class="field-label" data-i18n="other.privacy"></span>
               <div class="field-body">
                 <details id="privacyBox" class="privacy-box">
-                  <summary>这里存了什么、会往外面发什么</summary>
+                  <summary data-i18n="other.privacySummary"></summary>
                   <ul class="privacy-list">
-                    <li>设置（城市、昵称、偏好）：<code>settings.json</code> <span id="privSettings" class="privacy-size">…</span></li>
-                    <li>角色图和抠过的照片：<code>photos/</code> <span id="privPhotos" class="privacy-size">…</span></li>
-                    <li>日志和抠图轨迹：<code>app.log</code>、<code>cutout-trace.jsonl</code> <span id="privLogs" class="privacy-size">…</span></li>
-                    <li>浏览器缓存：<span id="privCaches" class="privacy-size">…</span></li>
+                    <li><span data-i18n="other.privacySettings"></span><code>settings.json</code> <span id="privSettings" class="privacy-size">…</span></li>
+                    <li><span data-i18n="other.privacyPhotos"></span><code>photos/</code> <span id="privPhotos" class="privacy-size">…</span></li>
+                    <li><span data-i18n="other.privacyLogs"></span><code>app.log</code><span data-i18n="other.listSeparator"></span><code>cutout-trace.jsonl</code> <span id="privLogs" class="privacy-size">…</span></li>
+                    <li><span data-i18n="other.privacyCaches"></span><span id="privCaches" class="privacy-size">…</span></li>
                   </ul>
-                  <p class="field-hint">联网只有四处：换城市时把城市名发给 open-meteo 换经纬度；之后只用经纬度取天气和空气质量；启动后读一次 GitHub 上的新版号（24 小时最多一次）；只有你点“去下载”才会打开浏览器。没有账号、没有埋点，照片不会上传。</p>
+                  <p class="field-hint" data-i18n="other.privacyBody"></p>
                   <div class="control-line">
-                    <button id="privacyCleanBtn" type="button" class="danger-small" aria-label="清理日志和缓存">清理日志和缓存</button>
-                    <button id="privacyConfirmBtn" type="button" class="danger-small" aria-label="确认清理日志和缓存" hidden>真的清理</button>
-                    <button id="privacyCancelBtn" type="button" class="ghost-small" aria-label="取消清理" hidden>算了</button>
+                    <button id="privacyCleanBtn" type="button" class="danger-small" data-i18n="other.cleanup" data-i18n-aria-label="other.cleanup"></button>
+                    <button id="privacyConfirmBtn" type="button" class="danger-small" data-i18n="other.cleanupConfirm" data-i18n-aria-label="other.cleanupConfirmAria" hidden></button>
+                    <button id="privacyCancelBtn" type="button" class="ghost-small" data-i18n="other.cleanupCancel" data-i18n-aria-label="other.cleanupCancelAria" hidden></button>
                   </div>
                   <p id="privacyStatus" class="field-hint"></p>
                 </details>
               </div>
             </div>
             <div class="field">
-              <span class="field-label">更新</span>
+              <span class="field-label" data-i18n="other.update"></span>
               <div class="field-body">
-                <button id="updateBtn" type="button">检查更新</button>
-                <p id="updateStatus" class="field-hint">有新版会在这里和气泡里说一声，点“去下载”打开发布页。</p>
-                <label class="check-row"><input id="updateBootToggle" type="checkbox" aria-label="启动时自动看一眼新版本"><span>启动时自动看一眼</span><em>之后每 24 小时最多一次，只读一个版本号</em></label>
+                <button id="updateBtn" type="button" data-i18n="other.updateBtn"></button>
+                <p id="updateStatus" class="field-hint" data-i18n="other.updateHint"></p>
+                <label class="check-row"><input id="updateBootToggle" type="checkbox" data-i18n-aria-label="other.updateBootAria"><span data-i18n="other.updateBoot"></span><em data-i18n="other.updateBootHint"></em></label>
               </div>
             </div>
             <div class="field">
-              <span class="field-label">让它先休息</span>
+              <span class="field-label" data-i18n="other.quit"></span>
               <div class="field-body">
-                <button id="quitBtn" type="button" class="danger">先退出啦</button>
-                <p class="field-hint">只是关掉这个窗口的话，我还是会待在托盘里</p>
+                <button id="quitBtn" type="button" class="danger" data-i18n="other.quitBtn"></button>
+                <p class="field-hint" data-i18n="other.quitHint"></p>
               </div>
             </div>
           </div>

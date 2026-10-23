@@ -40,7 +40,34 @@
     "tip5": "小口小口，刚刚好"
   },
   "weather": {
-    "failLog": "天气没拿到：{message}"
+    "failLog": "天气没拿到：{message}",
+    "city": "你在哪座城市",
+    "cityPlaceholder": "写下城市名，再点「找一找」",
+    "search": "找一找",
+    "locate": "用我的位置",
+    "recentAria": "最近用过的城市",
+    "refresh": "多久看一眼天气",
+    "refresh5": "每 5 分钟",
+    "refresh15": "每 15 分钟",
+    "refresh30": "每 30 分钟",
+    "refresh60": "每 60 分钟",
+    "refreshHint": "断网的时候，我会拿上次记住的天气先顶着",
+    "cityNowEmpty": "现在还没告诉我你在哪座城市",
+    "cityNow": "现在用的是：{city}",
+    "cityNowCoords": "现在用的是：{city}（{lat}, {lon}）",
+    "autoLocate": "自动定位",
+    "locatedCity": "我找到的位置",
+    "cityRequired": "先写下城市名呀",
+    "searching": "我找找看…",
+    "searchError": "没找到（{message}），也可以直接写拼音试试",
+    "searchNone": "没找到这座城市，换个写法试试（比如「衡阳」）",
+    "searchFound": "找到 {count} 个地方，点下面那一行就用它",
+    "citySaved": "记住啦：{city}，正在换天气…",
+    "searchFailed": "搜索失败",
+    "geoUnavailable": "这台电脑不让定位，手动写下城市名吧",
+    "locating": "看看你在哪…",
+    "located": "找到啦",
+    "geoFailed": "没定上位，手动写下城市名吧"
   },
   "pet": {
     "title": "桌宠",
@@ -106,5 +133,812 @@
     "snapHint": "拖到屏幕边缘会轻轻吸住",
     "snapGap": "离边多远开始吸",
     "snapGapUnit": "px（0 就是关掉）"
+  },
+  "bubble": {
+    "type": {
+      "text": {
+        "label": "写好的文字",
+        "sample": "文本"
+      },
+      "random": {
+        "label": "随机挑一句",
+        "sample": "记得喝水呀～"
+      },
+      "name": {
+        "label": "我的名字",
+        "sample": "小芳桌宠"
+      },
+      "weatherIcon": {
+        "label": "天气：图标",
+        "sample": "🌤️"
+      },
+      "weatherCity": {
+        "label": "天气：城市",
+        "sample": "北京"
+      },
+      "weatherTemp": {
+        "label": "天气：现在几度",
+        "sample": "13°"
+      },
+      "weatherText": {
+        "label": "天气：晴雨",
+        "sample": "晴"
+      },
+      "weatherFeels": {
+        "label": "天气：体感几度",
+        "sample": "体感 11°"
+      },
+      "weatherRange": {
+        "label": "天气：今天高低温",
+        "sample": "7~18°"
+      },
+      "weatherPrecip": {
+        "label": "天气：会不会下雨",
+        "sample": "0%"
+      },
+      "weatherHumidity": {
+        "label": "天气：湿度",
+        "sample": "79%"
+      },
+      "weatherWind": {
+        "label": "天气：风大不大",
+        "sample": "风 12km/h"
+      },
+      "weatherSun": {
+        "label": "天气：日出日落",
+        "sample": "06:42 日出 · 17:21 日落"
+      },
+      "weatherUv": {
+        "label": "天气：紫外线",
+        "sample": "紫外线 6"
+      },
+      "weatherTomorrow": {
+        "label": "天气：明天",
+        "sample": "明天 6~15° 多云"
+      },
+      "weatherHourly": {
+        "label": "天气：接下来几小时",
+        "sample": "15点 14° 多云 → …"
+      },
+      "weatherDays": {
+        "label": "天气：未来两天",
+        "sample": "明天 6~15° ⛅ · 后天 5~14° 🌧️"
+      },
+      "airQuality": {
+        "label": "空气：好坏",
+        "sample": "空气良（35）· 出去走走正好"
+      },
+      "airPm": {
+        "label": "空气：PM2.5",
+        "sample": "PM2.5 12"
+      },
+      "weatherTip": {
+        "label": "天气：贴心提醒",
+        "sample": "记得带伞呀"
+      },
+      "weatherUpdated": {
+        "label": "天气：更新时间",
+        "sample": "更新于 22:12"
+      },
+      "weatherHint": {
+        "label": "天气：离线提示",
+        "sample": "离线缓存"
+      },
+      "waterCups": {
+        "label": "喝水：今天几杯",
+        "sample": "3"
+      },
+      "waterNext": {
+        "label": "喝水：还有多久",
+        "sample": "再过 42 分钟"
+      },
+      "waterProgress": {
+        "label": "喝水：今天进度",
+        "sample": "●●●○○○○○"
+      },
+      "waterInterval": {
+        "label": "喝水：多久提醒一次",
+        "sample": "每 60 分钟"
+      },
+      "waterQuiet": {
+        "label": "喝水：安静时段",
+        "sample": "安静 23 点到 8 点"
+      },
+      "waterLast": {
+        "label": "喝水：上次什么时候",
+        "sample": "上次 22:12"
+      },
+      "waterTip": {
+        "label": "喝水：一句叮嘱",
+        "sample": "慢慢喝，别急呀"
+      },
+      "time": {
+        "label": "当前时间",
+        "sample": "22:12"
+      },
+      "date": {
+        "label": "今天的日期",
+        "sample": "10月19日 周日"
+      }
+    },
+    "card": {
+      "new": "新的卡片",
+      "weather": "天气",
+      "water": "喝水",
+      "random": "想说的话",
+      "weatherTitle": "🌤️ 天气",
+      "waterTitle": "💧 该喝水啦"
+    },
+    "layout": {
+      "todayPrefix": "今日 ",
+      "precipPrefix": " · 降水 ",
+      "cupPrefix": " 今天第 ",
+      "cupSuffix": " 杯"
+    },
+    "lib": {
+      "time": "当前时间",
+      "weather": "天气一行",
+      "tip": "贴心提醒",
+      "hourly": "未来几小时",
+      "days": "未来两天",
+      "air": "空气质量"
+    },
+    "random": {
+      "empty": "我在呢～"
+    },
+    "date": {
+      "format": "{month}月{day}日 周{weekday}",
+      "weekday": {
+        "sun": "日",
+        "mon": "一",
+        "tue": "二",
+        "wed": "三",
+        "thu": "四",
+        "fri": "五",
+        "sat": "六"
+      }
+    },
+    "weather": {
+      "cityFallback": "当前",
+      "loading": "正在取天气…",
+      "feels": "体感 {value}",
+      "wind": "风 {value}km/h",
+      "sun": "{sunrise} 日出 · {sunset} 日落",
+      "uv": "紫外线 {value}",
+      "tomorrow": "明天 {low}~{high}{text}",
+      "hourly": "{hour}点 {temp}{icon}",
+      "updated": "更新于 {time}",
+      "hint": "离线缓存"
+    },
+    "air": {
+      "quality": "空气{text}（{aqi}）"
+    },
+    "water": {
+      "interval": "每 {mins} 分钟",
+      "noInterval": "还没设提醒",
+      "next": "再过 {mins} 分钟",
+      "due": "该喝啦",
+      "quiet": "安静 {from} 点到 {to} 点",
+      "noQuiet": "不设安静时段",
+      "noneToday": "今天还没喝呢",
+      "last": "上次 {time}"
+    },
+    "autoHide": "气泡留多久",
+    "seconds": "秒",
+    "autoHideHint": "写 0 就一直留着，等你再点一下才收起来",
+    "cooldown": "两次天气之间",
+    "minutes": "分钟",
+    "cooldownHint": "免得你连着点，我一直报天气",
+    "phrases": "想对我说的话",
+    "phrasesPlaceholder": "每行一句，已经给你写好 24 句啦",
+    "phrasesHint": "每行一句，我会随机挑着说；改成你自己的话也行",
+    "style": "气泡长什么样",
+    "edit": "布置一下气泡…",
+    "styleHint": "想让哪句话出现在哪一行，都可以自己排"
+  },
+  "sound": {
+    "preset": {
+      "ding": "叮",
+      "pop": "啵",
+      "drop": "水滴",
+      "chime": "三音",
+      "soft": "轻提示"
+    },
+    "event": {
+      "click": "点击角色",
+      "bubble": "气泡出现",
+      "water": "喝水提醒"
+    },
+    "fragment": {
+      "none": "（未选择）",
+      "unknown": "（未知音色）",
+      "deleted": "（文件已删除）"
+    },
+    "enabled": "要不要出声",
+    "enable": "让我出声",
+    "enableHint": "点我、冒泡和提醒喝水的时候",
+    "volume": "音量",
+    "events": "什么时候响",
+    "eventsHint": "点我、冒泡、提醒喝水各响哪段；不想听就选「静音」",
+    "files": "我的音效",
+    "import": "添加一段音频…",
+    "filesHint": "wav / mp3 / ogg / m4a / flac 都行，单个别超过 8MB",
+    "pickAudio": "挑一段音频…",
+    "builtinGroup": "自带的声音",
+    "mineGroup": "我收下的音频",
+    "missingFragment": "（这段找不到了，重新选一个吧）",
+    "toggleTitle": "这件事要不要出声",
+    "toggleAria": "{name}：要不要出声",
+    "fragmentAria": "{name}：用哪段声音",
+    "volumeAria": "{name}：多大声",
+    "followsMaster": "跟着总音量",
+    "customVolume": "单独调",
+    "follow": "跟着",
+    "followTitle": "音量跟着总音量",
+    "preview": "听一下",
+    "filesEmpty": "还没添加自己的音频，自带的声音已经能用啦",
+    "deleteTitle": "删掉这段音频（用到它的地方会回到自带声音）",
+    "deleted": "删掉啦片段"
+  },
+  "cutout": {
+    "brushAria": "笔刷粗细（8 到 80 像素）",
+    "brushLabel": "笔刷大小",
+    "close": "关闭",
+    "defaultName": "照片角色",
+    "edit": {
+      "eraseOn": "擦一擦：在画面上拖动，去掉多余的地方；再点一次「擦一擦」，或者按 Esc 就退出。",
+      "group": "修一修",
+      "off": "退出修补啦。挪一挪、放大缩小摆好位置，再保存吧。",
+      "restoreOn": "找回来：在画面上拖动，把不小心擦掉的部分补回来；再点一次，或者按 Esc 就退出。"
+    },
+    "editHint": "E 擦一擦 / R 找回来 / [ ] 笔刷 / Ctrl+Z 撤销；Q / W 旋转、F 照镜子；修补时先暂停拖动。",
+    "empty": {
+      "hint": "JPG / PNG / WebP 都行，我会把人像留下来",
+      "title": "挑一张人像照片"
+    },
+    "erase": "擦一擦",
+    "error": {
+      "noPortrait": "没找到人像呢",
+      "openImage": "这张图打不开呢",
+      "readImage": "这张图读不进来呢",
+      "readPhoto": "这张照片读不进来呢",
+      "runFailed": "这次没抠成",
+      "saveFailed": "没保存成功，再试一次？"
+    },
+    "fallbackBtn": "不用抠，直接用整张",
+    "flip": {
+      "off": "不照镜子了",
+      "on": "照过镜子啦"
+    },
+    "mode": {
+      "busy": "忙一会儿",
+      "cutout": "已抠图",
+      "failed": "这次没处理成功",
+      "fallback": "整张照片",
+      "none": "等你的照片",
+      "original": "还没抠的原图"
+    },
+    "nameLabel": "给它起个名",
+    "pickBtn": "挑一张照片",
+    "preview": {
+      "current": "当前视图：{view}；{mode}。",
+      "empty": "还没有选照片哦。"
+    },
+    "privacy": "照片和角色图都只存在你自己的电脑里，抠图也是离线跑的。",
+    "resetEdit": "重新来过",
+    "resetView": "摆回原位",
+    "restore": "找回来",
+    "rotate": {
+      "flip": "⇋ 照镜子",
+      "flipTitle": "照镜子",
+      "group": "转一转",
+      "left": "↺ 往左",
+      "leftTitle": "往左转",
+      "right": "↻ 往右",
+      "rightTitle": "往右转"
+    },
+    "runBtn": "帮我抠出来吧",
+    "saveBtn": "就它了，保存",
+    "saveBtnConfirm": "再确认一次：保存整张照片",
+    "stage": {
+      "label": "角色预览",
+      "labelWith": "角色预览：{view}"
+    },
+    "status": {
+      "confirmFallback": "现在是「不用抠，直接用整张」，保存下来会带着原来的背景。再点一次才会保存哦。",
+      "done": "抠好啦。可以切到「蒙版」看看边缘，或者点「修一修」擦掉多余的地方。",
+      "editsReset": "修补都清空啦，回到最初的样子。",
+      "fallback": "{message}。现在显示的是整张原图，不是抠好的；保存前我会再问你一次。",
+      "fallbackUsed": "这次跳过抠图，用的就是整张照片。保存前我会再确认一次，角色库里也会标成「整张照片」。",
+      "idle": "挑好照片以后，我会在这里说进度",
+      "opening": "在打开照片啦…",
+      "pickCanceled": "好，那不选了",
+      "picked": "照片收到啦。点「开始抠图」，我在你电脑里把人像留下来（不上传）；也可以选「不用抠，直接用整张」。",
+      "picking": "等你挑照片…",
+      "rotated": "转了一下，现在是 {degree}°",
+      "runError": "抠图的时候出了点小状况，可以改用「不用抠，直接用整张」。",
+      "running": "在认真抠图啦～第一次会慢一点点，等我一下下",
+      "saved": "收好啦，已经换成：{name}",
+      "saving": "在收好这张啦…"
+    },
+    "step": {
+      "edit": "3. 修一修",
+      "pick": "1. 先挑张照片",
+      "place": "2. 摆好位置"
+    },
+    "subtitle": "照片只在你电脑里处理，不会上传",
+    "undo": "撤销",
+    "undoDone": "刚才那一下撤销啦。",
+    "view": {
+      "group": "看看什么样",
+      "mask": "蒙版",
+      "original": "原图",
+      "result": "结果"
+    },
+    "zoomHint": "拖着画面挪一挪，滚轮能放大缩小",
+    "zoomLabel": "缩放"
+  },
+  "editor": {
+    "addRow": "+ 再加一行",
+    "closeBtn": "关闭",
+    "confirm": {
+      "close": "还有改动没保存，真的要关掉吗？",
+      "reset": "要变回默认的气泡吗？还没保存的改动会丢掉哦。"
+    },
+    "error": {
+      "loadSettings": "没读到设置，稍后再试",
+      "save": "没保存成功，再试一次？"
+    },
+    "group": {
+      "other": "其他",
+      "text": "写点什么",
+      "time": "时间",
+      "water": "喝水",
+      "weather": "天气"
+    },
+    "inspector": {
+      "advanced": "再调调样式",
+      "bg": "垫个底色",
+      "bold": "加粗",
+      "clearBg": "不要了",
+      "color": "字颜色",
+      "display": "怎么显示",
+      "empty": "先点一块内容，右边就能改它写什么、长什么样",
+      "italic": "斜体",
+      "size": "多大",
+      "text": "写什么",
+      "title": "这一块",
+      "type": "这一块是什么"
+    },
+    "module": {
+      "chip": "（{label}）",
+      "text": "写好的文字"
+    },
+    "op": {
+      "backward": "往后",
+      "delete": "删除",
+      "forward": "往前"
+    },
+    "preset": {
+      "cupsPrefix": "今天第 ",
+      "cupsSuffix": " 杯啦",
+      "group": "一键排版",
+      "label": "先挑一个：",
+      "nextPrefix": "下次大概 ",
+      "rich": "详细",
+      "simple": "简洁",
+      "standard": "标准"
+    },
+    "preview": {
+      "empty": "这张卡还空着",
+      "later": "待会儿"
+    },
+    "resetBtn": "变回默认",
+    "row": {
+      "add": "在这一行后面加点内容",
+      "delete": "删掉这一行",
+      "down": "整行往下",
+      "empty": "这一行空着，点右边的 ＋ 加点内容",
+      "up": "整行往上"
+    },
+    "sample": {
+      "city": "北京",
+      "defaultText": "文字",
+      "name": "小芳桌宠",
+      "phrase": "记得喝口水呀～",
+      "text": "写点什么",
+      "weather": "晴"
+    },
+    "saveBtn": "保存",
+    "tab": {
+      "moveDown": "往后挪一张（点击顺序也会跟着换）",
+      "moveUp": "往前挪一张（点击顺序也会跟着换）"
+    },
+    "tip": "点一块内容，右边就能改它写什么、长什么样；行的左边 ↑ ↓ 可以换顺序。",
+    "toast": {
+      "maxRows": "最多 6 行啦",
+      "orderChanged": "顺序换好啦，之后点我就按这个顺序出卡",
+      "preset": "换成「{label}」啦，看看下面的预览",
+      "reset": "变回默认啦（别忘了点保存）",
+      "saved": "记住啦，点一下桌宠就能看到效果"
+    }
+  },
+  "onboard": {
+    "hello": "你好，我是 ",
+    "lead": "一分钟就能认全我：点一下、告诉我天气、放到顺手的位置。",
+    "step1": {
+      "title": "点我一下",
+      "body": "我会冒个泡：今天的天气、喝了几杯水，还有一句想对你说的话。"
+    },
+    "step2": {
+      "title": "告诉我你在哪座城市",
+      "body": "打开设置 → 天气，写下城市名（拼音也行），我就能报你那儿的天气啦。"
+    },
+    "step3": {
+      "title": "放到顺手的位置",
+      "body": "按住我拖到喜欢的地方，松手就记住；点右上角的小按钮能打开设置、布置气泡，或者让我先休息。"
+    },
+    "footNote": "以后想再看一遍，去设置 → 其他 就行",
+    "pickCity": "先去选城市",
+    "done": "知道啦"
+  },
+  "settings": {
+    "searchPlaceholder": "搜设置项：音量、城市、喝水…",
+    "searchAria": "搜索设置项",
+    "searchHint": "输入两个字就能找，比如「音量」「城市」「几杯」",
+    "searchResultsAria": "设置项搜索结果",
+    "navAria": "设置分类",
+    "autoSave": "改完就生效",
+    "statusDefault": "不用点保存就行",
+    "resetPanel": "恢复这页默认",
+    "resetConfirmPrefix": "把「",
+    "resetConfirmSuffix": "」恢复成默认？",
+    "resetConfirmHint": "只改这一页的设置，别的页面和你导入的图都不会动。",
+    "resetConfirmOk": "恢复默认",
+    "resetCancel": "先不动",
+    "saved": "记住啦",
+    "saveFailed": "刚才没记下来，再试一次好吗",
+    "deleteFailed": "删不掉呢，再试一次？",
+    "loadFailed": "没读到设置，稍后再试",
+    "localeChanged": "记下了，重开桌宠后换成这个语言",
+    "canceled": "好，那先不选",
+    "importFailed": "没收进来，再试一次？",
+    "imported": "收好啦：{name}",
+    "found": "找到了：{label}",
+    "findEmpty": "没找到有关的设置，试试「气泡」「城市」「音量」",
+    "resetUnavailable": "这一页没有可以恢复的默认值",
+    "resetDone": "「{panel}」已经回到默认啦",
+    "find": {
+      "name": {
+        "label": "它叫什么",
+        "desc": "改名字",
+        "keywords": "名字 称呼 改名 昵称"
+      },
+      "size": {
+        "label": "多大一只",
+        "desc": "窗口大小",
+        "keywords": "大小 尺寸 变大 变小 缩放"
+      },
+      "alwaysOnTop": {
+        "label": "一直看得见",
+        "desc": "不被别的窗口盖住",
+        "keywords": "置顶 最前面 挡住"
+      },
+      "autostart": {
+        "label": "开机就出现",
+        "desc": "登录后自动启动",
+        "keywords": "开机 自启 启动 登录"
+      },
+      "snapEnabled": {
+        "label": "靠边停好",
+        "desc": "拖到屏幕边缘吸住",
+        "keywords": "吸附 吸住 边缘 贴边"
+      },
+      "snapGap": {
+        "label": "离边多远开始吸",
+        "desc": "吸附距离（px）",
+        "keywords": "吸附 距离 像素"
+      },
+      "importBtn": {
+        "label": "换一张图当样子",
+        "desc": "选自己的图片",
+        "keywords": "角色 形象 图片 换装 皮肤"
+      },
+      "cutoutBtn": {
+        "label": "用照片做个我",
+        "desc": "抠图做新角色",
+        "keywords": "抠图 照片 去背 剪影"
+      },
+      "resetPosBtn": {
+        "label": "回到右下角",
+        "desc": "重置桌宠位置",
+        "keywords": "位置 归位 右下角 跑丢"
+      },
+      "autoHide": {
+        "label": "气泡留多久",
+        "desc": "停留秒数",
+        "keywords": "气泡 停留 几秒 消失"
+      },
+      "cooldown": {
+        "label": "两次天气之间",
+        "desc": "天气气泡间隔",
+        "keywords": "天气 间隔 频率 多久"
+      },
+      "phrases": {
+        "label": "想对我说的话",
+        "desc": "每行一句台词",
+        "keywords": "台词 说话 句子 文案 语录"
+      },
+      "editorBtn": {
+        "label": "气泡长什么样",
+        "desc": "排版与样式",
+        "keywords": "气泡 样式 排版 布局 外观"
+      },
+      "mode": {
+        "label": "唠叨程度",
+        "desc": "提醒频率",
+        "keywords": "唠叨 提醒 频率 少说 多说"
+      },
+      "interval": {
+        "label": "多久提醒喝水",
+        "desc": "喝水间隔分钟",
+        "keywords": "喝水 几杯 间隔 提醒"
+      },
+      "quietFrom": {
+        "label": "安静时间（开始）",
+        "desc": "这个点以后不吵你",
+        "keywords": "安静 免打扰 别吵 睡觉"
+      },
+      "nudgeEnabled": {
+        "label": "主动说话（总开关）",
+        "desc": "让它偶尔主动冒一句",
+        "keywords": "主动 说话 搭话 提醒 唠叨 nudge"
+      },
+      "nudgeLongUse": {
+        "label": "坐太多了起来走走",
+        "desc": "连着用满 50 分钟提醒",
+        "keywords": "久坐 站起来 休息 腰 眼睛"
+      },
+      "nudgeLateNight": {
+        "label": "深夜还在忙",
+        "desc": "23 点后劝你睡觉",
+        "keywords": "深夜 熬夜 睡觉 早睡 晚"
+      },
+      "nudgeAway": {
+        "label": "好久没见你",
+        "desc": "两小时没互动打个招呼",
+        "keywords": "好久 离开 回来 招呼"
+      },
+      "quietTo": {
+        "label": "安静时间（结束）",
+        "desc": "这个点以后恢复提醒",
+        "keywords": "安静 免打扰 起床"
+      },
+      "waterTimeline": {
+        "label": "今天的喝水时间轴",
+        "desc": "几点喝了一杯",
+        "keywords": "喝水 记录 时间轴 今天 几杯"
+      },
+      "cupMl": {
+        "label": "一杯多少毫升",
+        "desc": "导出 CSV 用",
+        "keywords": "毫升 一杯 容量 导出"
+      },
+      "exportWaterBtn": {
+        "label": "导出喝水记录",
+        "desc": "生成 CSV",
+        "keywords": "导出 csv 表格 记录 备份"
+      },
+      "city": {
+        "label": "你在哪座城市",
+        "desc": "搜城市名",
+        "keywords": "城市 定位 地点 在哪 天气"
+      },
+      "locateBtn": {
+        "label": "用我的位置",
+        "desc": "自动定位",
+        "keywords": "定位 位置 gps 自动"
+      },
+      "refreshMinutes": {
+        "label": "多久看一眼天气",
+        "desc": "刷新间隔",
+        "keywords": "天气 刷新 间隔 更新"
+      },
+      "sound": {
+        "label": "让我出声",
+        "desc": "总开关",
+        "keywords": "声音 静音 出声 音效"
+      },
+      "soundVolume": {
+        "label": "音量",
+        "desc": "响度",
+        "keywords": "音量 响度 大声 小声"
+      },
+      "soundEvents": {
+        "label": "什么时候响",
+        "desc": "各事件音效",
+        "keywords": "声音 事件 点击 提醒"
+      },
+      "soundImportBtn": {
+        "label": "添加一段音频",
+        "desc": "自定义音效",
+        "keywords": "音效 音频 自定义 导入"
+      },
+      "diagBtn": {
+        "label": "导出诊断信息",
+        "desc": "日志与状态，坐标打码",
+        "keywords": "诊断 日志 报错 反馈 导出"
+      },
+      "updateBtn": {
+        "label": "检查更新",
+        "desc": "有新版本时提示，不会偷偷装",
+        "keywords": "更新 升级 版本 新版 update"
+      },
+      "privacyCleanBtn": {
+        "label": "清理日志和缓存",
+        "desc": "数据与隐私，照片和设置不会动",
+        "keywords": "隐私 清理 数据 缓存 日志 删除 privacy"
+      },
+      "onboardBtn": {
+        "label": "再看一次欢迎引导",
+        "desc": "重新走一遍引导",
+        "keywords": "引导 欢迎 新手 教程"
+      },
+      "openDirBtn": {
+        "label": "东西放哪",
+        "desc": "打开数据文件夹",
+        "keywords": "数据 文件夹 备份 目录"
+      },
+      "quitBtn": {
+        "label": "先退出啦",
+        "desc": "关掉桌宠",
+        "keywords": "退出 关闭 结束"
+      }
+    }
+  },
+  "role": {
+    "title": "我的样子",
+    "hint": "点一下就能换；删除只影响你自己导入的图",
+    "resizePill": "自动缩到 610px",
+    "import": "选张图当样子",
+    "resetPosition": "回到右下角",
+    "wholePhoto": "整张照片",
+    "wholePhotoTitle": "这张是用「不用抠，直接用整张」保存的照片，背景还在",
+    "delete": "删掉",
+    "deleted": "删掉啦",
+    "pickImage": "挑一张图片吧…",
+    "openingCutout": "打开「用照片做个我」…",
+    "positionReset": "回到右下角啦"
+  },
+  "reminder": {
+    "mode": "唠叨程度",
+    "modeQuiet": "安静一点（我不吵你）",
+    "modeNormal": "正常就好",
+    "modeChatty": "多跟我说说话",
+    "modeHint": "选「安静一点」的话，喝水和主动冒泡都会先停下",
+    "interval": "多久提醒喝水",
+    "interval30": "每 30 分钟",
+    "interval45": "每 45 分钟",
+    "interval60": "每 60 分钟",
+    "interval90": "每 90 分钟",
+    "interval120": "每 120 分钟",
+    "intervalHint": "到点了会把气泡推到你面前，点一下「喝了」就重新计时",
+    "quiet": "安静时间",
+    "quietFromAria": "安静时间开始的小时",
+    "quietFromUnit": "点到",
+    "quietToAria": "安静时间结束的小时",
+    "quietToUnit": "点",
+    "quietHint": "跨过零点也可以，比如 23 点到 8 点",
+    "nudgeTitle": "主动说话",
+    "nudgeWhen": "什么时候主动开口",
+    "nudgeEnabled": "偶尔主动说话",
+    "nudgeEnabledHint": "总开关，关了下面三个都不算",
+    "nudgeLongUse": "坐太久了",
+    "nudgeLongUseHint": "连着用满 50 分钟，提醒你起来走走",
+    "nudgeLateNight": "深夜还在忙",
+    "nudgeLateNightHint": "23 点之后你还在电脑前，劝你早点睡",
+    "nudgeAway": "好久没见你",
+    "nudgeAwayHint": "两小时没互动，出来打个招呼",
+    "nudgeHint": "全屏看片或开会的时候它不会出声；两次说话之间至少隔 45 分钟",
+    "waterTitle": "喝水记录",
+    "today": "今天",
+    "waterTodayEmpty": "今天还没喝呢，等第一杯",
+    "week": "最近七天",
+    "weekHint": "从今天往前数七天，杯数最多的一天最满",
+    "cupMl": "一杯大概多少毫升",
+    "ml": "毫升",
+    "cupMlHint": "每杯按喝的时候的杯量记，改了只影响之后那几杯",
+    "export": "导出",
+    "exportCsv": "导出喝水记录（CSV）",
+    "exportHint": "存到数据目录，里面只有时间和毫升数",
+    "waterToday": "今天第 {cups} 杯，共约 {ml} 毫升",
+    "cups": "{count} 杯",
+    "waterReadFailed": "没读到喝水记录"
+  },
+  "other": {
+    "locale": "界面语言",
+    "localeSystem": "跟随系统",
+    "localeZh": "简体中文",
+    "localeEn": "English",
+    "localeHintPrefix": "改完要重开桌宠才会换语言；现在的语言：",
+    "localeStatus": "{locale}（可用：{available}，共 {count} 条）",
+    "localeUnreadable": "读不到",
+    "dataDir": "东西放哪",
+    "openDir": "打开文件夹",
+    "dataDirHint": "设置、角色图、天气缓存和音效都在这里，随时可以备份",
+    "onboard": "从头认识一下",
+    "onboardBtn": "再看一次欢迎引导",
+    "onboardHint": "就是第一次打开时出现的那张三步小说明",
+    "tray": "托盘和快捷键",
+    "trayChecking": "正在看看托盘好不好用…",
+    "shortcutChecking": "正在试着注册 Ctrl+Alt+P…",
+    "trayHint": "托盘图标找不到的时候，把鼠标放到桌宠身上也能叫出菜单；快捷键随时能把桌宠叫回来。",
+    "trouble": "遇到问题",
+    "diagnostics": "导出诊断信息",
+    "diagHint": "写一个 txt 到数据文件夹：版本、系统、托盘状态和日志尾巴。城市坐标会打码，也不会带上照片。",
+    "privacy": "数据与隐私",
+    "privacySummary": "这里存了什么、会往外面发什么",
+    "privacySettings": "设置（城市、昵称、偏好）：",
+    "privacyPhotos": "角色图和抠过的照片：",
+    "privacyLogs": "日志和抠图轨迹：",
+    "listSeparator": "、",
+    "privacyCaches": "浏览器缓存：",
+    "privacyBody": "联网只有四处：换城市时把城市名发给 open-meteo 换经纬度；之后只用经纬度取天气和空气质量；启动后读一次 GitHub 上的新版号（24 小时最多一次）；只有你点“去下载”才会打开浏览器。没有账号、没有埋点，照片不会上传。",
+    "cleanup": "清理日志和缓存",
+    "cleanupConfirm": "真的清理",
+    "cleanupConfirmAria": "确认清理日志和缓存",
+    "cleanupCancel": "算了",
+    "cleanupCancelAria": "取消清理",
+    "cleanupWithSize": "清理日志和缓存（{size}）",
+    "cleanupNothing": "暂时没有可清理的",
+    "privacyCleanNote": "只删日志、抠图轨迹和浏览器缓存；设置、角色图和照片都留着。",
+    "cleaning": "正在清理…",
+    "cleaned": "清理完了，删掉 {count} 项",
+    "cleanedStatus": "日志和缓存已清理",
+    "cleanupFailed": "清理失败：{message}",
+    "sizeEmpty": "空",
+    "photoCount": "{count} 张",
+    "none": "没有",
+    "update": "更新",
+    "updateBtn": "检查更新",
+    "updateHint": "有新版会在这里和气泡里说一声，点“去下载”打开发布页。",
+    "updateBootAria": "启动时自动看一眼新版本",
+    "updateBoot": "启动时自动看一眼",
+    "updateBootHint": "之后每 24 小时最多一次，只读一个版本号",
+    "updateBootOn": "下次启动会看一眼",
+    "updateBootOff": "启动时不再检查更新",
+    "updateChecking": "正在问服务器…",
+    "updateAvailable": "有新版本 {version}（现在是 {current}）",
+    "updateDownload": "去下载 {version}",
+    "updateFound": "发现新版本 {version}",
+    "updateReasonUpToDate": "已经是最新版",
+    "updateReasonThrottled": "刚查过，过会儿再看",
+    "updateReasonNoFeed": "还没配更新地址（开发版正常）",
+    "updateReasonSkipped": "这个版本你之前跳过了",
+    "updateReasonError": "连不上更新服务器，稍后再试",
+    "updateCheckFailed": "检查失败：{message}",
+    "updateNever": "还没查过",
+    "updateStatus": "当前 {version} · 上次检查：{last}。有新版会在这里和气泡里说一声。",
+    "updateUnreadable": "读不到更新信息，不影响使用。",
+    "trayOk": "托盘图标已经交给系统了：右键有设置和退出，单击能显示或隐藏。要是右下角没看到它，那是被折叠了，用 Ctrl+Alt+P 或鼠标悬停照样能叫出来。",
+    "trayFailed": "托盘这次没显示出来：把鼠标放到桌宠身上就会浮出菜单，设置和退出都在里面。",
+    "trayFailedWithReason": "托盘这次没显示出来（{reason}）：把鼠标放到桌宠身上就会浮出菜单，设置和退出都在里面。",
+    "shortcutOk": "Ctrl+Alt+P 可以用：按一下显示桌宠，再按一下收起来。",
+    "shortcutFailed": "Ctrl+Alt+P 没注册上：把鼠标放到桌宠上仍然能叫出菜单。",
+    "shortcutFailedWithReason": "Ctrl+Alt+P 没注册上（{reason}）：把鼠标放到桌宠上仍然能叫出菜单。",
+    "trayUnreadable": "没读到托盘状态，不过把鼠标放到桌宠身上仍然能打开设置和退出。",
+    "shortcutUnreadable": "没读到快捷键状态。",
+    "exportFailed": "导出没成功，再试一次？",
+    "exportFailedShort": "导出失败",
+    "exported": "已导出 {path}（{rows} 行）",
+    "exportedStatus": "导出好啦",
+    "diagCollecting": "正在收集…",
+    "diagDone": "写好啦：{path}（已打开文件夹）",
+    "diagExported": "诊断信息已导出",
+    "diagFailed": "导出失败：{message}",
+    "diagFailedStatus": "没导出成",
+    "quit": "让它先休息",
+    "quitBtn": "先退出啦",
+    "quitHint": "只是关掉这个窗口的话，我还是会待在托盘里"
   }
 }

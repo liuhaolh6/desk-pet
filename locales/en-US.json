@@ -40,7 +40,34 @@
     "tip5": "Small sips, just right"
   },
   "weather": {
-    "failLog": "weather failed: {message}"
+    "failLog": "weather failed: {message}",
+    "city": "Which city are you in",
+    "cityPlaceholder": "Type a city name, then hit “Find”",
+    "search": "Find",
+    "locate": "Use my location",
+    "recentAria": "Recently used cities",
+    "refresh": "How often to check the weather",
+    "refresh5": "Every 5 minutes",
+    "refresh15": "Every 15 minutes",
+    "refresh30": "Every 30 minutes",
+    "refresh60": "Every 60 minutes",
+    "refreshHint": "Offline, I fall back to the last weather I remember",
+    "cityNowEmpty": "You haven't told me which city you're in yet",
+    "cityNow": "Using: {city}",
+    "cityNowCoords": "Using: {city} ({lat}, {lon})",
+    "autoLocate": "Auto-located",
+    "locatedCity": "My found location",
+    "cityRequired": "Type a city name first",
+    "searching": "Looking…",
+    "searchError": "Not found ({message}) — you can also try pinyin",
+    "searchNone": "Couldn't find that city — try another spelling (e.g. “Hengyang”)",
+    "searchFound": "Found {count} places — click a row below to use it",
+    "citySaved": "Got it: {city} — switching the weather…",
+    "searchFailed": "Search failed",
+    "geoUnavailable": "This computer won't share its location — type a city name instead",
+    "locating": "Finding you…",
+    "located": "Found you",
+    "geoFailed": "Couldn't get a fix — type a city name instead"
   },
   "pet": {
     "title": "Desk pet",
@@ -106,5 +133,812 @@
     "snapHint": "Sticks gently when you drag it to a screen edge",
     "snapGap": "Snap distance",
     "snapGapUnit": "px (0 turns it off)"
+  },
+  "bubble": {
+    "type": {
+      "text": {
+        "label": "Written text",
+        "sample": "Text"
+      },
+      "random": {
+        "label": "Random line",
+        "sample": "Remember to drink water~"
+      },
+      "name": {
+        "label": "My name",
+        "sample": "Xiaofang"
+      },
+      "weatherIcon": {
+        "label": "Weather: icon",
+        "sample": "🌤️"
+      },
+      "weatherCity": {
+        "label": "Weather: city",
+        "sample": "Beijing"
+      },
+      "weatherTemp": {
+        "label": "Weather: current temp",
+        "sample": "13°"
+      },
+      "weatherText": {
+        "label": "Weather: conditions",
+        "sample": "Sunny"
+      },
+      "weatherFeels": {
+        "label": "Weather: feels like",
+        "sample": "Feels like 11°"
+      },
+      "weatherRange": {
+        "label": "Weather: today's high/low",
+        "sample": "7~18°"
+      },
+      "weatherPrecip": {
+        "label": "Weather: chance of rain",
+        "sample": "0%"
+      },
+      "weatherHumidity": {
+        "label": "Weather: humidity",
+        "sample": "79%"
+      },
+      "weatherWind": {
+        "label": "Weather: wind",
+        "sample": "Wind 12km/h"
+      },
+      "weatherSun": {
+        "label": "Weather: sunrise/sunset",
+        "sample": "Sunrise 06:42 · Sunset 17:21"
+      },
+      "weatherUv": {
+        "label": "Weather: UV",
+        "sample": "UV 6"
+      },
+      "weatherTomorrow": {
+        "label": "Weather: tomorrow",
+        "sample": "Tomorrow 6~15° Cloudy"
+      },
+      "weatherHourly": {
+        "label": "Weather: next hours",
+        "sample": "15:00 14° Cloudy → …"
+      },
+      "weatherDays": {
+        "label": "Weather: next two days",
+        "sample": "Tomorrow 6~15° ⛅ · Day after 5~14° 🌧️"
+      },
+      "airQuality": {
+        "label": "Air: quality",
+        "sample": "Air good (35) · nice for a walk"
+      },
+      "airPm": {
+        "label": "Air: PM2.5",
+        "sample": "PM2.5 12"
+      },
+      "weatherTip": {
+        "label": "Weather: friendly tip",
+        "sample": "Take an umbrella"
+      },
+      "weatherUpdated": {
+        "label": "Weather: updated at",
+        "sample": "Updated 22:12"
+      },
+      "weatherHint": {
+        "label": "Weather: offline hint",
+        "sample": "Cached offline"
+      },
+      "waterCups": {
+        "label": "Water: cups today",
+        "sample": "3"
+      },
+      "waterNext": {
+        "label": "Water: next reminder",
+        "sample": "In 42 min"
+      },
+      "waterProgress": {
+        "label": "Water: today's progress",
+        "sample": "●●●○○○○○"
+      },
+      "waterInterval": {
+        "label": "Water: reminder interval",
+        "sample": "Every 60 min"
+      },
+      "waterQuiet": {
+        "label": "Water: quiet hours",
+        "sample": "Quiet 23:00 to 8:00"
+      },
+      "waterLast": {
+        "label": "Water: last drink",
+        "sample": "Last at 22:12"
+      },
+      "waterTip": {
+        "label": "Water: a reminder",
+        "sample": "Sip slowly, no rush"
+      },
+      "time": {
+        "label": "Current time",
+        "sample": "22:12"
+      },
+      "date": {
+        "label": "Today's date",
+        "sample": "Sun, 10/19"
+      }
+    },
+    "card": {
+      "new": "New card",
+      "weather": "Weather",
+      "water": "Water",
+      "random": "Things to say",
+      "weatherTitle": "🌤️ Weather",
+      "waterTitle": "💧 Time to drink"
+    },
+    "layout": {
+      "todayPrefix": "Today ",
+      "precipPrefix": " · Rain ",
+      "cupPrefix": " #",
+      "cupSuffix": " today"
+    },
+    "lib": {
+      "time": "Current time",
+      "weather": "Weather line",
+      "tip": "Friendly tip",
+      "hourly": "Next hours",
+      "days": "Next two days",
+      "air": "Air quality"
+    },
+    "random": {
+      "empty": "I'm right here~"
+    },
+    "date": {
+      "format": "{weekday}, {month}/{day}",
+      "weekday": {
+        "sun": "Sun",
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat"
+      }
+    },
+    "weather": {
+      "cityFallback": "Current location",
+      "loading": "Fetching weather…",
+      "feels": "Feels like {value}",
+      "wind": "Wind {value}km/h",
+      "sun": "Sunrise {sunrise} · Sunset {sunset}",
+      "uv": "UV {value}",
+      "tomorrow": "Tomorrow {low}~{high}{text}",
+      "hourly": "{hour}:00 {temp}{icon}",
+      "updated": "Updated {time}",
+      "hint": "Cached offline"
+    },
+    "air": {
+      "quality": "Air {text} ({aqi})"
+    },
+    "water": {
+      "interval": "Every {mins} min",
+      "noInterval": "No reminder yet",
+      "next": "In {mins} min",
+      "due": "Time to drink",
+      "quiet": "Quiet {from}:00 to {to}:00",
+      "noQuiet": "No quiet hours",
+      "noneToday": "Nothing today yet",
+      "last": "Last at {time}"
+    },
+    "autoHide": "How long a bubble stays",
+    "seconds": "sec",
+    "autoHideHint": "0 keeps it up until you click again",
+    "cooldown": "Between two weather updates",
+    "minutes": "min",
+    "cooldownHint": "So clicking again and again doesn't make me repeat the weather",
+    "phrases": "Things to say to me",
+    "phrasesPlaceholder": "One per line — 24 are ready for you",
+    "phrasesHint": "One per line; I pick them at random. Your own words are welcome too.",
+    "style": "How the bubble looks",
+    "edit": "Arrange the bubble…",
+    "styleHint": "Put any line on any row — it's all up to you"
+  },
+  "sound": {
+    "preset": {
+      "ding": "Ding",
+      "pop": "Pop",
+      "drop": "Droplet",
+      "chime": "Chime",
+      "soft": "Soft chime"
+    },
+    "event": {
+      "click": "Pet click",
+      "bubble": "Bubble appears",
+      "water": "Drink reminder"
+    },
+    "fragment": {
+      "none": "(none selected)",
+      "unknown": "(unknown sound)",
+      "deleted": "(file deleted)"
+    },
+    "enabled": "Sound on or off",
+    "enable": "Let me make sounds",
+    "enableHint": "When I'm clicked, bubble, or remind you about water",
+    "volume": "Volume",
+    "events": "When it plays",
+    "eventsHint": "Which clip plays for clicking, bubbles and water reminders; pick “Mute” to stay silent",
+    "files": "My sound clips",
+    "import": "Add an audio clip…",
+    "filesHint": "wav / mp3 / ogg / m4a / flac all work; keep each under 8MB",
+    "pickAudio": "Pick an audio clip…",
+    "builtinGroup": "Built-in sounds",
+    "mineGroup": "My audio",
+    "missingFragment": "(This clip is gone — pick another)",
+    "toggleTitle": "Whether this one makes a sound",
+    "toggleAria": "{name}: make a sound?",
+    "fragmentAria": "{name}: which clip",
+    "volumeAria": "{name}: how loud",
+    "followsMaster": "Follows the master volume",
+    "customVolume": "Custom",
+    "follow": "Follow",
+    "followTitle": "Volume follows the master",
+    "preview": "Preview",
+    "filesEmpty": "No audio of your own yet — the built-in sounds already work",
+    "deleteTitle": "Delete this clip (places using it go back to built-in sounds)",
+    "deleted": "Clip deleted"
+  },
+  "cutout": {
+    "brushAria": "Brush size (8 to 80 pixels)",
+    "brushLabel": "Brush size",
+    "close": "Close",
+    "defaultName": "Photo pet",
+    "edit": {
+      "eraseOn": "Erase: drag on the picture to remove leftovers; click “Erase” again or press Esc to stop.",
+      "group": "Touch up",
+      "off": "Touch-up off. Move, zoom and position it, then save.",
+      "restoreOn": "Restore: drag on the picture to paint back what was erased by mistake; click again or press Esc to stop."
+    },
+    "editHint": "E erase / R restore / [ ] brush / Ctrl+Z undo; Q / W rotate, F mirror; pause dragging while retouching.",
+    "empty": {
+      "hint": "JPG / PNG / WebP all work — I will keep the person and drop the rest.",
+      "title": "Pick a portrait photo"
+    },
+    "erase": "Erase",
+    "error": {
+      "noPortrait": "No person found",
+      "openImage": "That image will not open.",
+      "readImage": "That image could not be read.",
+      "readPhoto": "That photo could not be read.",
+      "runFailed": "The cutout failed this time",
+      "saveFailed": "Could not save — try again?"
+    },
+    "fallbackBtn": "Skip cutting, use the whole photo",
+    "flip": {
+      "off": "Mirror off",
+      "on": "Mirrored"
+    },
+    "mode": {
+      "busy": "Working…",
+      "cutout": "Cut out",
+      "failed": "That did not work",
+      "fallback": "Whole photo",
+      "none": "Waiting for a photo",
+      "original": "Original, not cut out yet"
+    },
+    "nameLabel": "Give it a name",
+    "pickBtn": "Pick a photo",
+    "preview": {
+      "current": "Showing: {view}; {mode}.",
+      "empty": "No photo picked yet."
+    },
+    "privacy": "Photos and character images stay on your computer; the cutout runs offline too.",
+    "resetEdit": "Start over",
+    "resetView": "Reset position",
+    "restore": "Restore",
+    "rotate": {
+      "flip": "⇋ Mirror",
+      "flipTitle": "Mirror",
+      "group": "Rotate",
+      "left": "↺ Left",
+      "leftTitle": "Rotate left",
+      "right": "↻ Right",
+      "rightTitle": "Rotate right"
+    },
+    "runBtn": "Cut it out for me",
+    "saveBtn": "That's it — save",
+    "saveBtnConfirm": "Confirm again: save the whole photo",
+    "stage": {
+      "label": "Character preview",
+      "labelWith": "Character preview: {view}"
+    },
+    "status": {
+      "confirmFallback": "This is the whole photo, so the original background comes with it. Click once more to save.",
+      "done": "Done. Switch to “Mask” to check the edges, or use “Touch up” to erase leftovers.",
+      "editsReset": "All touch-ups cleared — back to the original.",
+      "fallback": "{message}. This is the whole original photo, not a cutout; I will ask once more before saving.",
+      "fallbackUsed": "Cutout skipped — this is the whole photo. I will confirm once before saving, and the library will mark it as “whole photo”.",
+      "idle": "Pick a photo and I will report progress here.",
+      "opening": "Opening the photo…",
+      "pickCanceled": "Okay, no photo then.",
+      "picked": "Got the photo. Hit “Cut it out for me” and I will keep the person on your computer (nothing is uploaded); or choose “Skip cutting, use the whole photo”.",
+      "picking": "Waiting for you to pick a photo…",
+      "rotated": "Rotated — now at {degree}°",
+      "runError": "Something went wrong while cutting out — you can use “Skip cutting, use the whole photo”.",
+      "running": "Cutting it out… the first run takes a moment, hang on.",
+      "saved": "Saved — now using: {name}",
+      "saving": "Saving this one…"
+    },
+    "step": {
+      "edit": "3. Touch up",
+      "pick": "1. Pick a photo",
+      "place": "2. Position it"
+    },
+    "subtitle": "Your photo is processed only on this computer — it is never uploaded.",
+    "undo": "Undo",
+    "undoDone": "Undone.",
+    "view": {
+      "group": "Choose a view",
+      "mask": "Mask",
+      "original": "Original",
+      "result": "Result"
+    },
+    "zoomHint": "Drag the picture to move it; scroll to zoom.",
+    "zoomLabel": "Zoom"
+  },
+  "editor": {
+    "addRow": "+ Add a row",
+    "closeBtn": "Close",
+    "confirm": {
+      "close": "There are unsaved changes. Close anyway?",
+      "reset": "Reset the bubble to the default? Unsaved changes will be lost."
+    },
+    "error": {
+      "loadSettings": "Could not load settings — try again later.",
+      "save": "Could not save — try again?"
+    },
+    "group": {
+      "other": "Other",
+      "text": "Text",
+      "time": "Date & time",
+      "water": "Water",
+      "weather": "Weather"
+    },
+    "inspector": {
+      "advanced": "Fine-tune the style",
+      "bg": "Background",
+      "bold": "Bold",
+      "clearBg": "Remove",
+      "color": "Text color",
+      "display": "Style",
+      "empty": "Click a block first — then you can edit what it says and how it looks.",
+      "italic": "Italic",
+      "size": "Size",
+      "text": "Content",
+      "title": "This block",
+      "type": "Block type"
+    },
+    "module": {
+      "chip": "({label})",
+      "text": "Custom text"
+    },
+    "op": {
+      "backward": "Move later",
+      "delete": "Delete",
+      "forward": "Move earlier"
+    },
+    "preset": {
+      "cupsPrefix": "Cup ",
+      "cupsSuffix": " today",
+      "group": "One-click layouts",
+      "label": "Start with:",
+      "nextPrefix": "Next in about ",
+      "rich": "Detailed",
+      "simple": "Minimal",
+      "standard": "Standard"
+    },
+    "preview": {
+      "empty": "This card is still empty",
+      "later": "Later"
+    },
+    "resetBtn": "Reset to default",
+    "row": {
+      "add": "Add content after this row",
+      "delete": "Delete this row",
+      "down": "Move row down",
+      "empty": "This row is empty — use ＋ on the right to add something.",
+      "up": "Move row up"
+    },
+    "sample": {
+      "city": "Beijing",
+      "defaultText": "Text",
+      "name": "Xiaofang",
+      "phrase": "Remember to take a sip of water.",
+      "text": "Write something",
+      "weather": "Sunny"
+    },
+    "saveBtn": "Save",
+    "tab": {
+      "moveDown": "Move this card later (the click order follows)",
+      "moveUp": "Move this card earlier (the click order follows)"
+    },
+    "tip": "Click a block to edit what it says and how it looks; use ↑ ↓ on the left of a row to reorder.",
+    "toast": {
+      "maxRows": "Six rows is the limit.",
+      "orderChanged": "Order changed — I will cycle the cards in this order.",
+      "preset": "Switched to “{label}” — check the preview below.",
+      "reset": "Back to default (do not forget to save).",
+      "saved": "Saved — click the pet to see it."
+    }
+  },
+  "onboard": {
+    "hello": "Hi, I'm ",
+    "lead": "Get to know me in a minute: tap me, tell me your city, put me somewhere handy.",
+    "step1": {
+      "title": "Tap me once",
+      "body": "A bubble pops up: today's weather, how much water you've had, and something I want to say."
+    },
+    "step2": {
+      "title": "Tell me your city",
+      "body": "Open Settings → Weather and type your city (pinyin works) — I'll then report its weather."
+    },
+    "step3": {
+      "title": "Put me somewhere handy",
+      "body": "Drag me anywhere and I'll remember it. The little button in the corner opens settings, bubble layout, or lets me rest."
+    },
+    "footNote": "To see this again, go to Settings → Other.",
+    "pickCity": "Pick a city first",
+    "done": "Got it"
+  },
+  "settings": {
+    "searchPlaceholder": "Search settings: volume, city, water…",
+    "searchAria": "Search settings",
+    "searchHint": "A couple of letters is enough — try “volume”, “city” or “cups”.",
+    "searchResultsAria": "Setting search results",
+    "navAria": "Settings sections",
+    "autoSave": "Changes apply right away",
+    "statusDefault": "No save button needed",
+    "resetPanel": "Reset this page",
+    "resetConfirmPrefix": "Reset “",
+    "resetConfirmSuffix": "” to defaults?",
+    "resetConfirmHint": "Only this page's settings — other pages and the pictures you imported stay as they are.",
+    "resetConfirmOk": "Reset",
+    "resetCancel": "Not now",
+    "saved": "Saved",
+    "saveFailed": "That didn't save — try again?",
+    "deleteFailed": "Couldn't delete it — try again?",
+    "loadFailed": "Couldn't read the settings — try again in a moment",
+    "localeChanged": "Got it — restart the pet to switch to this language",
+    "canceled": "Okay, nothing picked",
+    "importFailed": "Couldn't bring that in — try again?",
+    "imported": "Added: {name}",
+    "found": "Found it: {label}",
+    "findEmpty": "No matching settings — try “bubble”, “city” or “volume”.",
+    "resetUnavailable": "This page has no defaults to restore",
+    "resetDone": "“{panel}” is back to its defaults",
+    "find": {
+      "name": {
+        "label": "Its name",
+        "desc": "Change the name",
+        "keywords": "name nickname rename"
+      },
+      "size": {
+        "label": "How big",
+        "desc": "Window size",
+        "keywords": "size bigger smaller scale resize"
+      },
+      "alwaysOnTop": {
+        "label": "Always visible",
+        "desc": "Never hidden behind other windows",
+        "keywords": "topmost on top cover front"
+      },
+      "autostart": {
+        "label": "Starts with Windows",
+        "desc": "Launch after sign-in",
+        "keywords": "startup boot login autostart"
+      },
+      "snapEnabled": {
+        "label": "Snap to edges",
+        "desc": "Stick when dragged to a screen edge",
+        "keywords": "snap edge stick"
+      },
+      "snapGap": {
+        "label": "Snap distance",
+        "desc": "Snap distance in pixels",
+        "keywords": "snap distance pixel"
+      },
+      "importBtn": {
+        "label": "Change the look",
+        "desc": "Pick your own picture",
+        "keywords": "look image picture skin avatar"
+      },
+      "cutoutBtn": {
+        "label": "Make me from a photo",
+        "desc": "Cut out a new character",
+        "keywords": "photo cutout background silhouette"
+      },
+      "resetPosBtn": {
+        "label": "Back to the corner",
+        "desc": "Reset the pet's position",
+        "keywords": "position reset corner bottom right lost"
+      },
+      "autoHide": {
+        "label": "Bubble duration",
+        "desc": "Seconds it stays",
+        "keywords": "bubble duration seconds disappear"
+      },
+      "cooldown": {
+        "label": "Weather cooldown",
+        "desc": "Gap between weather bubbles",
+        "keywords": "weather interval frequency"
+      },
+      "phrases": {
+        "label": "Things to say",
+        "desc": "One line per phrase",
+        "keywords": "phrases lines say quotes"
+      },
+      "editorBtn": {
+        "label": "Bubble look",
+        "desc": "Layout and style",
+        "keywords": "bubble style layout appearance"
+      },
+      "mode": {
+        "label": "Chattiness",
+        "desc": "Reminder frequency",
+        "keywords": "chatty reminder frequency less more"
+      },
+      "interval": {
+        "label": "Water reminder",
+        "desc": "Interval in minutes",
+        "keywords": "water cups interval reminder"
+      },
+      "quietFrom": {
+        "label": "Quiet hours (start)",
+        "desc": "No noise after this hour",
+        "keywords": "quiet do not disturb sleep"
+      },
+      "nudgeEnabled": {
+        "label": "Speaking up (master)",
+        "desc": "Let it pipe up now and then",
+        "keywords": "speak talk nudge remind"
+      },
+      "nudgeLongUse": {
+        "label": "Sitting too long",
+        "desc": "Nudge after 50 minutes",
+        "keywords": "sitting stand rest break"
+      },
+      "nudgeLateNight": {
+        "label": "Late-night busy",
+        "desc": "Bedtime nudge after 23:00",
+        "keywords": "late night sleep bedtime"
+      },
+      "nudgeAway": {
+        "label": "Been away",
+        "desc": "Hello after two hours",
+        "keywords": "away back hello missing"
+      },
+      "quietTo": {
+        "label": "Quiet hours (end)",
+        "desc": "Reminders resume after this hour",
+        "keywords": "quiet do not disturb wake"
+      },
+      "waterTimeline": {
+        "label": "Today's water timeline",
+        "desc": "When each cup happened",
+        "keywords": "water log timeline today cups"
+      },
+      "cupMl": {
+        "label": "Millilitres per cup",
+        "desc": "Used for the CSV export",
+        "keywords": "ml cup size export"
+      },
+      "exportWaterBtn": {
+        "label": "Export water log",
+        "desc": "Generate a CSV",
+        "keywords": "export csv table log backup"
+      },
+      "city": {
+        "label": "Which city",
+        "desc": "Search by city name",
+        "keywords": "city location place weather"
+      },
+      "locateBtn": {
+        "label": "Use my location",
+        "desc": "Locate automatically",
+        "keywords": "locate location gps auto"
+      },
+      "refreshMinutes": {
+        "label": "Weather refresh",
+        "desc": "Refresh interval",
+        "keywords": "weather refresh interval update"
+      },
+      "sound": {
+        "label": "Sound on/off",
+        "desc": "Master switch",
+        "keywords": "sound mute audio"
+      },
+      "soundVolume": {
+        "label": "Volume",
+        "desc": "How loud",
+        "keywords": "volume loud quiet"
+      },
+      "soundEvents": {
+        "label": "When it plays",
+        "desc": "Clip per event",
+        "keywords": "sound event click remind"
+      },
+      "soundImportBtn": {
+        "label": "Add audio",
+        "desc": "Custom sounds",
+        "keywords": "audio sound custom import"
+      },
+      "diagBtn": {
+        "label": "Export diagnostics",
+        "desc": "Logs and status, coordinates masked",
+        "keywords": "diagnostics log error feedback export"
+      },
+      "updateBtn": {
+        "label": "Check for updates",
+        "desc": "Tells you, never installs silently",
+        "keywords": "update upgrade version new"
+      },
+      "privacyCleanBtn": {
+        "label": "Clear logs and cache",
+        "desc": "Privacy; photos and settings stay",
+        "keywords": "privacy clear data cache log delete"
+      },
+      "onboardBtn": {
+        "label": "Welcome tour again",
+        "desc": "Replay the intro",
+        "keywords": "tour welcome intro tutorial"
+      },
+      "openDirBtn": {
+        "label": "Where data lives",
+        "desc": "Open the data folder",
+        "keywords": "data folder backup directory"
+      },
+      "quitBtn": {
+        "label": "Quit for now",
+        "desc": "Close the pet",
+        "keywords": "quit exit close"
+      }
+    }
+  },
+  "role": {
+    "title": "My look",
+    "hint": "Click one to switch; deleting only affects the pictures you imported yourself",
+    "resizePill": "Scaled to 610px automatically",
+    "import": "Pick a picture as my look",
+    "resetPosition": "Back to the bottom-right",
+    "wholePhoto": "Whole photo",
+    "wholePhotoTitle": "Saved with “keep the whole photo” — the background is still there",
+    "delete": "Delete",
+    "deleted": "Deleted",
+    "pickImage": "Pick a picture…",
+    "openingCutout": "Opening “Make me from a photo”…",
+    "positionReset": "Back in the bottom-right"
+  },
+  "reminder": {
+    "mode": "How chatty",
+    "modeQuiet": "Quiet (I won't bother you)",
+    "modeNormal": "Normal",
+    "modeChatty": "Talk to me more",
+    "modeHint": "On “Quiet”, water nudges and spontaneous bubbles both pause",
+    "interval": "How often to remind me to drink",
+    "interval30": "Every 30 minutes",
+    "interval45": "Every 45 minutes",
+    "interval60": "Every 60 minutes",
+    "interval90": "Every 90 minutes",
+    "interval120": "Every 120 minutes",
+    "intervalHint": "When it's time I bring the bubble up; click “Drank it” to restart the timer",
+    "quiet": "Quiet hours",
+    "quietFromAria": "Quiet hours start hour",
+    "quietFromUnit": "to",
+    "quietToAria": "Quiet hours end hour",
+    "quietToUnit": "o'clock",
+    "quietHint": "Crossing midnight is fine — say 23 to 8",
+    "nudgeTitle": "Speaking up",
+    "nudgeWhen": "When to speak up",
+    "nudgeEnabled": "Speak up now and then",
+    "nudgeEnabledHint": "Master switch — turning it off disables all three below",
+    "nudgeLongUse": "Sitting too long",
+    "nudgeLongUseHint": "After 50 minutes of use, a reminder to get up and move",
+    "nudgeLateNight": "Still busy late at night",
+    "nudgeLateNightHint": "After 23:00 at the computer, a nudge to go to bed",
+    "nudgeAway": "Been away a while",
+    "nudgeAwayHint": "After two hours without a peep, I say hello",
+    "nudgeHint": "It stays silent during full-screen video or meetings; at least 45 minutes between two remarks",
+    "waterTitle": "Water log",
+    "today": "Today",
+    "waterTodayEmpty": "Nothing today yet — waiting for the first cup",
+    "week": "Last seven days",
+    "weekHint": "Seven days back from today; the fullest day has the most cups",
+    "cupMl": "How many ml per cup",
+    "ml": "ml",
+    "cupMlHint": "Each cup is logged at the size it was then; changes only affect later cups",
+    "export": "Export",
+    "exportCsv": "Export water log (CSV)",
+    "exportHint": "Saved to the data folder; it contains only times and millilitres",
+    "waterToday": "Cup {cups} today, about {ml} ml so far",
+    "cups": "{count} cups",
+    "waterReadFailed": "Couldn't read the water log"
+  },
+  "other": {
+    "locale": "Interface language",
+    "localeSystem": "Follow system",
+    "localeZh": "Chinese (Simplified)",
+    "localeEn": "English",
+    "localeHintPrefix": "Restart the pet to switch languages. Current language: ",
+    "localeStatus": "{locale} (available: {available}; {count} entries)",
+    "localeUnreadable": "Unreadable",
+    "dataDir": "Where things live",
+    "openDir": "Open folder",
+    "dataDirHint": "Settings, character images, weather cache and sounds all live here — back them up any time",
+    "onboard": "Meet me again",
+    "onboardBtn": "Show the welcome tour again",
+    "onboardHint": "The little three-step intro from your first launch",
+    "tray": "Tray and shortcut",
+    "trayChecking": "Checking whether the tray works…",
+    "shortcutChecking": "Trying to register Ctrl+Alt+P…",
+    "trayHint": "If the tray icon is hard to find, hovering over the pet also opens the menu; the shortcut brings the pet back any time.",
+    "trouble": "Something wrong",
+    "diagnostics": "Export diagnostics",
+    "diagHint": "Writes a txt into the data folder: version, OS, tray status and the tail of the log. City coordinates are masked, and no photos are included.",
+    "privacy": "Data and privacy",
+    "privacySummary": "What is stored here, and what leaves the machine",
+    "privacySettings": "Settings (city, nickname, preferences): ",
+    "privacyPhotos": "Character images and cut-out photos: ",
+    "privacyLogs": "Logs and cut-out traces: ",
+    "listSeparator": ", ",
+    "privacyCaches": "Browser caches: ",
+    "privacyBody": "Only four network calls: the city name goes to open-meteo for coordinates when you switch cities; after that only coordinates fetch weather and air quality; once at startup I read the latest version number from GitHub (at most once every 24 hours); the browser opens only when you click “Download”. No accounts, no tracking, and photos are never uploaded.",
+    "cleanup": "Clear logs and cache",
+    "cleanupConfirm": "Really clear",
+    "cleanupConfirmAria": "Confirm clearing logs and cache",
+    "cleanupCancel": "Never mind",
+    "cleanupCancelAria": "Cancel clearing",
+    "cleanupWithSize": "Clear logs and cache ({size})",
+    "cleanupNothing": "Nothing to clear right now",
+    "privacyCleanNote": "Only logs, cut-out traces and browser caches are deleted; settings, character images and photos stay.",
+    "cleaning": "Clearing…",
+    "cleaned": "Done — removed {count} items",
+    "cleanedStatus": "Logs and cache cleared",
+    "cleanupFailed": "Clearing failed: {message}",
+    "sizeEmpty": "Empty",
+    "photoCount": "{count} photos",
+    "none": "None",
+    "update": "Updates",
+    "updateBtn": "Check for updates",
+    "updateHint": "New versions show up here and in a bubble; click “Download” to open the release page.",
+    "updateBootAria": "Check for a new version at startup",
+    "updateBoot": "Take a quick look at startup",
+    "updateBootHint": "Then at most once every 24 hours, reading only a version number",
+    "updateBootOn": "It will take a look next launch",
+    "updateBootOff": "No update check at startup",
+    "updateChecking": "Asking the server…",
+    "updateAvailable": "New version {version} (you have {current})",
+    "updateDownload": "Download {version}",
+    "updateFound": "Found version {version}",
+    "updateReasonUpToDate": "Already up to date",
+    "updateReasonThrottled": "Checked just now — look again later",
+    "updateReasonNoFeed": "No update feed configured (normal in development)",
+    "updateReasonSkipped": "You skipped this version before",
+    "updateReasonError": "Can't reach the update server — try later",
+    "updateCheckFailed": "Check failed: {message}",
+    "updateNever": "Never checked",
+    "updateStatus": "Current {version} · last checked: {last}. New versions show up here and in a bubble.",
+    "updateUnreadable": "Can't read update info; everything else still works.",
+    "trayOk": "The tray icon is with the system: right-click for settings and quit, click to show or hide. If it's hidden in the overflow area, Ctrl+Alt+P or hovering still brings the menu up.",
+    "trayFailed": "The tray didn't show up this time: hover over the pet to bring up the menu with settings and quit.",
+    "trayFailedWithReason": "The tray didn't show up this time ({reason}): hover over the pet to bring up the menu with settings and quit.",
+    "shortcutOk": "Ctrl+Alt+P works: press to show the pet, press again to put it away.",
+    "shortcutFailed": "Ctrl+Alt+P couldn't be registered: hovering over the pet still brings up the menu.",
+    "shortcutFailedWithReason": "Ctrl+Alt+P couldn't be registered ({reason}): hovering over the pet still brings up the menu.",
+    "trayUnreadable": "Couldn't read the tray status, but hovering over the pet still opens settings and quit.",
+    "shortcutUnreadable": "Couldn't read the shortcut status.",
+    "exportFailed": "Export didn't work — try again?",
+    "exportFailedShort": "Export failed",
+    "exported": "Exported {path} ({rows} rows)",
+    "exportedStatus": "Exported",
+    "diagCollecting": "Collecting…",
+    "diagDone": "Written: {path} (folder opened)",
+    "diagExported": "Diagnostics exported",
+    "diagFailed": "Export failed: {message}",
+    "diagFailedStatus": "Export didn't go through",
+    "quit": "Let it rest",
+    "quitBtn": "Quit for now",
+    "quitHint": "Closing just this window leaves me in the tray"
   }
 }

@@ -9,7 +9,7 @@
   // P2-6 stage 3: this window's copy comes from the dictionary too.
   const i18nLib = window.deskPetI18n
   const i18nBridge = (api && api.i18n) || null
-  const t = (key) => (i18nBridge ? i18nBridge.t(key) : key)
+  const t = (key, vars) => (i18nBridge ? i18nBridge.t(key, vars) : key)
   /** Dictionary value, or the markup's own text when the key is not translated. */
   const tOr = (key, fallback) => {
     const value = t(key)
@@ -27,7 +27,7 @@
     node.textContent = text
     clearTimeout(setStatus.timer)
     if (hold === 0) return // keep it until something else happens
-    setStatus.timer = setTimeout(() => { node.textContent = '不用点保存就行' }, hold || 2200)
+    setStatus.timer = setTimeout(() => { node.textContent = t('settings.statusDefault') }, hold || 2200)
   }
 
   /** Persistent reminder of which place the weather is actually using. */
@@ -35,9 +35,11 @@
     const node = $('cityNow')
     if (!node) return
     const w = (settings && settings.weather) || {}
-    if (!w.city) { node.textContent = '现在还没告诉我你在哪座城市'; return }
-    node.textContent = '现在用的是：' + w.city + (w.label ? ' · ' + w.label : '') +
-      (Number.isFinite(Number(w.lat)) ? '（' + Number(w.lat).toFixed(2) + ', ' + Number(w.lon).toFixed(2) + '）' : '')
+    if (!w.city) { node.textContent = t('weather.cityNowEmpty'); return }
+    const where = w.city + (w.label ? ' · ' + w.label : '')
+    node.textContent = Number.isFinite(Number(w.lat))
+      ? t('weather.cityNowCoords', { city: where, lat: Number(w.lat).toFixed(2), lon: Number(w.lon).toFixed(2) })
+      : t('weather.cityNow', { city: where })
   }
 
   // --------------------------------------------------------------- panel nav
@@ -82,8 +84,8 @@
     const fire = () => {
       api.setSettings(patch).then((next) => {
         state.settings = next
-        setStatus(message || '记住啦')
-      }).catch(() => setStatus('刚才没记下来，再试一次好吗'))
+        setStatus(message || t('settings.saved'))
+      }).catch(() => setStatus(t('settings.saveFailed')))
     }
     if (immediate) fire()
     else state.saveTimer = setTimeout(fire, 350)
@@ -151,8 +153,8 @@
       if (role.cutout === false) {
         const badge = document.createElement('em')
         badge.className = 'role-badge'
-        badge.textContent = '整张照片'
-        badge.title = '这张是用「不用抠，直接用整张」保存的照片，背景还在'
+        badge.textContent = t('role.wholePhoto')
+        badge.title = t('role.wholePhotoTitle')
         card.appendChild(badge)
       }
       const label = document.createElement('span')
@@ -165,12 +167,12 @@
       if (!role.builtin) {
         const del = document.createElement('button')
         del.className = 'remove'
-        del.textContent = '删掉'
+        del.textContent = t('role.delete')
         del.onclick = (ev) => {
           ev.stopPropagation()
           api.deleteRole(role.id).then((result) => {
             state.roles = result.roles || []
-            setStatus(result.ok ? '删掉啦' : '删不掉呢，再试一次？')
+            setStatus(result.ok ? t('role.deleted') : t('settings.deleteFailed'))
             renderRoles()
           })
         }
@@ -184,7 +186,7 @@
     wireFind()
     wireReset()
     $('name').addEventListener('input', (ev) => {
-      const value = ev.target.value.trim() || '小芳'
+      const value = ev.target.value.trim() || t('appearance.namePlaceholder')
       save({ name: value })
     })
 
@@ -206,7 +208,7 @@
     // P2-6：语言只在启动时读一次字典，所以这里明确告诉用户要重开。
     const localeSelect = $('localeSelect')
     if (localeSelect) {
-      localeSelect.addEventListener('change', () => save({ locale: localeSelect.value }, true, '记下了，重开桌宠后换成这个语言'))
+      localeSelect.addEventListener('change', () => save({ locale: localeSelect.value }, true, t('settings.localeChanged')))
     }
     $('refreshMinutes').addEventListener('change', (ev) => {
       save({ weather: { refreshMinutes: Number(ev.target.value) } }, true)
@@ -234,13 +236,13 @@
       btn.disabled = true
       api.exportWaterCsv().then((result) => {
         if (!result || !result.ok) {
-          setStatus('导出没成功，再试一次？')
-          $('waterExportHint').textContent = (result && result.error) || '导出失败'
+          setStatus(t('other.exportFailed'))
+          $('waterExportHint').textContent = (result && result.error) || t('other.exportFailedShort')
           return
         }
-        $('waterExportHint').textContent = '已导出 ' + (result.path || '') + '（' + (result.rows || 0) + ' 行）'
-        setStatus('导出好啦')
-      }).catch(() => setStatus('导出没成功，再试一次？')).finally(() => { btn.disabled = false })
+        $('waterExportHint').textContent = t('other.exported', { path: result.path || '', rows: result.rows || 0 })
+        setStatus(t('other.exportedStatus'))
+      }).catch(() => setStatus(t('other.exportFailed'))).finally(() => { btn.disabled = false })
     })
     $('autoHide').addEventListener('change', (ev) => {
       save({ bubble: { autoHideSeconds: clamp(Number(ev.target.value) || 0, 0, 120) } }, true)
@@ -259,15 +261,15 @@
       save({ sound: { volume: value / 100 } })
     })
     $('soundImportBtn').addEventListener('click', () => {
-      setStatus('挑一段音频…')
+      setStatus(t('sound.pickAudio'))
       api.importSound().then((result) => {
-        if (!result || result.canceled) { setStatus('好，那先不选'); return }
-        if (!result.ok) { setStatus(result.error || '没收进来，再试一次？'); return }
+        if (!result || result.canceled) { setStatus(t('settings.canceled')); return }
+        if (!result.ok) { setStatus(result.error || t('settings.importFailed')); return }
         state.sounds = result.files || []
         renderSoundEvents()
         renderSoundFiles()
-        setStatus('收好啦：' + result.file.name)
-      }).catch(() => setStatus('没收进来，再试一次？'))
+        setStatus(t('settings.imported', { name: result.file.name }))
+      }).catch(() => setStatus(t('settings.importFailed')))
     })
     $('editorBtn').addEventListener('click', () => api.openEditor())
     $('onboardBtn').addEventListener('click', () => api.openOnboard())
@@ -277,35 +279,35 @@
     $('locateBtn').addEventListener('click', locate)
 
     $('importBtn').addEventListener('click', () => {
-      setStatus('挑一张图片吧…')
+      setStatus(t('role.pickImage'))
       api.importRole().then((result) => {
-        if (!result || result.canceled) { setStatus('好，那先不选'); return }
-        if (!result.ok) { setStatus(result.error || '没收进来，再试一次？'); return }
+        if (!result || result.canceled) { setStatus(t('settings.canceled')); return }
+        if (!result.ok) { setStatus(result.error || t('settings.importFailed')); return }
         state.roles = result.roles || []
-        return api.getState().then((next) => { fill(next.settings); setStatus('收好啦：' + result.role.name) })
-      }).catch(() => setStatus('没收进来，再试一次？'))
+        return api.getState().then((next) => { fill(next.settings); setStatus(t('settings.imported', { name: result.role.name })) })
+      }).catch(() => setStatus(t('settings.importFailed')))
     })
 
     $('cutoutBtn').addEventListener('click', () => {
-      setStatus('打开「用照片做个我」…')
+      setStatus(t('role.openingCutout'))
       api.openCutout()
     })
 
-    $('resetPosBtn').addEventListener('click', () => { save({ position: null }, true); setStatus('回到右下角啦') })
+    $('resetPosBtn').addEventListener('click', () => { save({ position: null }, true); setStatus(t('role.positionReset')) })
     $('openDirBtn').addEventListener('click', () => api.openDataDir())
     // P0-5: one click writes a redacted diagnostics txt next to the settings.
     $('diagBtn').addEventListener('click', async () => {
       const btn = $('diagBtn')
       const hint = $('diagStatus')
       btn.disabled = true
-      hint.textContent = '正在收集…'
+      hint.textContent = t('other.diagCollecting')
       try {
         const result = await api.exportDiagnostics()
-        hint.textContent = '写好啦：' + result.path + '（已打开文件夹）'
-        setStatus('诊断信息已导出')
+        hint.textContent = t('other.diagDone', { path: result.path })
+        setStatus(t('other.diagExported'))
       } catch (err) {
-        hint.textContent = '导出失败：' + ((err && err.message) || String(err))
-        setStatus('没导出成')
+        hint.textContent = t('other.diagFailed', { message: (err && err.message) || String(err) })
+        setStatus(t('other.diagFailedStatus'))
       } finally {
         btn.disabled = false
       }
@@ -315,23 +317,29 @@
       const btn = $('updateBtn')
       const hint = $('updateStatus')
       btn.disabled = true
-      hint.textContent = '正在问服务器…'
+      hint.textContent = t('other.updateChecking')
       try {
         const decision = await api.checkUpdate(true)
         if (decision && decision.kind !== 'none' && decision.url) {
           const info = await api.getUpdateStatus().catch(() => null)
-          hint.textContent = '有新版本 ' + decision.version + '（现在是 ' + ((info && info.version) || '') + '）'
-          btn.textContent = '去下载 ' + decision.version
+          hint.textContent = t('other.updateAvailable', { version: decision.version, current: (info && info.version) || '' })
+          btn.textContent = t('other.updateDownload', { version: decision.version })
           btn.disabled = false
           btn.onclick = () => api.openUpdate(decision.url)
-          setStatus('发现新版本 ' + decision.version)
+          setStatus(t('other.updateFound', { version: decision.version }))
           return
         }
-        const reasons = { 'up-to-date': '已经是最新版', throttled: '刚查过，过会儿再看', 'no-feed': '还没配更新地址（开发版正常）', skipped: '这个版本你之前跳过了', error: '连不上更新服务器，稍后再试' }
-        hint.textContent = reasons[decision && decision.reason] || '已经是最新版'
+        const reasons = {
+          'up-to-date': t('other.updateReasonUpToDate'),
+          throttled: t('other.updateReasonThrottled'),
+          'no-feed': t('other.updateReasonNoFeed'),
+          skipped: t('other.updateReasonSkipped'),
+          error: t('other.updateReasonError'),
+        }
+        hint.textContent = reasons[decision && decision.reason] || t('other.updateReasonUpToDate')
         setStatus(hint.textContent)
       } catch (err) {
-        hint.textContent = '检查失败：' + ((err && err.message) || String(err))
+        hint.textContent = t('other.updateCheckFailed', { message: (err && err.message) || String(err) })
       } finally {
         btn.disabled = false
       }
@@ -342,20 +350,22 @@
       try { info = await api.privacySummary() } catch { info = null }
       if (!info || !info.files) return
       const size = (bytes) => {
-        if (!bytes) return '空'
+        if (!bytes) return t('other.sizeEmpty')
         if (bytes < 1024) return bytes + ' B'
         if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
         return (bytes / 1024 / 1024).toFixed(1) + ' MB'
       }
       $('privSettings').textContent = size(info.files.settings && info.files.settings.bytes)
       const photos = info.files.photos || { count: 0, bytes: 0 }
-      $('privPhotos').textContent = photos.count + ' 张 · ' + size(photos.bytes)
+      $('privPhotos').textContent = t('other.photoCount', { count: photos.count }) + ' · ' + size(photos.bytes)
       const logs = (info.files.log && info.files.log.bytes) + (info.files.trace && info.files.trace.bytes)
       $('privLogs').textContent = size(logs)
       const caches = info.files.caches || { count: 0, bytes: 0 }
-      $('privCaches').textContent = caches.count ? size(caches.bytes) : '没有'
+      $('privCaches').textContent = caches.count ? size(caches.bytes) : t('other.none')
       const cleanBtn = $('privacyCleanBtn')
-      cleanBtn.textContent = logs || caches.bytes ? '清理日志和缓存（' + size(info.junkBytes) + '）' : '暂时没有可清理的'
+      cleanBtn.textContent = logs || caches.bytes
+        ? t('other.cleanupWithSize', { size: size(info.junkBytes) })
+        : t('other.cleanupNothing')
       cleanBtn.disabled = !info.junkBytes
       return info
     }
@@ -368,21 +378,21 @@
       $('privacyCleanBtn').hidden = true
       $('privacyConfirmBtn').hidden = false
       $('privacyCancelBtn').hidden = false
-      $('privacyStatus').textContent = '只删日志、抠图轨迹和浏览器缓存；设置、角色图和照片都留着。'
+      $('privacyStatus').textContent = t('other.privacyCleanNote')
     })
     $('privacyCancelBtn').addEventListener('click', () => { resetPrivacyConfirm(); $('privacyStatus').textContent = '' })
     $('privacyConfirmBtn').addEventListener('click', async () => {
       const btn = $('privacyConfirmBtn')
       btn.disabled = true
-      $('privacyStatus').textContent = '正在清理…'
+      $('privacyStatus').textContent = t('other.cleaning')
       try {
         const result = await api.privacyCleanup()
         resetPrivacyConfirm()
         await refreshPrivacy()
-        $('privacyStatus').textContent = '清理完了，删掉 ' + result.removed + ' 项'
-        setStatus('日志和缓存已清理')
+        $('privacyStatus').textContent = t('other.cleaned', { count: result.removed })
+        setStatus(t('other.cleanedStatus'))
       } catch (err) {
-        $('privacyStatus').textContent = '清理失败：' + ((err && err.message) || String(err))
+        $('privacyStatus').textContent = t('other.cleanupFailed', { message: (err && err.message) || String(err) })
       } finally {
         btn.disabled = false
       }
@@ -394,7 +404,7 @@
       // wire() 在 state.settings 就绪前跑，这里不能假设它已经有值。
       bootToggle.checked = !(state.settings && state.settings.update && state.settings.update.checkOnBoot === false)
       bootToggle.addEventListener('change', () => {
-        save({ update: { checkOnBoot: !!bootToggle.checked } }, true, bootToggle.checked ? '下次启动会看一眼' : '启动时不再检查更新')
+        save({ update: { checkOnBoot: !!bootToggle.checked } }, true, bootToggle.checked ? t('other.updateBootOn') : t('other.updateBootOff'))
       })
     }
 
@@ -409,8 +419,8 @@
   function fragmentOptions(selected) {
     const select = document.createElement('select')
     const groups = [
-      { label: '自带的声音', items: sound.PRESETS.map((p) => ({ value: p.id, label: p.label })) },
-      { label: '我收下的音频', items: state.sounds.map((f) => ({ value: 'file:' + f.id, label: f.name })) },
+      { label: t('sound.builtinGroup'), items: sound.PRESETS.map((p) => ({ value: p.id, label: p.label })) },
+      { label: t('sound.mineGroup'), items: state.sounds.map((f) => ({ value: 'file:' + f.id, label: f.name })) },
     ]
     groups.forEach((group) => {
       if (!group.items.length) return
@@ -427,7 +437,7 @@
     if (selected && !sound.isKnownFragment(selected, state.sounds)) {
       const opt = document.createElement('option')
       opt.value = selected
-      opt.textContent = '（这段找不到了，重新选一个吧）'
+      opt.textContent = t('sound.missingFragment')
       select.insertBefore(opt, select.firstChild)
     }
     select.value = selected
@@ -461,11 +471,11 @@
 
       const toggle = document.createElement('label')
       toggle.className = 'check'
-      toggle.title = '这件事要不要出声'
+      toggle.title = t('sound.toggleTitle')
       const check = document.createElement('input')
       check.type = 'checkbox'
       check.checked = !!event.enabled
-      check.setAttribute('aria-label', meta.label + '：要不要出声')
+      check.setAttribute('aria-label', t('sound.toggleAria', { name: meta.label }))
       check.onchange = () => saveSoundEvent(meta.key, { enabled: check.checked })
       toggle.appendChild(check)
       row.appendChild(toggle)
@@ -476,7 +486,7 @@
       row.appendChild(name)
 
       const select = fragmentOptions(event.fragment)
-      select.setAttribute('aria-label', meta.label + '：用哪段声音')
+      select.setAttribute('aria-label', t('sound.fragmentAria', { name: meta.label }))
       select.onchange = () => saveSoundEvent(meta.key, { fragment: select.value })
       row.appendChild(select)
 
@@ -484,7 +494,7 @@
       vol.className = 'vol'
       const range = document.createElement('input')
       range.type = 'range'
-      range.setAttribute('aria-label', meta.label + '：多大声')
+      range.setAttribute('aria-label', t('sound.volumeAria', { name: meta.label }))
       range.min = '0'
       range.max = '100'
       range.step = '5'
@@ -492,7 +502,7 @@
       range.value = String(effective)
       const label = document.createElement('b')
       label.textContent = event.volume == null ? '—' : effective + '%'
-      label.title = event.volume == null ? '跟着总音量' : '单独调'
+      label.title = event.volume == null ? t('sound.followsMaster') : t('sound.customVolume')
       range.oninput = () => { label.textContent = range.value + '%' }
       range.onchange = () => saveSoundEvent(meta.key, { volume: Number(range.value) / 100 })
       vol.appendChild(range)
@@ -501,14 +511,14 @@
 
       const follow = document.createElement('button')
       follow.type = 'button'
-      follow.textContent = '跟着'
-      follow.title = '音量跟着总音量'
+      follow.textContent = t('sound.follow')
+      follow.title = t('sound.followTitle')
       follow.onclick = () => saveSoundEvent(meta.key, { volume: null })
       row.appendChild(follow)
 
       const preview = document.createElement('button')
       preview.type = 'button'
-      preview.textContent = '听一下'
+      preview.textContent = t('sound.preview')
       preview.onclick = () => previewEvent(meta.key)
       row.appendChild(preview)
 
@@ -523,7 +533,7 @@
     if (!state.sounds.length) {
       const empty = document.createElement('span')
       empty.className = 'muted'
-      empty.textContent = '还没添加自己的音频，自带的声音已经能用啦'
+      empty.textContent = t('sound.filesEmpty')
       box.appendChild(empty)
       return
     }
@@ -534,15 +544,15 @@
       const del = document.createElement('button')
       del.type = 'button'
       del.textContent = '×'
-      del.title = '删掉这段音频（用到它的地方会回到自带声音）'
+      del.title = t('sound.deleteTitle')
       del.onclick = () => {
         api.deleteSound(file.id).then((result) => {
           state.sounds = result.files || []
           return api.getState().then((next) => {
             fill(next.settings)
-            setStatus('删掉啦片段')
+            setStatus(t('sound.deleted'))
           })
-        }).catch(() => setStatus('删不掉呢，再试一次？'))
+        }).catch(() => setStatus(t('settings.deleteFailed')))
       }
       chip.appendChild(del)
       box.appendChild(chip)
@@ -560,8 +570,8 @@
       if (!stats) return
       const today = stats.today || { cups: 0, ml: 0, items: [] }
       todayNode.textContent = today.cups
-        ? '今天第 ' + today.cups + ' 杯，共约 ' + today.ml + ' 毫升'
-        : '今天还没喝呢，等第一杯'
+        ? t('reminder.waterToday', { cups: today.cups, ml: today.ml })
+        : t('reminder.waterTodayEmpty')
       timeNode.textContent = ''
       ;(today.items || []).forEach((item) => {
         const li = document.createElement('li')
@@ -577,7 +587,7 @@
         if (day.isToday) li.setAttribute('aria-current', 'true')
         const label = document.createElement('span')
         label.className = 'day-label'
-        label.textContent = day.isToday ? '今天' : day.label
+        label.textContent = day.isToday ? t('reminder.today') : day.label
         const bar = document.createElement('span')
         bar.className = 'bar'
         const fill = document.createElement('i')
@@ -585,14 +595,14 @@
         bar.appendChild(fill)
         const count = document.createElement('span')
         count.className = 'day-count'
-        count.textContent = day.cups + ' 杯'
+        count.textContent = t('reminder.cups', { count: day.cups })
         li.appendChild(label)
         li.appendChild(bar)
         li.appendChild(count)
         weekNode.appendChild(li)
       })
     }).catch(() => {
-      todayNode.textContent = '没读到喝水记录'
+      todayNode.textContent = t('reminder.waterReadFailed')
     })
   }
 
@@ -645,6 +655,14 @@
     PANEL_TITLE[btn.dataset.panel] = btn.dataset.title || btn.textContent.trim()
   })
 
+  // 语言包里给了 settings.find.<id>.label / .desc / .keywords，就地覆盖中文默认值：
+  // 英文界面下用户按自己看到的词（city / volume）也能搜到。
+  FIND_INDEX.forEach((entry) => {
+    entry.label = tOr('settings.find.' + entry.id + '.label', entry.label)
+    entry.hint = tOr('settings.find.' + entry.id + '.desc', entry.hint)
+    entry.keys = entry.keys + ' ' + tOr('settings.find.' + entry.id + '.keywords', '')
+  })
+
   const reduceMotion = () => {
     try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches } catch (err) { return false }
   }
@@ -681,7 +699,7 @@
     if (!matches.length) {
       const empty = document.createElement('p')
       empty.className = 'search-empty'
-      empty.textContent = '没找到有关的设置，试试「气泡」「城市」「音量」'
+      empty.textContent = t('settings.findEmpty')
       box.appendChild(empty)
       box.hidden = false
       input.setAttribute('aria-expanded', 'true')
@@ -718,7 +736,7 @@
     if (typeof node.focus === 'function') node.focus({ preventScroll: true })
     $('searchResults').hidden = true
     $('settingSearch').setAttribute('aria-expanded', 'false')
-    setStatus('找到了：' + entry.label, 1800)
+    setStatus(t('settings.found', { label: entry.label }), 1800)
   }
 
   function wireFind() {
@@ -830,7 +848,7 @@
       const patch = panelResetPatch(panel)
       closeResetConfirm()
       if (!patch) return
-      save(patch, true, '「' + (PANEL_TITLE[panel] || panel) + '」已经回到默认啦')
+      save(patch, true, t('settings.resetDone', { panel: PANEL_TITLE[panel] || panel }))
     })
     box.addEventListener('keydown', (ev) => {
       if (ev.key === 'Escape') {

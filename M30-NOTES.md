@@ -174,3 +174,33 @@ app/editor.js 54 · lib/weather.js 54          共 30 个文件 / 880 处
    放开文件策略（danger-full-access）后实测可跑：`node tools/e2e/run.js` 4/4 通过（i18n 用例 4.4s）。
 4. **打包未验证**：`locales/*.json` 需要进 asar。electron-builder 默认打包整个仓库（`files` 未显式收窄），
    所以预期会自动进去，但**没有实机装包验证过**，出包时要用 `npx asar list` 或直接跑装好的 exe 确认。
+## 10. 阶段三-B：设置页整页改造（本次接手重做）
+
+上一个会话把设置页批量换成了 `data-i18n`，但只改了一半：HTML 全换了、JS 只换了一部分，
+语言包里预先塞了 400+ 条 `settings.*` / `finder` 键却没人引用，`smoke` 与 `check-a11y`
+里写死中文的断言全红，`check-i18n` 报缺 470 个键。这轮的处理：
+
+1. **先回退**（commit `ad3a0c2`）：把 `cutout.*` / `editor.*` / `diagnostics.*` 那批只改了代码、
+   没写词典的改动退回 `113b60e` 之前，保证 `check` / `smoke` / `unit` 全绿，再往前推。
+2. **接受设置页那部分**（HTML + `settings.js` 已改完的部分 + 两个语言包），它自洽：
+   `data-i18n` 节点 142 个全部有值、`data-i18n-aria-label` 全部落到 `aria-label`。
+3. **把搜索索引也本地化**：`FIND_INDEX` 仍是中文手写表（供 zh 兜底），加载后用
+   `settings.find.<id>.label/.desc/.keywords` 覆盖 —— 这正是那 400+ 条闲置键的用途。
+   en 下输入 `city` / `volume` 能命中；zh 下输入「城市」「音量」照旧命中。
+4. **静态断言改成认 `data-i18n`**：`tools/smoke.js` 里两处、`tools/check-a11y.js` 里五处
+   （搜索框名字、结果列表名字、最近城市行、确认按钮文案、导出按钮、空结果提示）。
+   判断依据从“HTML 里有这串中文”改成“这个控件有可访问名称（`aria-label` 或 `data-i18n-aria-label`）”。
+   运行时那侧靠 `tools/a11y-audit.js`（86 项 0 失败）兜底，比静态匹配更可信。
+
+真窗口验证（`--remote-debugging-port=9270`，数据目录 `.dev-p26s3`）：
+
+| 语言 | `data-i18n` 节点 | 空文案 | 缺 aria-label | 正文残留中文 | 搜索 |
+|---|---|---|---|---|---|
+| zh-CN | 142 | 0 | 0 | 194 处（JS 侧还没改完） | 「城市」1、「音量」1、「zzzz」0 且有中文提示 |
+| en-US | 142 | 0 | 0 | **0** | `city` 1（"Which city · Weather"） |
+
+（en 的 0 处残留说明设置页这一步真的整页通了；zh 的 194 处来自 `settings.js` 还没换的 toast /
+状态文案，下一步接着清。）
+
+剩余的活（阶段三-C 起）：`app/settings.js` 151 处、`app/bubble-model.js` 99 处、
+`app/editor.js` 54 处、`lib/weather.js` 54 处、`app/cutout.js` 52 处。

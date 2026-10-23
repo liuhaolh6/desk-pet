@@ -1254,7 +1254,11 @@ const PAD = 54
 
   // Search box + results container.
   assert.ok(/id="settingSearch"/.test(settingsHtml) && /type="search"/.test(settingsHtml), '侧边栏有搜索框')
-  assert.ok(/id="searchResults"/.test(settingsHtml) && /aria-label="设置项搜索结果"/.test(settingsHtml), '有结果列表且带名称')
+  assert.ok(
+    /id="searchResults"/.test(settingsHtml) &&
+      /aria-label="[^"]+"|data-i18n-aria-label="settings\.searchResultsAria"/.test(settingsHtml),
+    '有结果列表且带名称'
+  )
   assert.ok(/aria-describedby="searchHint"/.test(settingsHtml) && /id="searchHint"/.test(settingsHtml), '搜索框连着示例提示')
 
   // Every indexed target must still exist in the page.
@@ -1297,7 +1301,11 @@ const PAD = 54
   assert.deepEqual(withoutHint, [], '每个设置项都有一句话说明')
 
   // Recent cities.
-  assert.ok(/id="recentCities"/.test(settingsHtml) && /aria-label="最近用过的城市"/.test(settingsHtml), '天气页有最近城市一行')
+  assert.ok(
+    /id="recentCities"/.test(settingsHtml) &&
+      /aria-label="[^"]+"|data-i18n-aria-label="weather\.recentAria"/.test(settingsHtml),
+    '天气页有最近城市一行'
+  )
   assert.ok(/function noteRecentCity/.test(settingsJs) && /\.slice\(0, 5\)/.test(settingsJs), '最近城市最多记 5 个')
   assert.ok(/\[clean\]\.concat\(\(weather\.recent \|\| \[\]\)\.filter\(\(item\) => item !== clean\)\)/.test(settingsJs), '重复城市提到最前而不是重复出现')
   assert.ok(/noteRecentCity\(item\.name\)/.test(settingsJs), '选中城市后记一笔')

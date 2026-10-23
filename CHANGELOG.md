@@ -7,6 +7,12 @@
 ## [Unreleased]
 
 ### 新增
+- **多语言：设置页整页（ROADMAP P2-6 阶段三-B）**：`settings.html` 里最后 173 处中文全部变成 `data-i18n*` 标记，
+  面板标题/说明、搜索框、恢复默认确认层、七个面板的字段与提示都走字典；设置页的搜索索引也本地化了——
+  `FIND_INDEX` 仍是中文手写表（zh 兜底），加载后用 `settings.find.<id>.label/.desc/.keywords` 覆盖，
+  于是 en 下输入 `city`/`volume` 能命中，zh 下「城市」「音量」照旧。真窗口复验：en 下正文残留中文 **0 处**、
+  zh 下 194 处（还有 JS 侧 toast 待清）；`data-i18n` 节点 142 个全有值、`data-i18n-aria-label` 全落到 `aria-label`。
+  基线 **859 → 599**；`smoke` 与 `check-a11y` 里写死中文的断言改成认 `data-i18n`，a11y 静态 95 项、审计 86/0。
 - **多语言：桌宠窗口与窗口标题（ROADMAP P2-6 阶段二）**：`pet.html` 的 `<title>`、仿色图 `alt`、菜单按钮、
   菜单与按钮的 `aria-label` 全改成 `data-i18n*` 标记，**中文不再当兵补文案留在标记里**（否则“还剩多少处”永远数不准）；
   `pet.js` 启动时 `applyStatic()` 一次填完，喝水卡的「喝过了 / 稍后 10 分钟」和五句喝水小语、三条按小时
