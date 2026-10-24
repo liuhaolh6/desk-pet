@@ -93,3 +93,30 @@ certutil -user -addstore -f TrustedPublisher .tmp-signing\deskpet-selfsigned.cer
 - 本文档（流程 + 实测 + 风险）；
 - 证书与私钥**不进仓库**（在 `.tmp-signing/`，已被 `.gitignore` 的 `.tmp-*` 规则忽略）；
 - 想复现：按 §2 跑一遍即可，`tools/verify-signature.ps1` 可检查签名状态。
+## 9. 已知限制：杀软拦截安装器解包（本机实测）
+
+本机装的是 **Lenovo Anti-Virus powered by Huorong Security**（另带 Windows Defender）。
+从 2026-10-24 起，它会**静默拦截 NSIS 安装器的解包写盘**：
+
+| 实验 | 结果 |
+|---|---|
+| 0.6.11 签名包，默认 TEMP | 装不上，退出码 0 |
+| 0.6.11 签名包，TEMP 指向项目目录 | 装不上 |
+| 0.6.11 签名包，`/S /D=D:\DeskPetTest\installed` | 装不上，目录都没建 |
+| **0.6.8 老包**（当初在本机装成功过） | **同样装不上** |
+
+最后一行是判据：**同一份二进制、同一套命令，环境变了才失败**，与代码无关。
+火绒也解释了为什么 `%LOCALAPPDATA%\Temp` 一开始就不可写。
+
+失败时的表现容易误导排查：
+
+- 交互安装会在中途弹出「DeskPet 无法关闭」——这句来自 `extractAppPackage.nsh` 的解包失败分支，
+  与“关闭程序”无关（同一个 message id 也被旧卸载器重试循环复用）。
+- 静默安装（`/S`）直接放弃，**退出码 0、无任何提示**。
+
+`installSection.nsh` 里 `customInstall` 之后就解包 `app-64.7z`；用钩子落盘可证明
+`customInit`、`customInstall` 都到达了，之后文件一个都没写出来。
+
+**给用户的建议**：装前把安装包加入杀软白名单，或直接用便携版 `DeskPet-<ver>-portable.exe`。
+**产品侧兜底**：`build/installer.nsh` 的 `customInit` 会清掉「有安装记录但没有卸载器」的注册表残留，
+避免走进那条没有出口的重试循环。

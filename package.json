@@ -132,7 +132,9 @@
       ],
       "language": "2052",
       "runAfterFinish": true,
-      "menuCategory": false
+      "menuCategory": false,
+      "include": "build/installer.nsh",
+      "allowToChangeInstallationDirectory": false
     }
   },
   "dependencies": {
