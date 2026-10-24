@@ -6,6 +6,18 @@
 
 ## [Unreleased]
 
+## [0.6.13] - 2026-10-24
+
+### 修复
+
+- **应用图标与托盘图标去掉圆形徽章**：改成原图抠图后的「贴纸」——只有人物本身和透明底，不再有粉色圆环、
+  渐变底盘与投影；`build/icon.ico` 同步重生成（16–256px 多尺寸）。`tools/make-assets.py` 新增 `--reicon`，
+  可直接从 `assets/default.png` 重生成 `icon.png` / `icon.ico` / `tray.png` / `tray@2x.png`，且不再改写默认角色图。
+
+### 打包
+
+- 便携版 `dist/DeskPet-0.6.13-portable.exe`；安装器仍受本机杀软限制（`docs/SELF-SIGNING.md` §9）。
+
 ## [0.6.12] - 2026-10-24
 
 ### 新增

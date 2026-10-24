@@ -1,9 +1,13 @@
 """Generate the app icon / tray icons / .ico (and optionally the default character).
 
-Two modes:
+Three modes:
 
     python tools/make-assets.py                     # legacy vector pet (fallback)
     python tools/make-assets.py --photo <file.png>  # brand assets from a portrait
+    python tools/make-assets.py --reicon            # redo icon/tray from assets/default.png
+
+The icon and tray are a plain sticker: the cut-out subject on a transparent
+square, with no ring, gradient disc or drop shadow around it.
 
 `--photo` also rewrites `assets/default.png`, i.e. the built-in default role, so
 the same source drives the icon, the tray and the character shown on first run.
@@ -120,73 +124,56 @@ def face_crop(img, tight=0.72):
     return img.crop((left, top, left + side, top + side))
 
 
-def round_badge(crop, size, ring_ratio=0.045, shadow=True):
-    """Circular avatar with a soft brand gradient, ring and drop shadow, exactly `size` px."""
-    margin = max(2, round(size * 0.06)) if shadow else 0
-    inner = size - margin * 2
-    d_size = inner * 4  # supersample for smooth edges
+def sticker(img, size, pad_ratio=0.06):
+    """The subject cut out of its background, centred on a transparent square.
 
-    # Soft gradient disc behind the photo so its transparent background reads as
-    # a designed backdrop instead of showing the shadow through.
-    grad = Image.new("RGBA", (d_size, d_size), (0, 0, 0, 0))
-    top, bottom = (255, 226, 238), (228, 240, 255)
-    for y in range(d_size):
-        t = y / max(1, d_size - 1)
-        grad.paste(
-            (round(top[0] + (bottom[0] - top[0]) * t),
-             round(top[1] + (bottom[1] - top[1]) * t),
-             round(top[2] + (bottom[2] - top[2]) * t), 255),
-            (0, y, d_size, y + 1),
-        )
-    disc = Image.new("L", (d_size, d_size), 0)
-    ImageDraw.Draw(disc).ellipse((0, 0, d_size - 1, d_size - 1), fill=255)
-    grad.putalpha(disc)
-
-    square = crop.resize((d_size, d_size), Image.LANCZOS)
-    avatar = Image.alpha_composite(grad, square)
-    avatar.putalpha(disc)
-
-    ring_w = max(2, int(d_size * ring_ratio))
-    draw = ImageDraw.Draw(avatar)
-    # Draw the ring so its outer edge sits on the circle itself (no white sliver).
-    draw.ellipse((0, 0, d_size - 1, d_size - 1), outline=RING, width=ring_w)
-    inset = ring_w + max(1, ring_w // 3)
-    draw.ellipse((inset, inset, d_size - 1 - inset, d_size - 1 - inset),
-                 outline=(255, 255, 255, 120), width=max(1, ring_w // 4))
-    avatar = avatar.resize((inner, inner), Image.LANCZOS)
-
-    if not shadow:
-        return avatar
-
+    This is what the Windows shell and the tray want: a sticker with alpha and
+    no badge, ring, gradient disc or drop shadow behind it.
+    """
+    box = subject_box(img, 6)
+    subj = img.crop(box)
+    inner = max(1, round(size * (1 - 2 * pad_ratio)))
+    scale = min(inner / subj.width, inner / subj.height)
+    w = max(1, round(subj.width * scale))
+    h = max(1, round(subj.height * scale))
+    resized = subj.resize((w, h), Image.LANCZOS)
     canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    blur = max(1, margin / 2.0)
-    sh = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    ImageDraw.Draw(sh).ellipse((margin // 2, margin, size - 1 - margin // 2, size - 1),
-                               fill=(32, 49, 112, 80))
-    canvas.alpha_composite(sh.filter(ImageFilter.GaussianBlur(blur)))
-    canvas.alpha_composite(avatar, (margin, margin))
+    canvas.alpha_composite(resized, ((size - w) // 2, (size - h) // 2))
     return canvas
+
+
+def write_icons(character):
+    """Write icon.png, build/icon.ico (multi-size), tray.png and tray@2x.png."""
+    icon = sticker(character, 256)
+    icon.save(os.path.join(ASSETS, "icon.png"))
+    icon.save(
+        os.path.join(BUILD, "icon.ico"),
+        sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)],
+    )
+    sticker(character, 32, pad_ratio=0.02).save(os.path.join(ASSETS, "tray.png"))
+    sticker(character, 64, pad_ratio=0.03).save(os.path.join(ASSETS, "tray@2x.png"))
+    return icon
 
 
 def photo_assets(path):
     os.makedirs(ASSETS, exist_ok=True)
     os.makedirs(BUILD, exist_ok=True)
 
-    source = Image.open(path).convert("RGBA")
     character = load_character(path)
     character.save(os.path.join(ASSETS, "default.png"))
     print("wrote default.png (%dx%d)" % character.size)
 
-    icon = round_badge(face_crop(character, 1.0), 256)
-    icon.save(os.path.join(ASSETS, "icon.png"))
-    icon.resize((256, 256), Image.LANCZOS).save(
-        os.path.join(BUILD, "icon.ico"),
-        sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)],
-    )
-    round_badge(face_crop(character, 0.72), 32, ring_ratio=0.12).save(os.path.join(ASSETS, "tray.png"))
-    round_badge(face_crop(character, 0.78), 64, ring_ratio=0.08).save(os.path.join(ASSETS, "tray@2x.png"))
+    icon = write_icons(character)
     print("wrote icon.png (%dx%d), icon.ico, tray.png, tray@2x.png" % icon.size)
-    print("source:", path, source.size)
+    print("source:", path, character.size)
+
+
+def reicon():
+    """Regenerate icon/tray from the existing character without touching default.png."""
+    os.makedirs(BUILD, exist_ok=True)
+    character = Image.open(os.path.join(ASSETS, "default.png")).convert("RGBA")
+    icon = write_icons(character)
+    print("wrote icon.png (%dx%d), icon.ico, tray.png, tray@2x.png" % icon.size)
 
 
 def vector_assets():
@@ -210,8 +197,12 @@ def vector_assets():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--photo", help="portrait PNG used for the icon, tray and default character")
+    parser.add_argument("--reicon", action="store_true",
+                        help="regenerate icon/tray from assets/default.png (sticker, no ring)")
     args = parser.parse_args()
-    if args.photo:
+    if args.reicon:
+        reicon()
+    elif args.photo:
         photo_assets(args.photo)
     else:
         vector_assets()
