@@ -1171,23 +1171,27 @@ const PAD = 54
   assert.deepEqual(lay.windowBoundsForPet(200, 300, 220, 180), { x: 146, y: 120, width: 328, height: 400 }, '窗口 = 桌宠 - 左右留白 / 向上预留')
   assert.equal(lay.mirrorSide(), 'none', '居中不贴边')
 
-  // P2-4 stage 2: the pet window no longer reserves a bubble strip at all.
+  // 0.6.11: the bubble has its own window, but the hover menu still lives in
+  // this one and is drawn outside the pet — so the strip is honoured again,
+  // just transiently and never at the cost of moving the pet.
   const grown = lay.applyBubbleHeight(170)
-  assert.deepEqual(grown, { reserve: 0, side: 'above' }, '气泡在独立窗口，桌宠窗口不再预留')
-  assert.equal(winBounds.height, 220, '窗口高度恒等于桌宠高度')
-  assert.equal(winBounds.y, 300, '窗口不因气泡上移')
-  assert.deepEqual(lay.petPos, { x: 200, y: 300 }, '桌宠不会被气泡顶走')
+  assert.deepEqual(grown, { reserve: 170, side: 'above' }, '菜单需要时窗口临时长高')
+  assert.equal(winBounds.height, 390, '窗口高度 = 桌宠 + 预留')
+  assert.equal(winBounds.y, 130, '窗口向上长，桌宠位置不动')
+  assert.deepEqual(lay.petPos, { x: 200, y: 300 }, '桌宠不会被菜单顶走')
 
-  winBounds = { x: 146, y: 120, width: 328, height: 400 }
+  winBounds = { x: 146, y: 130, width: 328, height: 390 }
   const shrunk = lay.applyBubbleHeight(0)
-  assert.equal(shrunk.reserve, 0, '任何调用都不产生预留')
-  assert.equal(winBounds.height, 220, '遗留的预留会被收回')
+  assert.equal(shrunk.reserve, 0, '菜单收起后预留归零')
+  assert.equal(winBounds.height, 220, '窗口收回桌宠尺寸')
 
   lay.begin({ x: 200, y: 20, reserve: 0 })
-  winBounds = { x: 146, y: 0, width: 328, height: 220 }
-  lay.applyBubbleHeight(180)
-  assert.equal(lay.petPos.y, 20, '贴顶时也不再下推桌宠（气泡自己翻到下方）')
-  assert.equal(winBounds.y, 20, '窗口始终与桌宠对齐（不再为了气泡留边）')
+  winBounds = { x: 146, y: 20, width: 328, height: 220 }
+  const top = lay.applyBubbleHeight(180)
+  assert.deepEqual(top, { reserve: 180, side: 'below' }, '上方放不下就把菜单翻到下方')
+  assert.equal(lay.petPos.y, 20, '贴顶时也不下推桌宠')
+  assert.equal(winBounds.y, 20, '窗口顶边贴住桌宠，不越界')
+  assert.equal(winBounds.height, 400, '下方预留同样计入窗口')
 
   // Click-through: dragging is interactive without waiting for the cursor poll.
   const dragLay = layoutMod.createWindowLayout({

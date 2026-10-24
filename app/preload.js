@@ -139,6 +139,8 @@ contextBridge.exposeInMainWorld('deskPet', {
   onOverlaySide: (cb) => ipcRenderer.on('overlay:side', (_ev, side) => cb(side)),
   overlayClick: () => ipcRenderer.send('overlay:click'),
   overlayAction: (id) => ipcRenderer.send('overlay:action', id),
+  // 0.6.11：气泡装不下时请求放大（宽高同比），主进程负责不超出屏幕。
+  askBubbleSize: (scale) => ipcRenderer.send('overlay:grow', scale),
 
   hidePet: () => ipcRenderer.send('pet:hide'),
   openSettings: () => ipcRenderer.send('pet:open-settings'),

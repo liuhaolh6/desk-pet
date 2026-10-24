@@ -190,16 +190,16 @@
     document.body.style.setProperty('--bubble-room', reserve + 'px')
   }
 
+  // 0.6.11：气泡搬进独立窗口后，桌宠窗口不再为气泡预留透明带；只有悬停菜单
+  // 仍画在这个窗口里，需要临时把窗口长高（见 openMenu）。
   function bubbleReserve() {
-    const avail = Math.round(window.innerWidth) - 12
-    const w = Math.max(BUBBLE_MIN_W, Math.min(BUBBLE_MAX_W, avail))
-    return Math.ceil((w * 700) / 1026) + 8
+    return 0
   }
 
   /** Re-measure after a size change. The strip stays reserved (0.6.4). */
   async function syncBubbleSpace() {
-    if (state.menuOpen) return reserveSpace(Math.max(bubbleReserve(), measureMenu()))
-    return reserveSpace(bubbleReserve())
+    if (state.menuOpen) return reserveSpace(measureMenu())
+    return reserveSpace(0)
   }
 
   async function showBubble(payload) {
@@ -211,7 +211,7 @@
     // The overlay does the drawing; this window only reserves the strip (still
     // reserved in P2-4 stage 1) and keeps the card state.
     try { api.renderBubble(payload) } catch (err) {}
-    await reserveSpace(bubbleReserve())
+    await reserveSpace(0)
     if (state.bubbleToken !== token) return
     scheduleRectReport()
     setTimeout(scheduleRectReport, 520)
@@ -394,7 +394,7 @@
     void petMenu.offsetHeight
     // 0.6.2: reserve max(bubble strip, menu) so opening/closing the menu never
     // shrinks the transparent window (one less flash source).
-    reserveSpace(Math.max(bubbleReserve(), measureMenu()))
+    reserveSpace(measureMenu())
     clearTimeout(state.menuShowTimer)
     state.menuShowTimer = setTimeout(() => {
       if (!state.menuOpen) return
@@ -415,7 +415,7 @@
     const finish = () => {
       if (state.menuOpen) return
       petMenu.hidden = true
-      if (!state.wantBubble) reserveSpace(bubbleReserve())
+      if (!state.wantBubble) reserveSpace(0)
     }
     if (immediate) finish()
     else setTimeout(finish, 180)
@@ -612,7 +612,7 @@
     })
     // 0.6.1: reserve the bubble strip once and keep it; content swaps never
     // resize the transparent window again.
-    reserveSpace(bubbleReserve()).catch(() => {})
+    reserveSpace(0).catch(() => {})
     window.addEventListener('resize', () => { syncBubbleSpace().catch(() => {}) })
     reportHitRects()
     window.addEventListener('resize', scheduleRectReport)
@@ -645,7 +645,7 @@
         const id = state.currentCard
         const card = id ? cardById(id) : null
         if (card) renderCard(card, id, { playSound: false, markWeather: false })
-        else reserveSpace(bubbleReserve())
+        else reserveSpace(0)
       }
     })
     // Role list can change without a settings write (import/cutout/delete).

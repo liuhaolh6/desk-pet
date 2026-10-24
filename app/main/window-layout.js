@@ -136,19 +136,31 @@ function createWindowLayout({ screen, placement, readSettings, log, winState, ge
    * @returns {{reserve:0, side:'above'}}
    */
   function applyBubbleHeight(height) {
-    // P2-4 stage 2: the bubble lives in its own window, so the pet window no
-    // longer reserves a strip. The handler stays registered (renderers still
-    // call it) but it must never resize or shift the pet.
-    void height
-    reserve = 0
-    bubbleSide = 'above'
-    const win = getWindow()
-    if (!win || win.isDestroyed()) return { reserve, side: bubbleSide }
-    // A window created before this change (or by an older build) may still carry
-    // a strip; shrink it back to pet size on the first call.
+    // P2-4 stage 2 moved the bubble into its own window, so a card no longer
+    // needs a strip. But the hover menu is still drawn by the pet renderer and
+    // it extends *outside* the pet image: with a pet-sized window it was clipped
+    // and its buttons were unreachable (0.6.10 regression). So the renderer may
+    // still ask for a transient strip; the pet must stay put while the window
+    // grows around it.
     const size = settingsSize()
     const pet = petScreenRect(size)
-    const bounds = windowBoundsForPet(pet.x, pet.top, size, 0)
+    const want = Math.max(0, Math.round(Number(height) || 0))
+    let extra = want
+    const win = getWindow()
+    if (!win || win.isDestroyed()) {
+      reserve = extra
+      bubbleSide = 'above'
+      return { reserve, side: bubbleSide }
+    }
+    // Never grow past the screen: the strip goes on whichever side has room,
+    // preferring above (that is where the menu is drawn by default).
+    const area = screen.getDisplayMatching({ x: pet.x, y: pet.top, width: size, height: size }).workArea
+    const roomAbove = Math.max(0, pet.top - area.y)
+    const roomBelow = Math.max(0, area.y + area.height - pet.bottom)
+    bubbleSide = (roomAbove >= want || roomAbove >= roomBelow) ? 'above' : 'below'
+    extra = Math.min(extra, bubbleSide === 'above' ? roomAbove : roomBelow)
+    reserve = extra
+    const bounds = windowBoundsForPet(pet.x, pet.top, size, extra)
     const b = win.getBounds()
     if (b.x !== bounds.x || b.y !== bounds.y || b.width !== bounds.width || b.height !== bounds.height) {
       win.setBounds(bounds, false)

@@ -14,6 +14,11 @@
 
   const BUBBLE_REF_W = 300
   const FIT_FLOOR = 0.6
+  // 0.6.11：内容装不下时，气泡窗口按 0.18 一档变大（最多 1.54 倍宽），
+  // 而不是把字缩到看不清或把按钮挤出窗口。主进程负责真实尺寸。
+  const GROW_STEP = 0.18
+  const MAX_SCALE = 1.54
+  let askedScale = 1
 
   function el(tag, cls, text) {
     const node = document.createElement(tag)
@@ -94,10 +99,25 @@
     }
     document.body.style.setProperty('--bubble-fit', fit.toFixed(3))
     clampText()
+    return fit
+  }
+
+  /** 还有字被截断（或按钮溢出）就请求主进程把窗口放大一档，最多到 MAX_SCALE。 */
+  function growIfNeeded(fit) {
+    const over = overflowAmount()
+    const clipped = Array.from(content.querySelectorAll('.bubble-mod'))
+      .some((span) => span.dataset.full != null && span.textContent !== span.dataset.full)
+    // 字号已经缩到下限还不宽裕，说明该把窗口变大了（而不是继续压字号）。
+    const atFloor = Number(fit) <= FIT_FLOOR + 0.002
+    if (!clipped && !over.h && !over.w && !atFloor) return
+    if (askedScale >= MAX_SCALE - 0.001) return
+    askedScale = Math.min(MAX_SCALE, askedScale + GROW_STEP)
+    try { api.askBubbleSize(askedScale) } catch (err) {}
   }
 
   function render(payload) {
     const data = payload || {}
+    askedScale = 1
     syncMetrics()
     bubble.classList.remove('show')
     content.innerHTML = ''
@@ -126,7 +146,8 @@
     content.appendChild(frame)
     // 先量再显示：把字体缩放做完，避免"先以 100% 闪一下再缩"。
     requestAnimationFrame(() => {
-      fitText()
+      const fit = fitText()
+      growIfNeeded(fit)
       requestAnimationFrame(() => {
         bubble.classList.add('show')
         requestAnimationFrame(() => syncMetrics())
@@ -162,7 +183,11 @@
     api.onOverlaySide((side) => {
       document.body.dataset.bubbleSide = side === 'below' ? 'below' : 'above'
     })
-    window.addEventListener('resize', syncMetrics)
+    window.addEventListener('resize', () => {
+      syncMetrics()
+      const fit2 = fitText()
+      growIfNeeded(fit2)
+    })
     syncMetrics()
   }
 

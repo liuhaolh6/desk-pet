@@ -32,6 +32,8 @@ function createOverlay({ BrowserWindow, screen, store, getPetWin, getLayout, log
   let win = null
   let visible = false
   let side = 'above'
+  // 0.6.11：卡片内容装不下时由渲染层请求放大（宽高同比例），每次 show 归 1。
+  let growScale = 1
 
   function create() {
     if (win && !win.isDestroyed()) return win
@@ -76,11 +78,14 @@ function createOverlay({ BrowserWindow, screen, store, getPetWin, getLayout, log
   }
 
   /** 气泡窗口的尺寸：宽度跟桌宠窗口同一套 clamp，高度由 1026:700 定死。 */
-  function metrics() {
+  function metrics(area) {
     const petWin = getPetWin()
     const size = clamp(Number(store.readSettings().size) || 220, 80, 480)
     const petWidth = petWin && !petWin.isDestroyed() ? petWin.getBounds().width : size + WIN_PAD * 2
-    const width = Math.round(clamp(petWidth - 12, BUBBLE_MIN_W, BUBBLE_MAX_W))
+    const base = clamp(petWidth - 12, BUBBLE_MIN_W, BUBBLE_MAX_W)
+    // 放大时不能超出显示器工作区；宽度先封顶，高度按同一比例跟上。
+    const capW = area ? Math.max(BUBBLE_MIN_W, area.width - 8) : BUBBLE_MAX_W * 1.54
+    const width = Math.round(Math.min(base * growScale, capW))
     const height = Math.ceil(width * ASPECT)
     return { width, height, size }
   }
@@ -91,10 +96,11 @@ function createOverlay({ BrowserWindow, screen, store, getPetWin, getLayout, log
     const layout = getLayout()
     const petWin = getPetWin()
     if (!layout || !petWin || petWin.isDestroyed()) return
-    const { width, height, size } = metrics()
+    const size = clamp(Number(store.readSettings().size) || 220, 80, 480)
     const pet = layout.petScreenRect(size)
     const display = screen.getDisplayMatching({ x: pet.x, y: pet.top, width: size, height: size })
     const area = display.workArea
+    const { width, height } = metrics(area)
 
     const wantAbove = forceSide ? forceSide === 'above' : true
     let y = wantAbove ? pet.top - GAP_ABOVE - height : pet.bottom + GAP_ABOVE
@@ -128,6 +134,7 @@ function createOverlay({ BrowserWindow, screen, store, getPetWin, getLayout, log
   function show(payload) {
     const w = create()
     if (!w) return
+    growScale = 1
     place('above')
     syncSide()
     lastRender = payload
@@ -139,6 +146,16 @@ function createOverlay({ BrowserWindow, screen, store, getPetWin, getLayout, log
       try { w.showInactive() } catch (err) {}
     }
     try { w.moveTop() } catch (err) {}
+  }
+
+  /** 换一个放大倍数（1 起）。只在可见时重排，避免看不见的窗口乱跳。 */
+  function grow(scale) {
+    const next = Math.max(1, Math.min(1.54, Number(scale) || 1))
+    if (Math.abs(next - growScale) < 0.001) return
+    growScale = next
+    if (!visible) return
+    place(side)
+    syncSide()
   }
 
   function hide() {
@@ -168,10 +185,11 @@ function createOverlay({ BrowserWindow, screen, store, getPetWin, getLayout, log
   }
 
   return {
-    show, hide, follow, place, applyAlwaysOnTop, destroy,
+    show, hide, follow, place, grow, applyAlwaysOnTop, destroy,
     get window() { return win },
     get visible() { return visible },
     get side() { return side },
+    get scale() { return growScale },
   }
 }
 
@@ -196,6 +214,11 @@ function registerOverlayIpc({ ipcMain, overlay, getPet, onShow, onHide }) {
   ipcMain.on('bubble:hide', () => {
     if (overlay) overlay.hide()
     if (onHide) onHide()
+  })
+
+  // 渲染层说“装不下，请大一号”：只让它变大，收回由下一次 show 的 growScale=1 负责。
+  ipcMain.on('overlay:grow', (ev, scale) => {
+    if (overlay) overlay.grow(scale)
   })
 
   ipcMain.on('overlay:click', () => {

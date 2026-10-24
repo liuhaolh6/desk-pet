@@ -69,6 +69,8 @@ function registerIpc(deps) {
     phrasesSeed: (i18n && i18n.seedOf ? i18n.seedOf('bubble.phrasesSeed') : []),
   }))
 
+  const petBounds = () => { const w = windows.pet(); return w && !w.isDestroyed() ? w.getBounds() : null }
+
   ipcMain.handle('app:status', () => ({
     version,
     electron: process.versions.electron,
@@ -80,7 +82,8 @@ function registerIpc(deps) {
     shortcut: trayHost.shortcutReport(),
     // P1-2: which interaction mode the pet is in, plus how many impossible
     // transitions were attempted since launch (a bug report should have both).
-    window: { state: winState.state, illegal: winState.illegal, lastIllegal: winState.lastIllegal },
+    // 0.6.11：窗口矩形的真实值（菜单预留/气泡放大出问题时，bug 报告里要有数）。
+    window: { state: winState.state, illegal: winState.illegal, lastIllegal: winState.lastIllegal, bounds: petBounds() },
   }))
 
   // P1-4: “恢复这页默认”需要知道每个键的出厂值；只读、不带任何用户数据。

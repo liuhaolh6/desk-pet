@@ -181,6 +181,18 @@ body.photo-role .pet-flip {
   pointer-events: auto;
 }
 
+/* 0.6.11：贴顶时窗口把空间留在桌宠下方，菜单也跟着翻到下面，别被窗口剪掉。 */
+body[data-bubble-side="below"] .pet-menu {
+  bottom: auto;
+  top: calc(100% + 10px);
+  transform: translateX(-50%) scale(0.96) translateY(-10px);
+  transform-origin: 50% 0;
+}
+
+body[data-bubble-side="below"] .pet-menu.open {
+  transform: translateX(-50%) scale(1) translateY(0);
+}
+
 .pet-menu button {
   display: block;
   width: 100%;

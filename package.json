@@ -1,6 +1,6 @@
 {
   "name": "desk-pet",
-  "version": "0.6.10",
+  "version": "0.6.11",
   "description": "Windows 桌面宠物：自定义角色形象、点击看天气/喝水提醒，名称大小模式位置全部可配置",
   "main": "app/main.js",
   "private": true,
