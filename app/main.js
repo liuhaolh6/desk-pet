@@ -140,7 +140,7 @@ const winState = createWindowState({
 // Role images go through a custom scheme so renderers never see file paths.
 protocol.registerSchemesAsPrivileged([
   { scheme: 'pet-role', privileges: { standard: true, secure: true, supportFetchAPI: true } },
-  { scheme: 'pet-sound', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
+  { scheme: 'pet-sound', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } },
 ])
 log('schemes registered')
 

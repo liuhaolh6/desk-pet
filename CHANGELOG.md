@@ -6,6 +6,29 @@
 
 ## [Unreleased]
 
+## [0.6.14] - 2026-10-24
+
+### 修复
+
+- **导入的音效没有声音**：`pet-sound://` 自定义协议注册时没开 `corsEnabled`，响应也没带 CORS 头，
+  `file://` 页面里的 `fetch('pet-sound://…')` 被浏览器拦成 `TypeError: Failed to fetch`，于是只有内置
+  （WebAudio 合成）音色能响、导入的 WAV/MP3 全部哑掉。修法两处、缺一不可：`app/main.js` 的 privileges 加
+  `corsEnabled: true`；`app/main/catalog.js` 的响应加 `access-control-allow-origin/headers: *`。
+  实测修复后 `fetch` 200、`decodeAudioData` 得 1.85 s、播放链路真的 `start()`。见 `M33-NOTES.md`。
+
+### 变更
+
+- 新增 `tests/unit/sound-protocol.test.js`（3 例：wav/mp3 的 content-type 与 CORS 头、未知 id/错误 host → 404，
+  用假 fs/store 不碰真协议）；`tools/smoke.js` 加两条断言（privileges 含 `corsEnabled`、响应含 ACAO 头）
+  防止以后被「清理」回去；`npm run check` 覆盖新测试文件。
+- `package.json` 的 `build.files` 加 `!app/**/.dsh-ops-*.lock`：编辑器原子写留下的零字节临时锁文件不再打进
+  asar（本次清掉工作区 130 个，asar 600 → 549 条）。
+
+### 打包
+
+- 便携版 `dist/DeskPet-0.6.14-portable.exe`（153,830,942 字节，SHA-256 `fcc661cc…7204b6`，未签名）；
+  安装器仍受本机杀软限制（`docs/SELF-SIGNING.md` §9），最后可用安装器仍是 `0.6.11`。
+
 ## [0.6.13] - 2026-10-24
 
 ### 修复

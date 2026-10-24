@@ -837,6 +837,20 @@ const PAD = 54
     '预留区不再上报命中矩形（气泡与悬停菜单都在独立窗口里，菜单命中区只留收起按钮）',
   )
   assert.ok(/setIgnoreMouseEvents\(true, \{ forward: true \}\)/.test(mainJs), '固定预留区默认鼠标穿透')
+
+  // 0.6.13: 导入音效由渲染层 fetch('pet-sound://…') 取字节再 decodeAudioData。
+  // 自定义协议不开 corsEnabled / 响应不带 CORS 头时，file:// 页面拿到的是
+  // "Failed to fetch"，所有导入音效静音（内置 preset 是合成音，所以只有导入的哑）。
+  assert.ok(
+    /'pet-sound', privileges: \{ standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true \}/.test(mainJs),
+    'pet-sound 自定义协议开 corsEnabled',
+  )
+  assert.ok(
+    /'access-control-allow-origin': '\*'/.test(
+      fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'catalog.js'), 'utf8'),
+    ),
+    'pet-sound 响应带 CORS 头',
+  )
   assert.ok(/sendRects/.test(petJs) && /pet:rects/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')) && /function updateInteractive/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'window-layout.js'), 'utf8')), '渲染层上报命中区、主进程轮询光标决定可交互')
 
   for (const key of ['water.progress', 'water.interval', 'water.quiet', 'water.last', 'water.tip']) {

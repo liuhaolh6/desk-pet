@@ -47,7 +47,13 @@ function createCatalog(deps) {
       const type = {
         wav: 'audio/wav', mp3: 'audio/mpeg', ogg: 'audio/ogg', m4a: 'audio/mp4', flac: 'audio/flac',
       }[ext] || 'application/octet-stream'
-      return new Response(bytes, { headers: { 'content-type': type } })
+      // 渲染层从 file:// 页面 fetch 这个自定义协议（WebAudio 要字节），
+      // 跨源请求靠这两个头放行；缺了就会「Failed to fetch」，导入的音效全哑。
+      return new Response(bytes, { headers: {
+        'content-type': type,
+        'access-control-allow-origin': '*',
+        'access-control-allow-headers': '*',
+      } })
     } catch (err) {
       return new Response('error', { status: 500 })
     }
