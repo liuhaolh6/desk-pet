@@ -16,7 +16,8 @@
 
 ### 打包
 
-- 便携版 `dist/DeskPet-0.6.13-portable.exe`；安装器仍受本机杀软限制（`docs/SELF-SIGNING.md` §9）。
+- 便携版 `dist/DeskPet-0.6.13-portable.exe`（153,834,291 字节，SHA-256 `d50851e1…c87161`，未签名）；安装器仍受本机杀软限制（`docs/SELF-SIGNING.md` §9）。
+- 仓库转公开（MIT）前已用 `git filter-repo` 从全部历史移除原始照片素材，旧 commit 已不可访问；项目内只剩程序生成的合成测试图。
 
 ## [0.6.12] - 2026-10-24
 
