@@ -7,12 +7,19 @@
  * 现在气泡有自己的 `transparent` 窗口：桌宠窗口只装桌宠，气泡窗口按气泡
  * 尺寸精确开在它上方，跟着桌宠走。
  *
+ * 阶段二起悬停菜单也住在这里：同一个窗口，按 `hasBubble || hasMenu` 决定
+ * 显隐——菜单收起且没有气泡时整扇窗隐藏，桌宠窗口则永远只有桌宠那么大，
+ * 菜单再也不会被窗口边缘剪掉。菜单的摆位规则在 overlay-menu.js，通道在
+ * overlay-ipc.js，这里只管那扇窗本身和气泡。
+ *
  * 这个模块只管窗口本身：建、摆、显示/隐藏。内容由渲染层 `overlay.js` 画，
  * 卡片数据由桌宠窗口算好后经 IPC 送过来（见 ipc.js 的 bubble:render）。
  */
 
 const path = require('node:path')
 const { clamp, WIN_PAD } = require('./geometry')
+const { createMenuController } = require('./overlay-menu')
+const { registerOverlayIpc } = require('./overlay-ipc')
 
 const BUBBLE_MIN_W = 220
 const BUBBLE_MAX_W = 340
@@ -34,6 +41,33 @@ function createOverlay({ BrowserWindow, screen, store, getPetWin, getLayout, log
   let side = 'above'
   // 0.6.11：卡片内容装不下时由渲染层请求放大（宽高同比例），每次 show 归 1。
   let growScale = 1
+  // 两件东西共用一扇窗：气泡和悬停菜单。任何一个要显示，窗口就显示。
+  let bubbleShown = false
+  // 窗口是懒创建的：首次 show 时 loadFile 还没完成，直接 send 会丢。
+  // 所以把最近一次要画的东西记下来，等 did-finish-load 再补发一次。
+  let lastRender = null
+
+  // 窗口是懒创建的；ipc.js 想往窗口上挂 blur（菜单失焦收起）之类的监听，
+  // 先把钩子攒着，create() 时一次挂上。
+  const windowHooks = []
+
+  const menu = createMenuController({
+    screen,
+    getLayout,
+    getPetWin,
+    ensureWindow: () => create(),
+    getWindow: () => (win && !win.isDestroyed() ? win : null),
+    setSide: (next) => { side = next },
+    syncVisibility: () => syncVisibility(),
+  })
+
+  function onWindow(fn) {
+    if (typeof fn !== 'function') return
+    windowHooks.push(fn)
+    if (win && !win.isDestroyed()) {
+      try { fn(win) } catch (err) {}
+    }
+  }
 
   function create() {
     if (win && !win.isDestroyed()) return win
@@ -51,6 +85,8 @@ function createOverlay({ BrowserWindow, screen, store, getPetWin, getLayout, log
       fullscreenable: false,
       skipTaskbar: true,
       hasShadow: false,
+      // 平时不抢焦点（气泡不该打断打字）；菜单打开期间临时 setFocusable(true)，
+      // 收起后立即退回 false——键盘只在菜单打开时被短暂借用。
       focusable: false,
       alwaysOnTop: !!s.alwaysOnTop,
       backgroundColor: '#00000000',
@@ -62,10 +98,15 @@ function createOverlay({ BrowserWindow, screen, store, getPetWin, getLayout, log
       },
     })
     win.setAlwaysOnTop(!!s.alwaysOnTop, 'screen-saver')
-    // 气泡本身要能点（点一下收起/下一张），窗口又只有气泡大小，
+    // 气泡/菜单本身要能点（点一下收起、点菜单项），窗口又只有内容大小，
     // 所以整窗可点，不做 click-through；窗口外的一切照旧是桌面。
     win.loadFile(path.join(__dirname, '..', 'overlay.html'))
-    win.on('closed', () => { win = null; visible = false })
+    win.on('closed', () => {
+      win = null
+      visible = false
+      bubbleShown = false
+      menu.reset()
+    })
     win.webContents.on('did-fail-load', (ev, code, desc, url) => log('overlay-load-failed', code, desc, url))
     win.webContents.on('did-finish-load', () => {
       if (!win || win.isDestroyed()) return
@@ -73,7 +114,13 @@ function createOverlay({ BrowserWindow, screen, store, getPetWin, getLayout, log
       if (lastRender) {
         try { win.webContents.send('overlay:render', lastRender) } catch (err) {}
       }
+      if (menu.isOpen()) {
+        try { win.webContents.send('overlay:menu', { open: true }) } catch (err) {}
+      }
     })
+    for (const fn of windowHooks) {
+      try { fn(win) } catch (err) {}
+    }
     return win
   }
 
@@ -118,34 +165,45 @@ function createOverlay({ BrowserWindow, screen, store, getPetWin, getLayout, log
     win.setBounds({ x: Math.round(x), y: Math.round(y), width, height })
   }
 
-  // 窗口是懒创建的：首次 show 时 loadFile 还没完成，直接 send 会丢。
-  // 所以把最近一次要画的东西记下来，等 did-finish-load 再补发一次。
-  let lastRender = null
-
   function syncSide() {
     if (!win || win.isDestroyed()) return
     try { win.webContents.send('overlay:side', side) } catch (err) {}
   }
 
+  /** 显隐：气泡或菜单任一需要就显示，都不需要就整窗隐藏。 */
+  function syncVisibility() {
+    if (!win || win.isDestroyed()) return
+    const want = bubbleShown || menu.isOpen()
+    if (want && !visible) {
+      visible = true
+      try { win.showInactive() } catch (err) {}
+    } else if (!want && visible) {
+      visible = false
+      try { win.hide() } catch (err) {}
+    }
+    if (want) {
+      try { win.moveTop() } catch (err) {}
+    }
+  }
+
   /**
    * 显示一张卡。`payload` 是可序列化的行数据（见 app/pet.js buildRows）。
-   * 先摆位置再显示，避免"先在旧位置闪一下再跳过去"。
+   * 先摆位置再显示，避免「先在旧位置闪一下再跳过去」。
    */
   function show(payload) {
     const w = create()
     if (!w) return
     growScale = 1
+    bubbleShown = true
+    // 气泡和菜单不共存：气泡出现时菜单让位（桌宠渲染层也会先收菜单）。
+    menu.close()
     place('above')
     syncSide()
     lastRender = payload
     if (!w.webContents.isLoading()) {
       try { w.webContents.send('overlay:render', payload) } catch (err) {}
     }
-    if (!visible) {
-      visible = true
-      try { w.showInactive() } catch (err) {}
-    }
-    try { w.moveTop() } catch (err) {}
+    syncVisibility()
   }
 
   /** 换一个放大倍数（1 起）。只在可见时重排，避免看不见的窗口乱跳。 */
@@ -153,22 +211,26 @@ function createOverlay({ BrowserWindow, screen, store, getPetWin, getLayout, log
     const next = Math.max(1, Math.min(1.54, Number(scale) || 1))
     if (Math.abs(next - growScale) < 0.001) return
     growScale = next
-    if (!visible) return
+    if (!visible || menu.isOpen()) return
     place(side)
     syncSide()
   }
 
   function hide() {
     if (!win || win.isDestroyed()) return
-    visible = false
+    bubbleShown = false
     lastRender = null
     try { win.webContents.send('overlay:clear') } catch (err) {}
-    try { win.hide() } catch (err) {}
+    syncVisibility()
   }
 
-  /** 桌宠动了/换了屏幕：气泡跟着走（不可见时不做无意义的 setBounds）。 */
+  /** 桌宠动了/换了屏幕：气泡或菜单跟着走（不可见时不做无意义的 setBounds）。 */
   function follow() {
     if (!visible) return
+    if (menu.isOpen()) {
+      menu.follow()
+      return
+    }
     place(side)
     syncSide()
   }
@@ -179,57 +241,27 @@ function createOverlay({ BrowserWindow, screen, store, getPetWin, getLayout, log
   }
 
   function destroy() {
+    menu.reset()
     if (win && !win.isDestroyed()) win.destroy()
     win = null
     visible = false
+    bubbleShown = false
   }
 
   return {
-    show, hide, follow, place, grow, applyAlwaysOnTop, destroy,
+    show, hide, follow, place, grow, applyAlwaysOnTop, destroy, onWindow,
+    openMenu: (anchor) => menu.open(anchor),
+    closeMenu: () => menu.close(),
+    placeMenu: () => menu.place(),
+    setMenuSize: (size) => menu.setSize(size),
     get window() { return win },
     get visible() { return visible },
     get side() { return side },
     get scale() { return growScale },
+    get bubbleOpen() { return bubbleShown },
+    get menuOpen() { return menu.isOpen() },
+    get menuSize() { return menu.size },
   }
-}
-
-/**
- * P2-4：气泡窗口的 IPC 面。放在这里而不是 ipc.js，是因为这些通道只跟
- * overlay 有关（渲染、收起、点击转发）；业务状态仍然在桌宠窗口里。
- *
- * @param {object} deps
- * @param {object} deps.ipcMain
- * @param {object} deps.overlay        createOverlay(...) 的返回值
- * @param {function} deps.getPet       返回桌宠窗口或 null
- * @param {function} deps.onShow       气泡出现（状态机 + 预留区）
- * @param {function} deps.onHide       气泡收起
- */
-function registerOverlayIpc({ ipcMain, overlay, getPet, onShow, onHide }) {
-  ipcMain.on('bubble:render', (ev, payload) => {
-    if (!overlay) return
-    overlay.show(payload)
-    if (onShow) onShow()
-  })
-
-  ipcMain.on('bubble:hide', () => {
-    if (overlay) overlay.hide()
-    if (onHide) onHide()
-  })
-
-  // 渲染层说“装不下，请大一号”：只让它变大，收回由下一次 show 的 growScale=1 负责。
-  ipcMain.on('overlay:grow', (ev, scale) => {
-    if (overlay) overlay.grow(scale)
-  })
-
-  ipcMain.on('overlay:click', () => {
-    const pet = getPet && getPet()
-    if (pet && !pet.isDestroyed()) pet.webContents.send('bubble:click')
-  })
-
-  ipcMain.on('overlay:action', (ev, id) => {
-    const pet = getPet && getPet()
-    if (pet && !pet.isDestroyed()) pet.webContents.send('bubble:action', String(id || ''))
-  })
 }
 
 module.exports = { createOverlay, registerOverlayIpc }

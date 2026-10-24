@@ -16,8 +16,6 @@
   const petWrap = document.getElementById('petWrap')
   const petFlip = document.getElementById('petFlip')
   const menuBtn = document.getElementById('menuBtn')
-  const petMenu = document.getElementById('petMenu')
-  const menuActions = Array.from(petMenu.querySelectorAll('button[data-action]'))
 
   const state = {
     settings: null,
@@ -37,7 +35,6 @@
     bubbleToken: 0,
     showTimer: 0,
     lastReserve: -1,
-    menuShowTimer: 0,
   }
 
   // ------------------------------------------------------------------ utils
@@ -160,9 +157,9 @@
       if (r.width > 0 && r.height > 0) rects.push({ x: r.left, y: r.top, w: r.width, h: r.height })
     }
     push(petWrap)
-    // P2-4: the bubble lives in app/overlay.html now, so this window only
-    // reports the pet and the hover menu.
-    if (state.menuOpen) { push(petMenu); push(menuBtn) }
+    // P2-4 阶段二：气泡和悬停菜单都画在 app/overlay.html 里，这个窗口只剩桌宠
+    // 本体；菜单打开时把菜单按钮也算进命中区，方便再点一下收起。
+    if (state.menuOpen) push(menuBtn)
     try { api.sendRects(rects) } catch (err) {}
   }
 
@@ -198,7 +195,6 @@
 
   /** Re-measure after a size change. The strip stays reserved (0.6.4). */
   async function syncBubbleSpace() {
-    if (state.menuOpen) return reserveSpace(measureMenu())
     return reserveSpace(0)
   }
 
@@ -378,48 +374,27 @@
   }
 
   // ------------------------------------------------------------------ menu
-  function measureMenu() {
-    return Math.ceil(petMenu.offsetHeight) + 20
-  }
-
+  // P2-4 阶段二：菜单不再是这个窗口里的 DOM。这一侧只算锚点（桌宠头顶正中，
+  // 窗口内坐标）交给主进程，由 overlay 窗口画、摆、收；菜单按钮仍在这里，
+  // 命中区域也只报它。桌宠窗口因此不再随菜单长高。
   function openMenu() {
     if (state.menuOpen) return
-    if (state.wantBubble) hideBubble()
     clearTimeout(state.showTimer)
     state.menuOpen = true
-    api.setMenu(true)
-    petMenu.hidden = false
+    const rect = petWrap.getBoundingClientRect()
+    api.setMenu(true, { x: rect.left + rect.width / 2, y: rect.top })
+    if (state.wantBubble) hideBubble()
     scheduleRectReport()
     petWrap.classList.add('hover', 'menu-open')
-    void petMenu.offsetHeight
-    // 0.6.2: reserve max(bubble strip, menu) so opening/closing the menu never
-    // shrinks the transparent window (one less flash source).
-    reserveSpace(measureMenu())
-    clearTimeout(state.menuShowTimer)
-    state.menuShowTimer = setTimeout(() => {
-      if (!state.menuOpen) return
-      petMenu.classList.add('open')
-      const first = petMenu.querySelector('button')
-      if (first) first.focus({ preventScroll: true })
-    }, 50)
   }
 
-  function closeMenu(immediate) {
+  function closeMenu() {
     if (!state.menuOpen) return
     state.menuOpen = false
     api.setMenu(false)
     scheduleRectReport()
-    clearTimeout(state.menuShowTimer)
-    petMenu.classList.remove('open')
     petWrap.classList.remove('menu-open')
-    const finish = () => {
-      if (state.menuOpen) return
-      petMenu.hidden = true
-      if (!state.wantBubble) reserveSpace(0)
-    }
-    if (immediate) finish()
-    else setTimeout(finish, 180)
-    if (!petMenu.matches(':hover')) hideHoverSoon()
+    if (!petWrap.matches(':hover')) hideHoverSoon()
   }
 
   function toggleMenu() {
@@ -455,38 +430,27 @@
     menuBtn.addEventListener('pointerenter', hoverForPointer)
     petWrap.addEventListener('pointerenter', hoverForPointer)
     petWrap.addEventListener('pointerleave', leaveForPointer)
-    petMenu.addEventListener('pointerenter', hoverForPointer)
-    petMenu.addEventListener('pointerleave', leaveForPointer)
 
-    menuActions.forEach((btn) => {
-      btn.addEventListener('click', (ev) => {
-        ev.preventDefault()
-        ev.stopPropagation()
-        const action = btn.dataset.action
-        closeMenu()
-        if (action === 'settings') api.openSettings()
-        else if (action === 'editor') api.openEditor()
-        else if (action === 'weather') api.refreshWeather()
-        else if (action === 'hide') api.hidePet()
-        else if (action === 'quit') api.quit()
-      })
-    })
-
-    document.addEventListener('pointerdown', (ev) => {
-      if (!state.menuOpen) return
-      if (petMenu.contains(ev.target) || menuBtn.contains(ev.target)) return
+    // 菜单里的点击发生在 overlay 窗口，主进程把 data-action 原样转回来。
+    api.onMenuAction((action) => {
       closeMenu()
-      state.menuDismissAt = Date.now()
-    }, true)
-
-    document.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Escape' && state.menuOpen) {
-        closeMenu()
-        menuBtn.focus({ preventScroll: true })
-      }
+      if (action === 'settings') api.openSettings()
+      else if (action === 'editor') api.openEditor()
+      else if (action === 'weather') api.refreshWeather()
+      else if (action === 'hide') api.hidePet()
+      else if (action === 'quit') api.quit()
     })
-
-    window.addEventListener('blur', () => closeMenu(true))
+    // 菜单窗口自己收起（Esc、失焦、点面板空白）时把这边状态清掉。
+    api.onMenuClosed(() => {
+      if (!state.menuOpen) return
+      state.menuOpen = false
+      scheduleRectReport()
+      petWrap.classList.remove('menu-open')
+    })
+    // 焦点在桌宠窗口时的 Esc 兜底；焦点在菜单窗口时由 overlay 自己处理。
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape' && state.menuOpen) closeMenu()
+    })
   }
 
   // ------------------------------------------------------------------ input

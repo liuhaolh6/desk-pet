@@ -829,7 +829,13 @@ const PAD = 54
   assert.ok(/bubbleReserve\(\)/.test(petJs), '同一串气泡内用固定空间，卡片切换不 resize')
   assert.ok(!/resizeForBubble\(0\)/.test(petJs), '运行中不再把窗口缩成 0，杜绝透明窗口 resize 频闪')
   assert.ok(/bubble\.addEventListener\('click'/.test(overlayJs) && /overlayClick/.test(overlayJs), '点击气泡转发回桌宠窗口再收起')
-  assert.ok(/if \(state\.menuOpen\) \{ push\(petMenu\); push\(menuBtn\) \}/.test(petJs) && /bubble-bshape/.test(overlayHtml), '预留区不再上报命中矩形（气泡自身在独立窗口里可点）')
+  assert.ok(
+    /push\(petWrap\)/.test(petJs) &&
+      /if \(state\.menuOpen\) push\(menuBtn\)/.test(petJs) &&
+      /id="petMenu"/.test(overlayHtml) &&
+      /bubble-bshape/.test(overlayHtml),
+    '预留区不再上报命中矩形（气泡与悬停菜单都在独立窗口里，菜单命中区只留收起按钮）',
+  )
   assert.ok(/setIgnoreMouseEvents\(true, \{ forward: true \}\)/.test(mainJs), '固定预留区默认鼠标穿透')
   assert.ok(/sendRects/.test(petJs) && /pet:rects/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')) && /function updateInteractive/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'window-layout.js'), 'utf8')), '渲染层上报命中区、主进程轮询光标决定可交互')
 
@@ -886,6 +892,7 @@ const PAD = 54
   const settingsHtml = readSrc(path.join(root, 'app', 'settings.html'))
   const settingsJs = readSrc(path.join(root, 'app', 'settings.js'))
   const petHtml = fs.readFileSync(path.join(root, 'app', 'pet.html'), 'utf8')
+  const overlayMenuHtml = fs.readFileSync(path.join(root, 'app', 'overlay.html'), 'utf8')
 
   assert.ok(/globalShortcut/.test(mainJs), '主进程引入 globalShortcut')
   assert.ok(/const ACCELERATOR = 'CommandOrControl\+Alt\+P'/.test(mainJs) && /globalShortcut\.register\(ACCELERATOR, actions\.togglePet\)/.test(mainJs), 'Ctrl+Alt+P 注册为显示/隐藏桌宠')
@@ -897,7 +904,7 @@ const PAD = 54
   assert.ok(/id="trayStatus"/.test(settingsHtml) && /id="shortcutStatus"/.test(settingsHtml), '设置 → 其他 有托盘/快捷键两行说明')
   assert.ok(/renderAppStatus/.test(settingsJs) && /api\.getAppStatus\(\)/.test(settingsJs), '设置页打开时填入真实状态')
   assert.ok(/other\.trayFailed/.test(settingsJs) && /other\.trayOk/.test(settingsJs), '托盘失效时说明桌宠的悬浮菜单仍可用')
-  assert.ok(/data-action="settings"/.test(petHtml) && /data-action="quit"/.test(petHtml), '桌宠悬浮菜单确实带设置和退出')
+  assert.ok(/data-action="settings"/.test(overlayMenuHtml) && /data-action="quit"/.test(overlayMenuHtml), '悬停菜单（现画在 overlay 窗口）确实带设置和退出')
   ok('托盘兜底：Ctrl+Alt+P 显示/隐藏、托盘失败可恢复、设置页说明状态')
 }
 
@@ -1019,7 +1026,7 @@ const PAD = 54
     }
   }
 
-  assert.deepEqual(mods, ['boot.js', 'catalog.js', 'cutout-service.js', 'debug-open.js', 'diagnostics.js', 'fullscreen.js', 'geometry.js', 'i18n.js', 'ipc.js', 'log.js', 'nudge-pump.js', 'overlay.js', 'privacy.js', 'reminder.js', 'seed.js', 'theme.js', 'tray.js', 'updater.js', 'water-ipc.js', 'weather-pump.js', 'window-layout.js', 'windows.js'], 'app/main/ 下的模块名单')
+  assert.deepEqual(mods, ['boot.js', 'catalog.js', 'cutout-service.js', 'debug-open.js', 'diagnostics.js', 'fullscreen.js', 'geometry.js', 'i18n.js', 'ipc.js', 'log.js', 'nudge-pump.js', 'overlay-ipc.js', 'overlay-menu.js', 'overlay.js', 'privacy.js', 'reminder.js', 'seed.js', 'theme.js', 'tray.js', 'updater.js', 'water-ipc.js', 'weather-pump.js', 'window-layout.js', 'windows.js'], 'app/main/ 下的模块名单')
   const mainJs = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
   for (const name of mods) {
     const file = path.join(modDir, name)
@@ -1027,8 +1034,9 @@ const PAD = 54
     assert.ok(/module\.exports = \{/.test(text), name + ' 有导出')
     // ipc.js is a flat list of ~40 handlers; it gets its own (looser) cap so
     // the rest stay small.
-    // ipc.js 是所有窗口的通道总表；P2-4 加气泡窗口通道（430→450），P2-6 加 phrasesSeed（450→460）。
-    const cap = name === 'ipc.js' ? 460 : 320
+    // ipc.js 是所有窗口的通道总表；P2-4 加气泡窗口通道（430→450），P2-6 加 phrasesSeed（450→460），
+    // P2-4 阶段二把菜单也搬进 overlay 窗口（460→500）。
+    const cap = name === 'ipc.js' ? 500 : 320
     assert.ok(text.split('\n').length <= cap, name + ' 不超过 ' + cap + ' 行')
   }
   assert.ok(/require\('\.\/main\/log'\)/.test(mainJs), 'main.js 引用 log 模块')
@@ -1125,7 +1133,7 @@ const PAD = 54
   assert.ok(!/let petDragging/.test(mainJs2), '旧的 petDragging 布尔已移交给状态机')
   assert.ok(/winState\.is\('dragging'\)/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'ipc.js'), 'utf8') +
     fs.readFileSync(path.join(__dirname, '..', 'app', 'main', 'window-layout.js'), 'utf8')), '点击穿透读状态机的 dragging')
-  assert.ok(/setMenu: \(open\) => ipcRenderer\.send\('pet:menu'/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')), 'preload 爆出 setMenu')
+  assert.ok(/setMenu: \(open, anchor\) => ipcRenderer\.send\('pet:menu'/.test(fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8')), 'preload 爆出 setMenu（带菜单锚点）')
   ok('P1-2 状态机：全矩阵转移、非法计数、菜单/拖动/抠图序列与接线')
 }
 
@@ -1171,27 +1179,23 @@ const PAD = 54
   assert.deepEqual(lay.windowBoundsForPet(200, 300, 220, 180), { x: 146, y: 120, width: 328, height: 400 }, '窗口 = 桌宠 - 左右留白 / 向上预留')
   assert.equal(lay.mirrorSide(), 'none', '居中不贴边')
 
-  // 0.6.11: the bubble has its own window, but the hover menu still lives in
-  // this one and is drawn outside the pet — so the strip is honoured again,
-  // just transiently and never at the cost of moving the pet.
+  // P2-4 阶段二：悬停菜单也搬进 overlay 窗口，桌宠窗口不再为它让位——
+  // applyBubbleHeight 只为 pet:reserve/pet:bubble 的兼容保留，恒返回零预留。
+  const before = { ...winBounds }
   const grown = lay.applyBubbleHeight(170)
-  assert.deepEqual(grown, { reserve: 170, side: 'above' }, '菜单需要时窗口临时长高')
-  assert.equal(winBounds.height, 390, '窗口高度 = 桌宠 + 预留')
-  assert.equal(winBounds.y, 130, '窗口向上长，桌宠位置不动')
-  assert.deepEqual(lay.petPos, { x: 200, y: 300 }, '桌宠不会被菜单顶走')
+  assert.deepEqual(grown, { reserve: 0, side: 'above' }, '桌宠窗口不再为菜单长高')
+  assert.deepEqual(winBounds, before, '窗口尺寸不随菜单变化')
 
-  winBounds = { x: 146, y: 130, width: 328, height: 390 }
   const shrunk = lay.applyBubbleHeight(0)
-  assert.equal(shrunk.reserve, 0, '菜单收起后预留归零')
-  assert.equal(winBounds.height, 220, '窗口收回桌宠尺寸')
+  assert.equal(shrunk.reserve, 0, '预留恒为零')
+  assert.deepEqual(winBounds, before, '收起菜单也不动窗口')
 
   lay.begin({ x: 200, y: 20, reserve: 0 })
   winBounds = { x: 146, y: 20, width: 328, height: 220 }
   const top = lay.applyBubbleHeight(180)
-  assert.deepEqual(top, { reserve: 180, side: 'below' }, '上方放不下就把菜单翻到下方')
+  assert.deepEqual(top, { reserve: 0, side: 'above' }, '贴顶也不再把菜单翻到下方')
   assert.equal(lay.petPos.y, 20, '贴顶时也不下推桌宠')
-  assert.equal(winBounds.y, 20, '窗口顶边贴住桌宠，不越界')
-  assert.equal(winBounds.height, 400, '下方预留同样计入窗口')
+  assert.equal(winBounds.y, 20, '窗口不因菜单移动')
 
   // Click-through: dragging is interactive without waiting for the cursor poll.
   const dragLay = layoutMod.createWindowLayout({
@@ -1536,6 +1540,8 @@ const PAD = 54
   const petJsP24 = fs.readFileSync(path.join(root, 'app', 'pet.js'), 'utf8')
   const preloadP24 = fs.readFileSync(path.join(root, 'app', 'preload.js'), 'utf8')
   const ipcP24 = fs.readFileSync(path.join(root, 'app', 'main', 'ipc.js'), 'utf8')
+  const ovIpc = fs.readFileSync(path.join(root, 'app', 'main', 'overlay-ipc.js'), 'utf8')
+  const ovMenu = fs.readFileSync(path.join(root, 'app', 'main', 'overlay-menu.js'), 'utf8')
   const mainP24 = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
 
   assert.ok(/function createOverlay/.test(ovMain) && /showInactive/.test(ovMain), 'overlay 窗口：独立、不抢焦点')
@@ -1548,7 +1554,12 @@ const PAD = 54
   assert.ok(/api\.renderBubble\(payload\)/.test(petJsP24), '桌宠窗口只把卡片整包发出去')
   assert.ok(/renderBubble: \(payload\) => ipcRenderer\.send\('bubble:render'/.test(preloadP24), 'preload 暴露 renderBubble')
   assert.ok(/onOverlayRender: \(cb\)/.test(preloadP24) && /overlayClick: \(\)/.test(preloadP24), 'preload 暴露气泡窗口的渲染/点击通道')
-  assert.ok(/ipcMain\.on\('bubble:render'/.test(ovMain) && /ipcMain\.on\('bubble:hide'/.test(ovMain), '主进程接 bubble:render / bubble:hide')
+  assert.ok(/ipcMain\.on\('bubble:render'/.test(ovIpc) && /ipcMain\.on\('bubble:hide'/.test(ovIpc), '主进程接 bubble:render / bubble:hide')
+  // P2-4 阶段二：菜单和气泡共用一扇窗，按「气泡 || 菜单」决定显隐。
+  assert.ok(/bubbleShown \|\| menu\.isOpen\(\)/.test(ovMain), '菜单开或气泡在，窗口才显示；都无则整窗隐藏')
+  assert.ok(/openMenu: \(anchor\) => menu\.open\(anchor\)/.test(ovMain), 'overlay 暴露 openMenu(anchor)')
+  assert.ok(/MENU_GAP/.test(ovMenu) && /petBottom \+ MENU_GAP/.test(ovMenu), '菜单摆位：上方优先，放不下翻下方')
+  assert.ok(/overlay:menu-size/.test(ovIpc) && /overlay:menu-action/.test(ovIpc) && /overlay:menu-close/.test(ovIpc), '菜单尺寸/点击/收起通道在 overlay-ipc')
   assert.ok(/overlay = createOverlay\(/.test(mainP24), 'main.js 创建 overlay 实例')
   assert.ok(/inset: 0/.test(ovCss), 'overlay.css 铺满整窗')
   ok('P2-4 气泡独立窗口：懒建、不抢焦点、跟随、首帧补发、点击转发')
@@ -1588,13 +1599,20 @@ const PAD = 54
   const mainS2 = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
   const zhS2 = JSON.parse(fs.readFileSync(path.join(root, 'locales', 'zh-CN.json'), 'utf8'))
 
-  for (const key of ['pet.title', 'pet.alt', 'pet.menu.settings', 'pet.menu.quit']) {
+  const ovHtmlS2 = fs.readFileSync(path.join(root, 'app', 'overlay.html'), 'utf8')
+
+  for (const key of ['pet.title', 'pet.alt']) {
     assert.ok(new RegExp('data-i18n(-alt|-title|-aria-label)?="' + key.replace(/\./g, '\\.') + '"').test(petHtmlS2), 'pet.html 用 data-i18n 标了 ' + key)
   }
+  // P2-4 阶段二：菜单搬到 overlay 窗口，菜单项的文案在 overlay.html 里。
+  for (const key of ['pet.menu.settings', 'pet.menu.quit']) {
+    assert.ok(new RegExp('data-i18n(-alt|-title|-aria-label)?="' + key.replace(/\./g, '\\.') + '"').test(ovHtmlS2), 'overlay.html 用 data-i18n 标了 ' + key)
+  }
+  assert.ok(/<script src="i18n\.js"><\/script>/.test(ovHtmlS2), 'overlay.html 引入渲染层 i18n（菜单文案）')
   assert.ok(/<script src="i18n\.js"><\/script>/.test(petHtmlS2), 'pet.html 引入渲染层 i18n')
   assert.ok(/applyStatic\(document, api\.i18n\)/.test(petJsS2), 'pet.js 启动时填充静态文案')
   assert.ok(/t\('water\.(done|later)'\)/.test(petJsS2), '喝水按钮文案走字典')
-  const menuButtons = petHtmlS2.match(/data-action="(settings|editor|weather|hide|quit)"[^>]*/g) || []
+  const menuButtons = ovHtmlS2.match(/data-action="(settings|editor|weather|hide|quit)"[^>]*/g) || []
   assert.equal(menuButtons.length, 5, '菜单五个动作都在')
   assert.ok(menuButtons.every((tag) => /data-i18n="pet\.menu\./.test(tag)), '每个菜单项都挂了 data-i18n')
   for (const key of ['window.settings', 'window.editor', 'window.cutout', 'window.onboard']) {

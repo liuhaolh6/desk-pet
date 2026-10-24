@@ -382,10 +382,24 @@ function registerIpc(deps) {
     layout.updateInteractive()
   })
 
-  // The menu is a renderer-side overlay; the machine needs to know whether it is
-  // open because it changes the reserved strip and gates bubble/drag events.
-  ipcMain.on('pet:menu', (ev, open) => {
-    winState.transition(open ? 'menu-open' : 'menu-close')
+  // P2-4 阶段二：菜单画在 overlay 窗口里（和气泡同一扇窗），这里负责把
+  // 状态机和那扇窗同步好。`payload` 是 { open, anchor }，anchor 是桌宠渲染层
+  // 算的锚点（桌宠窗口内坐标，桌宠头顶正中）。
+  ipcMain.on('pet:menu', (ev, payload) => {
+    const open = typeof payload === 'object' && payload ? !!payload.open : !!payload
+    const anchor = (payload && typeof payload === 'object') ? payload.anchor : null
+    if (open) {
+      // 菜单顶掉气泡：先把状态机从 bubble 拉回 idle，再进 menu。
+      if (bubbleVisible) {
+        bubbleVisible = false
+        winState.transition('bubble-hide')
+      }
+      if (overlay) overlay.openMenu(anchor)
+      winState.transition('menu-open')
+    } else {
+      if (overlay) overlay.closeMenu()
+      if (winState.is('menu')) winState.transition('menu-close')
+    }
   })
 
   ipcMain.handle('pet:bubble', (ev, payload) => {
@@ -409,12 +423,23 @@ function registerIpc(deps) {
   })
 
   ipcMain.on('pet:hide', () => {
-    if (overlay) overlay.hide()
+    if (overlay) {
+      overlay.closeMenu()
+      overlay.hide()
+    }
+    if (winState.is('menu')) winState.transition('menu-close')
     const win = windows.pet()
     if (win) win.hide()
   })
 
-  // P2-4：气泡窗口的通道（渲染/收起/点击转发）在 app/main/overlay.js 里注册，
+  // 菜单窗口自己收起（失焦、Esc、点面板空白）时，状态机和桌宠窗口都要知道。
+  const notifyMenuClosed = () => {
+    if (winState.is('menu')) winState.transition('menu-close')
+    const pet = windows.pet()
+    if (pet && !pet.isDestroyed()) pet.webContents.send('pet:menu-closed')
+  }
+
+  // P2-4：气泡窗口的通道（渲染/收起/点击转发/菜单）在 app/main/overlay-ipc.js 里注册，
   // 这里只把"出现/收起"翻译成状态机事件。
   registerOverlayIpc({
     ipcMain,
@@ -430,7 +455,24 @@ function registerIpc(deps) {
       bubbleVisible = false
       winState.transition('bubble-hide')
     },
+    onMenuAction: (id) => {
+      notifyMenuClosed()
+      const pet = windows.pet()
+      if (pet && !pet.isDestroyed()) pet.webContents.send('pet:menu-action', id)
+    },
+    onMenuClose: () => notifyMenuClosed(),
   })
+
+  // 菜单窗口失焦（点了别的应用）也要收起，否则会一直挂在桌面上。
+  if (overlay) {
+    overlay.onWindow((w) => {
+      w.on('blur', () => {
+        if (!overlay.menuOpen) return
+        overlay.closeMenu()
+        notifyMenuClosed()
+      })
+    })
+  }
 
   ipcMain.on('pet:open-settings', () => actions.openSettings())
   ipcMain.on('pet:open-editor', () => actions.openEditor())

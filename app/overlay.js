@@ -1,16 +1,20 @@
 'use strict'
 
 /**
- * P2-4：独立气泡窗口的渲染层。
+ * P2-4：独立气泡/菜单窗口的渲染层。
  *
  * 卡片数据由桌宠窗口算好（require 气泡模型、天气、喝水状态都在那边），
  * 这里只负责画：换算 --u、渲染行、缩字号到下限（0.6）后按比例截断、
  * 把点击/按钮转发回桌宠窗口。这样气泡窗口本身没有任何业务状态。
+ *
+ * 阶段二起悬停菜单也画在这里：面板尺寸由主进程量、窗口跟着变，
+ * 点击按 data-action 回给主进程再转给桌宠窗口，和气泡按钮同一条路。
  */
 ;(() => {
   const api = window.deskPet
   const bubble = document.getElementById('bubble')
   const content = document.getElementById('bubbleContent')
+  const menu = document.getElementById('petMenu')
 
   const BUBBLE_REF_W = 300
   const FIT_FLOOR = 0.6
@@ -160,6 +164,72 @@
     content.innerHTML = ''
   }
 
+  /* ----------------------------------------------------------- hover menu */
+
+  let menuOpen = false
+  let menuCloseTimer = 0
+
+  /** 量面板本体（不含窗口留白），窗口尺寸由主进程 = 面板 + 2 * 6px。 */
+  function menuSize() {
+    const wasHidden = menu.hidden
+    menu.hidden = false
+    const rect = menu.getBoundingClientRect()
+    const size = { width: Math.ceil(rect.width), height: Math.ceil(rect.height) }
+    menu.hidden = wasHidden
+    return size
+  }
+
+  function reportMenuSize() {
+    const size = menuSize()
+    if (!size.width || !size.height) return
+    try { api.reportMenuSize(size) } catch (err) {}
+  }
+
+  function openMenu() {
+    clearTimeout(menuCloseTimer)
+    menuOpen = true
+    menu.hidden = false
+    menu.classList.remove('open')
+    // 先让布局落一帧，过渡才会从 scale(0.96) 出发，而不是直接跳到位。
+    void menu.offsetWidth
+    requestAnimationFrame(() => {
+      if (!menuOpen) return
+      menu.classList.add('open')
+      const first = menu.querySelector('button')
+      if (first) {
+        try { first.focus() } catch (err) {}
+      }
+    })
+  }
+
+  function closeMenu() {
+    if (!menuOpen) return
+    menuOpen = false
+    menu.classList.remove('open')
+    clearTimeout(menuCloseTimer)
+    menuCloseTimer = setTimeout(() => {
+      if (!menuOpen) menu.hidden = true
+    }, 220)
+  }
+
+  function wireMenu() {
+    menu.addEventListener('click', (ev) => {
+      const btn = ev.target && ev.target.closest ? ev.target.closest('button[data-action]') : null
+      if (btn) {
+        ev.stopPropagation()
+        try { api.menuAction(btn.dataset.action) } catch (err) {}
+        closeMenu()
+        return
+      }
+      try { api.menuClose() } catch (err) {}
+      closeMenu()
+    })
+    api.onOverlayMenu((payload) => {
+      if (payload && payload.open) openMenu()
+      else closeMenu()
+    })
+  }
+
   function wire() {
     bubble.addEventListener('click', (ev) => {
       const btn = ev.target && ev.target.closest ? ev.target.closest('.bubble-act, .actions button') : null
@@ -173,10 +243,14 @@
     // 和以前点气泡一样：Esc 也收起。气泡窗口不抢焦点，但屏幕阅读器用户
     // 用"跳到窗口"导航过来时 Esc 应该有个结果。
     window.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Escape') {
-        ev.preventDefault()
-        try { api.overlayClick() } catch (err) {}
+      if (ev.key !== 'Escape') return
+      ev.preventDefault()
+      if (menuOpen) {
+        try { api.menuClose() } catch (err) {}
+        closeMenu()
+        return
       }
+      try { api.overlayClick() } catch (err) {}
     })
     api.onOverlayRender(render)
     api.onOverlayClear(clear)
@@ -188,6 +262,12 @@
       const fit2 = fitText()
       growIfNeeded(fit2)
     })
+    wireMenu()
+    // 菜单文案由 data-i18n 填，填完尺寸才准，所以量一次报给主进程。
+    if (window.deskPetI18n && api.i18n) {
+      try { window.deskPetI18n.applyStatic(document, api.i18n) } catch (err) {}
+    }
+    requestAnimationFrame(reportMenuSize)
     syncMetrics()
   }
 

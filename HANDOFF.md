@@ -1,6 +1,6 @@
 # 交接文档（HANDOFF）
 
-> 版本 `0.6.11` · 最后更新 2026-10-24 · 给下一个接手的人（或下一个对话的我）。
+> 版本 `0.6.12` · 最后更新 2026-10-24 · 给下一个接手的人（或下一个对话的我）。
 > 目标：读完这一份就能**安全地改代码、跑验证、出包**，不必重新摸索。
 > 想先知道"这东西现在还差在哪、下一步做什么"，看 [`ROADMAP.md`](ROADMAP.md)。
 
@@ -14,10 +14,10 @@
 | 本地目录 | `D:\project\deskpet` |
 | 仓库 | `ssh://git@ssh.github.com:443/liuhaolh6/desk-pet.git`，分支 `main`，**当前是私有仓库** |
 | 版本 | 代码 = 已出包 = `0.6.10`（主题包 P2-7 完成、0.6.9 的更新提示与隐私页一并带上）：`dist\DeskPet-0.6.10-setup.exe`（165,605,153 B ≈ 157.9 MiB，安装器，未签名，SHA-256 `a92bfa52…cf8a5d2`）与 `dist\DeskPet-0.6.10-portable.exe`（153,927,095 B ≈ 146.8 MiB，便携版，SHA-256 `228227a2…b018678`）；tag `v0.6.10` |
-| 最近提交 | 0.6.10 = 本提交（P2-7 主题包 + zip 导入导出；打包时补上 `locales/**` `themes/**` 两条 files 规则——之前打出来的包根本没有语言包和主题包）；0.6.9 = P2-3 更新提示 + P2-8 隐私文档；`dba1115` P2-1 安装器 · `58f94b4` P2-2 签名准备；P1 全部落地：`e2952ca` P1-9 e2e 入库 · `6c7a4fb` P1-8 真机 a11y · `94358ae` P1-7 主动说话 · `cdb3531` P1-6 天气增强 · `469d343` P1-5 喝水记录 · `b106382` P1-4 设置可用性 · `6342b75` P1-3 单测 · `01de0b2` P1-2 状态机 · `80332c7` P1-1 完成；0.6.6 收尾 = `e01c1cb`/`12176d2`/`5be8c4d`；再往前 `adbe033` 0.6.5 首次引导 |
+| 最近提交 | 0.6.12 = 本提交（P2-4 阶段二收尾：悬停菜单搬进 overlay 窗口、桌宠窗口不再被菜单撑大、Win11 透明窗框差自标定；见 `M32-NOTES.md`）；0.6.11 = 菜单临时长高窗口 + 气泡随内容放大 + 喝水按钮可点；0.6.10 = P2-7 主题包（打包补上 `locales/**` `themes/**` 两条 files 规则）；0.6.9 = P2-3 更新提示 + P2-8 隐私文档；`dba1115` P2-1 安装器 · `58f94b4` P2-2 签名准备；P1 全部落地：`e2952ca` P1-9 e2e 入库 · `6c7a4fb` P1-8 真机 a11y · `94358ae` P1-7 主动说话 · `cdb3531` P1-6 天气增强 · `469d343` P1-5 喝水记录 · `b106382` P1-4 设置可用性 · `6342b75` P1-3 单测 · `01de0b2` P1-2 状态机 · `80332c7` P1-1 完成；0.6.6 收尾 = `e01c1cb`/`12176d2`/`5be8c4d`；再往前 `adbe033` 0.6.5 首次引导 |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js`（`npm test` = smoke + `npm run unit`）；带窗口的再加 `npm run test:e2e` |
-| 自动化基线 | smoke **66 项** · unit **164 例** · check-a11y **95 项** · check-i18n **30 文件 / 18 处** · a11y-audit **86 项** · a11y-keyboard **6 项** · a11y-tree **4 窗口 / 0 无名** · e2e **4 用例**，全部通过 |
+| 自动化基线 | smoke **67 项** · unit **182 例** · check-a11y **95 项** · check-i18n **30 文件 / 0 处** · a11y-audit **86 项 / 0 失败** · a11y-keyboard **6 项** · a11y-tree **4 窗口 / 0 无名** · e2e **4 用例**，全部通过 |
 | 最新产物 | 安装器 `dist/DeskPet-0.6.8-setup.exe` 165,558,348 字节，SHA-256 `2d5dfe47eb809af9e762b41b367d53da83c21d5634cfa31c9bfb0a82c9fff89c`；便携版 `dist/DeskPet-0.6.8-portable.exe` 153,882,861 字节，SHA-256 `668ba228f9f6c700a93fd1c48c0bfcabdefa910b21a74291c3c89ba62e777a16` |
 
 **能做什么**：换形象（照片抠图 / 导入 PNG）、点击看天气和喝水进度、按时提醒喝水、24 条内置温柔提示语、
@@ -98,9 +98,11 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `app/main/windows.js`（新） | 297 | 五窗口工厂：桌宠/设置/编辑器/抠图/引导 + 单例 + 设置副效应 |
 | `app/main/catalog.js`（新） | 106 | 角色与声音目录、`pet-role://`与`pet-sound://`协议、设置/角色广播 |
 | `app/main/boot.js`（新） | 81 | 数据目录候选与可写探测、日志落盘、单实例锁（不碰 `userData`） |
-| `app/main/ipc.js`（新） | 446 |
-| `app/main/overlay.js`（新） | 211 | 气泡独立窗口：懒创建、贴宠物上方/翻下方、跟随、`showInactive` 不抢焦点；`registerOverlayIpc` 管 `bubble:render|hide`、`overlay:click|action` |
-| `app/overlay.html` / `overlay.css` / `overlay.js`（新） | 22 / 169 / 169 | 气泡渲染层：只画行与按钮，超框收缩到 0.6 再截断，点击与按钮转发回桌宠窗口 | 全部 `ipcMain` 通道（state/app/settings/roles/sounds/weather/cutout/pet/onboard），依赖全部注入；喝水四通道在 `water-ipc.js` |
+| `app/main/ipc.js`（新） | 495 | 全部 `ipcMain` 通道（state/app/settings/roles/sounds/weather/cutout/pet/onboard），依赖全部注入；喝水四通道在 `water-ipc.js`，overlay 窗口通道在 `overlay-ipc.js` |
+| `app/main/overlay-menu.js`（新，0.6.12） | 198 | 悬停菜单的窗口侧：按渲染层报的面板尺寸与锚点算窗口矩形（上方优先、放不下翻下方、夹在工作区），`open/close/place/follow/setSize`，并自标定 Win11 透明窗框差（整窗比内容区 +6×+7px） |
+| `app/main/overlay-ipc.js`（新，0.6.12） | 60 | overlay 窗口的 IPC 面：`bubble:render|hide`、`overlay:grow|click|action`、`overlay:menu-size|menu-action|menu-close`，把菜单动作转发回桌宠窗口 |
+| `app/main/overlay.js`（新） | 266 | 气泡独立窗口：懒创建、贴宠物上方/翻下方、跟随、`showInactive` 不抢焦点；按「气泡 || 菜单」决定显隐；`registerOverlayIpc` 已拆到 `overlay-ipc.js` |
+| `app/overlay.html` / `overlay.css` / `overlay.js`（新） | 34 / 272 / 274 | 气泡 + 悬停菜单渲染层：气泡只画行与按钮，超框收缩到 0.6 再截断；菜单复用 `#petMenu` 五项 `data-action`，量尺寸上报、点项/点空白/Esc 转发 | 全部 `ipcMain` 通道（state/app/settings/roles/sounds/weather/cutout/pet/onboard），依赖全部注入；喝水四通道在 `water-ipc.js` |
 | `app/main/weather-pump.js`（新） | 81 | 天气取数/缓存回退/定时刷新，时钟可注入；`refresh/schedule/current` |
 | `app/main/reminder.js`（新） | 69 | 喝水提醒：勿扰/勿扰时段/`snoozeUntil` 延后/间隔/10 分钟限流，`tick()` 返回本次判定 |
 | `app/main/cutout-service.js`（新） | 232 | 抠图：解码、输入令牌、utilityProcess、进程内回退、`cutout-trace.jsonl` |
@@ -130,7 +132,7 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `app/main/geometry.js` | 25 | 窗口几何纯函数：`clamp/windowWidth/bubbleReserveFor`（与渲染层同一公式） |
 | `app/main/tray.js` | 97 | 托盘 + 全局快捷键：`createTrayHost()` 返回 `probe/status/register/setTooltip`，`ACCELERATOR` 常量 |
 | `app/main/diagnostics.js` | 99 | 诊断导出：脱敏设置 + 日志尾巴 → txt，返回 `{ok,path,bytes}` |
-| `app/pet.js` | 676 | 桌宠渲染、气泡几何与 60% 字号下限 + 截断、命中区上报、手势仲裁、菜单、气泡上的「稍后 10 分钟」 |
+| `app/pet.js` | 642 | 桌宠渲染、气泡几何与 60% 字号下限 + 截断、命中区上报、手势仲裁、菜单锚点上报（菜单 DOM 在 overlay 窗口）、气泡上的「稍后 10 分钟」 |
 | `app/pet.css` | 450 | 气泡 1026:700 框、动效、reduced-motion |
 | `app/settings.js` / `.html` / `.css` | 997 / 417 / 1102 | 设置窗口，7 个 `data-panel` 分类；侧边栏搜索（`FIND_INDEX` + 打分 + 键盘）、顶栏按页「恢复这页默认」（二次确认层）、天气页最近城市；其他面板带托盘/快捷键状态、诊断导出与语言下拉 |
 | `app/cutout.js` / `.html` / `.css` | 621 / — / 353 | 抠图窗口：三态视图、擦除、旋转、保存 |
@@ -147,8 +149,8 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `lib/cutout-eval.js`（新） | 137 | 评测指标纯函数：iou / boundaryLength / edgeSharpness / maskFromImage / summarize |
 | `tools/cutout-eval.js`（新） | 150 | 评测 CLI：逐图跑真实 ONNX 管线，输出 IoU/edge/ms/coverage |
 | `tools/make-cutout-golden.js`（新） | 145 | 合成 golden set 生成器（10 张 + 真值蒙版） |
-| `tools/smoke.js` | 1537 | `npm test` 的第一段：存储/角色/天气/气泡/几何/文案/引导/托盘/诊断/模块拆分/窗口状态机/天气泵/提醒/设置搜索与恢复默认/喝水记录/多语言 64 项断言 |
-| `tests/unit/*.test.js` | 164 例 | `npm run unit`（`node:test`，零依赖）：`bubble-model` 19 · `placement` 16 · `weather` 24 · `cutout-math` 15 · `water-log` 15 · `nudges` 11 · `boot-candidates` 5 · `update-check` 13 · `privacy` 5 · `cutout-model` 10 · `cutout-eval` 13 · `i18n` 18（P1-3/P1-7/P2-1/P2-3/P2-5/P2-6/P2-8） |
+| `tools/smoke.js` | 1684 | `npm test` 的第一段：存储/角色/天气/气泡/几何/文案/引导/托盘/诊断/模块拆分/窗口状态机/天气泵/提醒/设置搜索与恢复默认/喝水记录/多语言/菜单搬 overlay 67 项断言 |
+| `tests/unit/*.test.js` | 182 例 | `npm run unit`（`node:test`，零依赖）：`bubble-model` 19 · `placement` 16 · `weather` 24 · `cutout-math` 15 · `water-log` 15 · `nudges` 11 · `boot-candidates` 5 · `update-check` 13 · `privacy` 5 · `cutout-model` 10 · `cutout-eval` 13 · `i18n` 18（P1-3/P1-7/P2-1/P2-3/P2-5/P2-6/P2-8） |
 | `docs/USER-GUIDE.md` | 123 | 用户手册：三分钟上手 + 9 条 FAQ（0.6.6 / ROADMAP P0-4） |
 | `docs/PRIVACY.md`（新） | 84 | 隐私说明：不发遥测、照片不外传、联网三处、数据目录、一键清理（P2-8） |
 
@@ -225,10 +227,10 @@ token 表上限 3，窗口关闭即清空。
 
 | 工具 | 覆盖 | 命令 | 当前 |
 |---|---|---|---|
-| 语法 | 49 个 JS 文件 | `npm run check` | ✅ |
-| `tools/smoke.js` | 存储/角色/天气码/`advice`/气泡模型/几何不变量/文案/首次引导/托盘兜底/诊断导出/主进程模块拆分/窗口状态机/预留-可见性分离/天气泵回退/提醒限流与勿扰/设置搜索与按页恢复默认/喝水记录与延后/主动说话/气泡独立窗口/多语言骨架与桌宠窗口 | `npm test` | ✅ 64 项 |
+| 语法 | 51 个 JS 文件 | `npm run check` | ✅ |
+| `tools/smoke.js` | 存储/角色/天气码/`advice`/气泡模型/几何不变量/文案/首次引导/托盘兜底/诊断导出/主进程模块拆分/窗口状态机/预留-可见性分离/天气泵回退/提醒限流与勿扰/设置搜索与按页恢复默认/喝水记录与延后/主动说话/气泡独立窗口/菜单搬 overlay/多语言骨架与桌宠窗口 | `npm test` | ✅ 67 项 |
 | `tools/check-i18n.js` | 语言包键名对齐、空串、每个文件的内联中文数不得高于基线（剥注释后计数） | `node tools/check-i18n.js` | ✅ 30 文件 / 0 处 |
-| `tests/unit/` | 纯函数单测：气泡模型归一化/取值、多显示器放置与吸附、天气文案与 AQI、抠图数学、喝水记录、主动说话决策、便携数据目录候选、版本比较与更新决策、隐私清理边界、抠图模型解析与评测指标、多语言计数与静态覆盖 | `npm run unit` | ✅ 164 例 |
+| `tests/unit/` | 纯函数单测：气泡模型归一化/取值、多显示器放置与吸附、天气文案与 AQI、抠图数学、喝水记录、主动说话决策、便携数据目录候选、版本比较与更新决策、隐私清理边界、抠图模型解析与评测指标、多语言计数与静态覆盖 | `npm run unit` | ✅ 182 例 |
 | `tools/check-a11y.js` | 静态无障碍断言（对比度数学、24px、reduced-motion、forced-colors 分支、回流、aria、`lang`、引导卡、托盘/诊断行、搜索框与恢复默认确认层） | `node tools/check-a11y.js` | ✅ 95 项 |
 | `tools/a11y-audit.js` | 真实 DOM 审计（AX 名称、对比度、目标尺寸、焦点、320px 回流、forced-colors、reduced-motion） | `--port <调试端口>` | ✅ 86 项 / 0 失败 |
 | `tools/a11y-keyboard.js` | 键盘-only 抠图全流程 | `node tools/a11y-keyboard.js` | ✅ 6 项 |
@@ -395,7 +397,7 @@ node node_modules/electron-builder/cli.js --win nsis --x64   # → dist\DeskPet-
 
 1. 读 `README.md` → 本文 §0–§4 → `ROADMAP.md`（不足与路线）。
 2. `npm ci`；若 `node_modules/electron/dist/electron.exe` 不存在，进 `node_modules/electron` 跑 `node install.js`。
-3. 跑 §5 的三条命令，确认 49 / 44 / 通过。
+3. 跑 §5 的三条命令，确认 51 / 67 / 182 全绿。
 4. 起开发实例，点桌宠看三张卡、拖动、开设置、跑一次抠图。
 5. 看 `dist/DeskPet-0.6.4-portable.exe` 是否在；核对 §0 的哈希。
 6. 把 §4 十条不变量抄进你的工作记忆，再动代码。
@@ -425,23 +427,18 @@ node node_modules/electron-builder/cli.js --win nsis --x64   # → dist\DeskPet-
 ## 10. 新对话开场白（直接粘贴）
 
 > 继续 `D:\project\deskpet` 的 Windows 桌面宠物项目，先读 `HANDOFF.md`（§0 速览、§4 不变量、§6 坑）
-> 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.6`，`main` 已同步，tag 到 `v0.6.6`。
-> 验证基线：`npm run check`（62 个 JS）+ `npm test`（smoke 67 项 + unit 182 例）+ `node tools/check-a11y.js`（95 项）全部通过；
+> 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.12`，`main` 已同步，tag 到 `v0.6.12`。
+> 验证基线：`npm run check`（51 个 JS）+ `npm test`（smoke 67 项 + unit 182 例）+ `node tools/check-a11y.js`（95 项）全部通过；
 > 带界面的还要跑 `npm run test:e2e`（4 用例）、`a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
-> 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。## 9. 当前未完成的一件事（P2-4 阶段二，接手请从这里继续）
+> 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。
 
-P2 其余各项均已完成（P2-1/2/3/5/6/7/8），只剩 **P2-4 阶段二的最后一步：把悬停菜单搬进 overlay 窗口**。
+## 9. P2-4 阶段二（0.6.12 已完成）
 
-**已完成的部分（commit `12e2837`）**：桌宠窗口已退回纯宠物尺寸，不再为气泡预留 54px strip；气泡由 overlay 自己定位、自己定高（`3b0b0b6` 起还会随内容变高）。
+> 这一节原来写的是「唯一剩下的任务」，现在做完了，保留要点方便以后改菜单。
 
-**没做的部分**：`app/pet.html:19-26` 的 `#petMenu` 仍在桌宠窗口里。目前靠“打开菜单时按菜单尺寸重算命中区域”绕开窗口边缘剪裁——这是绕，不是解。
-
-**做法（按此顺序）**：
-1. `app/overlay.html` 增加菜单容器（复用现有按钮与 `data-action`）；overlay 支持“气泡卡 / 菜单”两种内容。
-2. `app/pet.js:380-430` 的开关逻辑改为只算锚点、把菜单矩形交给主进程；DOM 与点击留在 overlay。
-3. `app/main/window-layout.js` 去掉“菜单撑大命中区域”的特例，桌宠窗口恒定宠物尺寸。
-4. `app/main/overlay.js` 按 `hasBubble || hasMenu` 决定显隐；菜单关且无气泡则整窗隐藏。
-
-**验收**：CDP 实测「点菜单按钮 → 设置/布置/喝水/隐藏/退出都能触发」「菜单不再被窗口剪」「桌宠窗口尺寸不随菜单变化」；门禁 smoke 67 / unit 166 / check-a11y 绿。
-
-**注意**：仓库多为 CRLF，`ops_edit_file` 的 oldText 要带 `\r\n`；气泡与菜单都在 overlay 窗口，CDP 要连 overlay target，不是 `#pet` 页。
+- 活动代码：`app/main/overlay-menu.js`（窗口矩形 + 自标定）、`app/main/overlay-ipc.js`（菜单通道）、`app/overlay.html` 的 `#petMenu`（五项 `data-action`）、
+  `app/pet.js` 只报锚点、`app/main/window-layout.js` 的 `applyBubbleHeight` 恒 `{reserve: 0, side: 'above'}`。
+- 验收证据：CDP（连 overlay target）五项动作 10/10 到达桌宠页；菜单完整落在窗口内（面板 196×187、窗口 208×216）；
+  桌宠窗口 330×222 开合前后不变；Esc/点空白/失焦都能收起；「退出」动作让进程真的退出。
+- 踩过的坑：Win11 透明无边框窗整窗比内容区宽 6、高 7（显示后高差 17），`setBounds` 要按标定值补；
+  隐藏态窗框不可信，显示后要再 `place()` 一次。细节见 `M32-NOTES.md`。

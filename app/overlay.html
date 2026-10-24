@@ -18,6 +18,17 @@
     </svg>
     <div id="bubbleContent" class="bubble-content"></div>
   </div>
+  <!-- P2-4 stage 2：悬停菜单也放在这个窗口里。窗口按菜单尺寸单独开，
+       不再挤在桌宠窗口里，所以既不会被窗口剪掉，桌宠窗口也不用跟着变。 -->
+  <div id="petMenu" class="pet-menu" role="menu" data-i18n-aria-label="pet.menu.label" hidden>
+    <button type="button" role="menuitem" data-action="settings" data-i18n="pet.menu.settings"></button>
+    <button type="button" role="menuitem" data-action="editor" data-i18n="pet.menu.editor"></button>
+    <button type="button" role="menuitem" data-action="weather" data-i18n="pet.menu.weather"></button>
+    <div class="pet-menu-sep" role="separator"></div>
+    <button type="button" role="menuitem" data-action="hide" data-i18n="pet.menu.hide"></button>
+    <button type="button" role="menuitem" data-action="quit" class="danger" data-i18n="pet.menu.quit"></button>
+  </div>
+  <script src="i18n.js"></script>
   <script src="overlay.js"></script>
   <script src="theme-boot.js"></script>
 </body>

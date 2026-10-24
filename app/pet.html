@@ -16,14 +16,8 @@
       <button id="menuBtn" class="menu-btn" type="button" data-i18n-aria-label="pet.menu.open" data-i18n-title="pet.menu.label">
         <span></span><span></span><span></span>
       </button>
-      <div id="petMenu" class="pet-menu" role="menu" data-i18n-aria-label="pet.menu.label" hidden>
-        <button type="button" role="menuitem" data-action="settings" data-i18n="pet.menu.settings"></button>
-        <button type="button" role="menuitem" data-action="editor" data-i18n="pet.menu.editor"></button>
-        <button type="button" role="menuitem" data-action="weather" data-i18n="pet.menu.weather"></button>
-        <div class="pet-menu-sep" role="separator"></div>
-        <button type="button" role="menuitem" data-action="hide" data-i18n="pet.menu.hide"></button>
-        <button type="button" role="menuitem" data-action="quit" class="danger" data-i18n="pet.menu.quit"></button>
-      </div>
+      <!-- P2-4 阶段二：#petMenu 搬到 app/overlay.html，和气泡同一扇窗口，
+           桌宠窗口不再为它长高。 -->
     </div>
   </div>
   <script src="i18n.js"></script>

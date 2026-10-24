@@ -124,9 +124,9 @@ contextBridge.exposeInMainWorld('deskPet', {
   // Hiding is separate from the reserve: the strip stays reserved (no resize),
   // the machine still has to leave the `bubble` state.
   bubbleHidden: () => ipcRenderer.send('pet:bubble-hidden'),
-  // P1-2: the hover menu is a renderer overlay, so the main-process state
-  // machine learns about it from here (it gates bubble/drag and the reserve).
-  setMenu: (open) => ipcRenderer.send('pet:menu', !!open),
+  // P1-2 → P2-4 阶段二：菜单画在 overlay 窗口里，主进程只知道「开/关」和
+  // 锚点（桌宠窗口内坐标，桌宠头顶正中），由它去摆那扇窗。
+  setMenu: (open, anchor) => ipcRenderer.send('pet:menu', { open: !!open, anchor: anchor || null }),
 
   // P2-4：气泡画在独立窗口里。桌宠窗口算好卡片 → 这里把"行 + 按钮"送过去。
   renderBubble: (payload) => ipcRenderer.send('bubble:render', payload),
@@ -141,6 +141,13 @@ contextBridge.exposeInMainWorld('deskPet', {
   overlayAction: (id) => ipcRenderer.send('overlay:action', id),
   // 0.6.11：气泡装不下时请求放大（宽高同比），主进程负责不超出屏幕。
   askBubbleSize: (scale) => ipcRenderer.send('overlay:grow', scale),
+  // P2-4 阶段二：菜单也在 overlay 窗口里。
+  onOverlayMenu: (cb) => ipcRenderer.on('overlay:menu', (_ev, payload) => cb(payload)),
+  reportMenuSize: (size) => ipcRenderer.send('overlay:menu-size', size),
+  menuAction: (id) => ipcRenderer.send('overlay:menu-action', id),
+  menuClose: () => ipcRenderer.send('overlay:menu-close'),
+  onMenuAction: (cb) => ipcRenderer.on('pet:menu-action', (_ev, id) => cb(id)),
+  onMenuClosed: (cb) => ipcRenderer.on('pet:menu-closed', () => cb()),
 
   hidePet: () => ipcRenderer.send('pet:hide'),
   openSettings: () => ipcRenderer.send('pet:open-settings'),

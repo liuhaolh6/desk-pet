@@ -121,50 +121,21 @@ function createWindowLayout({ screen, placement, readSettings, log, winState, ge
   }
 
   /**
-   * Reserve bubble/menu space WITHOUT moving the pet on screen.
+   * P2-4 stage 2: nothing is reserved any more.
    *
-   * The old version computed `y = max(workArea.y, bottom - nextH)`; when the pet
-   * sat near the top of the work area that clamp pushed the window's bottom down,
-   * and since the pet is anchored to the window's bottom it visibly slid down (same
-   * size, wrong place) on the first taps after startup or a drag.
-   *
-   * Now: keep the pet's screen rect fixed. Grow upward when there is room above,
-   * otherwise grow downward (renderer puts the bubble below the pet). If neither
-   * side can host the full height, reserve whatever the larger side has.
+   * The bubble has its own window, and the hover menu moved there too, so the
+   * pet window is always exactly pet-sized: a card or the menu can never push
+   * it around and nothing can be clipped by it. Kept as a function because the
+   * `pet:reserve` IPC and the smoke/unit tests still call it — the renderer's
+   * `--bubble-room` just stays 0 now.
    *
    * @param {number|null} height ignored since P2-4 stage 2 (kept for IPC compat)
    * @returns {{reserve:0, side:'above'}}
    */
   function applyBubbleHeight(height) {
-    // P2-4 stage 2 moved the bubble into its own window, so a card no longer
-    // needs a strip. But the hover menu is still drawn by the pet renderer and
-    // it extends *outside* the pet image: with a pet-sized window it was clipped
-    // and its buttons were unreachable (0.6.10 regression). So the renderer may
-    // still ask for a transient strip; the pet must stay put while the window
-    // grows around it.
-    const size = settingsSize()
-    const pet = petScreenRect(size)
-    const want = Math.max(0, Math.round(Number(height) || 0))
-    let extra = want
-    const win = getWindow()
-    if (!win || win.isDestroyed()) {
-      reserve = extra
-      bubbleSide = 'above'
-      return { reserve, side: bubbleSide }
-    }
-    // Never grow past the screen: the strip goes on whichever side has room,
-    // preferring above (that is where the menu is drawn by default).
-    const area = screen.getDisplayMatching({ x: pet.x, y: pet.top, width: size, height: size }).workArea
-    const roomAbove = Math.max(0, pet.top - area.y)
-    const roomBelow = Math.max(0, area.y + area.height - pet.bottom)
-    bubbleSide = (roomAbove >= want || roomAbove >= roomBelow) ? 'above' : 'below'
-    extra = Math.min(extra, bubbleSide === 'above' ? roomAbove : roomBelow)
-    reserve = extra
-    const bounds = windowBoundsForPet(pet.x, pet.top, size, extra)
-    const b = win.getBounds()
-    if (b.x !== bounds.x || b.y !== bounds.y || b.width !== bounds.width || b.height !== bounds.height) {
-      win.setBounds(bounds, false)
-    }
+    void height
+    reserve = 0
+    bubbleSide = 'above'
     return { reserve, side: bubbleSide }
   }
 

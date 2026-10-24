@@ -145,11 +145,96 @@ body[data-bubble-side="below"] .bubble-shape ellipse {
   outline-offset: 2px;
 }
 
+/* ------------------------------------------------------- hover menu (P2-4) */
+
+/* 菜单窗口的尺寸就是这块面板加一圈 6px 留白（阴影才不会在窗口边缘被
+   切出直角），所以面板本身不居中、也不吸底，固定在留白里；高度随内容走，
+   主进程量完就把窗口改成同样大小。 */
+.pet-menu {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  box-sizing: border-box;
+  width: 196px;
+  padding: 10px 12px 0;
+  border: 1px solid rgba(32, 49, 112, 0.35);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  color: #203170;
+  transform: scale(0.96) translateY(10px);
+  transform-origin: 50% 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s cubic-bezier(0.34, 1.3, 0.6, 1);
+}
+
+.pet-menu[hidden] {
+  display: none;
+}
+
+.pet-menu.open {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+
+/* 桌宠贴顶时菜单翻到桌宠下方，动画方向也跟着翻。 */
+body[data-bubble-side="below"] .pet-menu {
+  transform: scale(0.96) translateY(-10px);
+  transform-origin: 50% 0;
+}
+
+body[data-bubble-side="below"] .pet-menu.open {
+  transform: scale(1) translateY(0);
+}
+
+.pet-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #203170;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.pet-menu button:hover,
+.pet-menu button:focus-visible {
+  background: rgba(32, 49, 112, 0.1);
+  color: #203170;
+  outline: none;
+}
+
+.pet-menu button.danger {
+  color: var(--danger);
+}
+
+.pet-menu button.danger:hover,
+.pet-menu button.danger:focus-visible {
+  background: rgba(192, 57, 43, 0.1);
+  color: var(--danger);
+}
+
+.pet-menu-sep {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--line);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bubble-bshape,
   .bubble-b1,
   .bubble-b2,
-  .bubble-content {
+  .bubble-content,
+  .pet-menu {
     transition-duration: 0.01ms !important;
   }
 }
@@ -166,5 +251,23 @@ body[data-bubble-side="below"] .bubble-shape ellipse {
 
   .actions button {
     border: 1px solid ButtonText;
+  }
+
+  .pet-menu {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .pet-menu button {
+    color: CanvasText;
+  }
+
+  .pet-menu button:focus-visible {
+    outline: 1px solid ButtonText;
+  }
+
+  .pet-menu-sep {
+    background: CanvasText;
   }
 }

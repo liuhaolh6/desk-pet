@@ -6,6 +6,33 @@
 
 ## [Unreleased]
 
+## [0.6.12] - 2026-10-24
+
+### 新增
+
+- **悬停菜单搬进 overlay 窗口（P2-4 阶段二收尾）**：菜单不再画在桌宠窗口里，改由覆盖在桌宠上方的透明窗口渲染——与气泡同一扇窗。
+  桌宠渲染层只负责算锚点（桌宠头顶正中）并把「菜单开/关 + 锚点」交给主进程；窗口开多大、摆在哪由 `app/main/overlay-menu.js` 决定
+  （上方优先，放不下翻到下方，并限制在屏幕工作区内）。点菜单项经 `overlay:menu-action` 转发回桌宠窗口，隐藏/退出等动作照旧。
+- 菜单窗口自动标定窗框差：Win11 的透明无边框窗口，整窗比内容区宽 6px、高 7px（显示后高度差还会变 17px），先向渲染层要一次真实
+  `innerWidth/innerHeight` 与 `screenX/Y`，再补正 `setBounds`；不补的话菜单底边会被窗口裁掉 1~5px。
+- 菜单打开期间 overlay 窗口才可聚焦（`focusable` 动态切换），键盘可以 Tab 进菜单、Esc 退出；菜单关闭且没有气泡时整窗隐藏（`hasBubble || hasMenu`）。
+
+### 变更
+
+- **桌宠窗口不再被菜单撑大**：`app/main/window-layout.js` 的 `applyBubbleHeight` 恒返回 `{reserve: 0, side: 'above'}`，
+  桌宠窗口恒等于「桌宠 + 左右 54px 留白」，打开/关闭菜单前后尺寸与位置不变，也不再重排命中区域。
+- 新增 `app/main/overlay-ipc.js`：overlay 窗口的 IPC 面从 `ipc.js` 拆出（气泡渲染/收起、点击转发、菜单尺寸与动作）。
+- `tools/smoke.js` 断言改为「菜单在 `overlay.html`」「桌宠窗口几何不因菜单改变」，unit 182 例。
+
+### 修复
+
+- 菜单失焦收起：焦点离开 overlay 窗口即收起（原来挂在桌宠窗口的 `blur` 上，菜单搬走以后那个事件不会再出现）。
+- 关闭菜单与收起气泡互不踩状态：先收起气泡再开菜单，状态机只走 `bubble-hide → menu-open`，`pet:menu-closed` 只回给桌宠窗口。
+
+### 打包
+
+- 便携版 `dist/DeskPet-0.6.12-portable.exe`、安装器 `dist/DeskPet-0.6.12-setup.exe`（均未签名；安装器可能被杀软拦解包，见 `docs/SELF-SIGNING.md` §9）。
+
 ## [0.6.11] - 2026-10-24
 
 ### 修复
