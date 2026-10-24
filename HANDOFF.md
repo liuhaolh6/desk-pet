@@ -1,6 +1,6 @@
 # 交接文档（HANDOFF）
 
-> 版本 `0.6.13` · 最后更新 2026-10-24 · 给下一个接手的人（或下一个对话的我）。
+> 版本 `0.6.14` · 最后更新 2026-10-24 · 给下一个接手的人（或下一个对话的我）。
 > 目标：读完这一份就能**安全地改代码、跑验证、出包**，不必重新摸索。
 > 想先知道"这东西现在还差在哪、下一步做什么"，看 [`ROADMAP.md`](ROADMAP.md)。
 
@@ -13,12 +13,12 @@
 | 是什么 | Windows x64 桌面宠物（Electron 44 + 离线 ONNX 人像抠图），悬浮在桌面上，点击看天气 / 喝水 / 温馨话 |
 | 本地目录 | `D:\project\deskpet` |
 | 仓库 | `ssh://git@ssh.github.com:443/liuhaolh6/desk-pet.git`，分支 `main`，**已公开（MIT，2026-10-24）**；公开前已用 `git filter-repo` 从全部历史移除原始照片素材，旧 commit 已 404，本地备份在 `D:\project\.tmp\deskpet-pre-filter-*.bundle`；项目内已无原始照片，原图存放在项目外 `D:\deskpet-private\`（见该目录 `README.txt`） |
-| 版本 | 代码与便携版 = `0.6.13`（图标贴纸化）：`dist\DeskPet-0.6.13-portable.exe`（153,834,291 B ≈ 146.7 MiB，未签名，SHA-256 `d50851e1…c87161`），tag `v0.6.13`；**安装器自 0.6.12 起本机产不出**：杀软拦截 electron-builder 运行刚生成的安装器来生成卸载器（`ERR_ELECTRON_BUILDER_CANNOT_EXECUTE`，见 `docs/SELF-SIGNING.md` §9），最后可用安装器 = `0.6.11` |
-| 最近提交 | 0.6.13 = `8939d07` 应用/托盘图标改抠图贴纸（去圆环）+ 公开前 `git filter-repo` 清历史（原始照片已从所有 commit 移除，仓库转公开 MIT）+ 本次文档；0.6.12 = `2aa29a1` 代码 + `083af41` 文档（P2-4 阶段二收尾：悬停菜单搬进 overlay 窗口、桌宠窗口不再被菜单撑大、Win11 透明窗框差自标定；见 `M32-NOTES.md`）；0.6.11 = `360c76d` 菜单临时长高窗口 + 气泡随内容放大 + 喝水按钮可点；0.6.10 = P2-7 主题包（打包补上 `locales/**` `themes/**` 两条 files 规则）；0.6.9 = P2-3 更新提示 + P2-8 隐私文档；`dba1115` P2-1 安装器 · `58f94b4` P2-2 签名准备；P1 全部落地：`e2952ca` P1-9 e2e 入库 · `6c7a4fb` P1-8 真机 a11y · `94358ae` P1-7 主动说话 · `cdb3531` P1-6 天气增强 · `469d343` P1-5 喝水记录 · `b106382` P1-4 设置可用性 · `6342b75` P1-3 单测 · `01de0b2` P1-2 状态机 · `80332c7` P1-1 完成；0.6.6 收尾 = `e01c1cb`/`12176d2`/`5be8c4d`；再往前 `adbe033` 0.6.5 首次引导 |
+| 版本 | 代码与便携版 = `0.6.14`（导入音效无声修复）：`dist\DeskPet-0.6.14-portable.exe`（153,830,942 B ≈ 146.7 MiB，未签名，SHA-256 `fcc661cc…7204b6`），tag `v0.6.14`；**安装器自 0.6.12 起本机产不出**：杀软拦截 electron-builder 运行刚生成的安装器来生成卸载器（`ERR_ELECTRON_BUILDER_CANNOT_EXECUTE`，见 `docs/SELF-SIGNING.md` §9），最后可用安装器 = `0.6.11` |
+| 最近提交 | 0.6.14 = `912a409` 导入音效补 CORS（`corsEnabled` + ACAO，含 `sound-protocol` 单测与 smoke 断言、`build.files` 排除临时锁）+ 本次文档（见 `M33-NOTES.md`）；文档提交 `a5bf8f1`；0.6.13 = `8939d07` 应用/托盘图标改抠图贴纸（去圆环）+ 公开前 `git filter-repo` 清历史（原始照片已从所有 commit 移除，仓库转公开 MIT）+ 本次文档；0.6.12 = `2aa29a1` 代码 + `083af41` 文档（P2-4 阶段二收尾：悬停菜单搬进 overlay 窗口、桌宠窗口不再被菜单撑大、Win11 透明窗框差自标定；见 `M32-NOTES.md`）；0.6.11 = `360c76d` 菜单临时长高窗口 + 气泡随内容放大 + 喝水按钮可点；0.6.10 = P2-7 主题包（打包补上 `locales/**` `themes/**` 两条 files 规则）；0.6.9 = P2-3 更新提示 + P2-8 隐私文档；`dba1115` P2-1 安装器 · `58f94b4` P2-2 签名准备；P1 全部落地：`e2952ca` P1-9 e2e 入库 · `6c7a4fb` P1-8 真机 a11y · `94358ae` P1-7 主动说话 · `cdb3531` P1-6 天气增强 · `469d343` P1-5 喝水记录 · `b106382` P1-4 设置可用性 · `6342b75` P1-3 单测 · `01de0b2` P1-2 状态机 · `80332c7` P1-1 完成；0.6.6 收尾 = `e01c1cb`/`12176d2`/`5be8c4d`；再往前 `adbe033` 0.6.5 首次引导 |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js`（`npm test` = smoke + `npm run unit`）；带窗口的再加 `npm run test:e2e` |
-| 自动化基线 | smoke **67 项** · unit **182 例** · check-a11y **95 项** · check-i18n **30 文件 / 0 处** · a11y-audit **86 项 / 0 失败** · a11y-keyboard **6 项** · a11y-tree **4 窗口 / 0 无名** · e2e **4 用例**，全部通过 |
-| 最新产物 | 便携版 `dist/DeskPet-0.6.13-portable.exe` 153,834,291 字节，SHA-256 `d50851e105a99cd300963a3949cff2b12887d899dc16869d6ada6869a8c87161`（未签名；本机无法启动校验打包后的二进制——Lenovo/Huorong 静默拦截，改用 `@electron/asar` 校验 `app.asar`：599 文件、版本 0.6.13、含 `overlay-menu.js`/`overlay-ipc.js`；`build/icon.ico` 256px 帧已目检为贴纸无圆环）；安装器最后可用 `dist/DeskPet-0.6.11-setup.exe` 165,634,808 字节 |
+| 自动化基线 | smoke **67 项** · unit **185 例** · check-a11y **95 项** · check-i18n **30 文件 / 0 处** · a11y-audit **86 项 / 0 失败** · a11y-keyboard **6 项** · a11y-tree **4 窗口 / 0 无名** · e2e **4 用例**，全部通过 |
+| 最新产物 | 便携版 `dist/DeskPet-0.6.14-portable.exe` 153,830,942 字节，SHA-256 `fcc661cc7a46a1598f8222e3ddd18c67a36b0eef6719421a3a7374328bdf04b6`（未签名；本机无法启动校验打包后的二进制——Lenovo/Huorong 静默拦截，改用 `@electron/asar` 校验 `app.asar`：549 文件、版本 0.6.14、`main.js` 含 `corsEnabled`、`catalog.js` 含 ACAO 头、无 `.dsh-ops` 锁文件）；安装器最后可用 `dist/DeskPet-0.6.11-setup.exe` 165,634,808 字节 |
 
 **能做什么**：换形象（照片抠图 / 导入 PNG）、点击看天气和喝水进度、按时提醒喝水、24 条内置温柔提示语、
 气泡内容自己排版（28 种模块）、音效可换、多显示器记忆与贴边吸附、托盘、开机自启、便携运行（数据跟着文件夹走）。
@@ -150,7 +150,7 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `tools/cutout-eval.js`（新） | 150 | 评测 CLI：逐图跑真实 ONNX 管线，输出 IoU/edge/ms/coverage |
 | `tools/make-cutout-golden.js`（新） | 145 | 合成 golden set 生成器（10 张 + 真值蒙版） |
 | `tools/smoke.js` | 1684 | `npm test` 的第一段：存储/角色/天气/气泡/几何/文案/引导/托盘/诊断/模块拆分/窗口状态机/天气泵/提醒/设置搜索与恢复默认/喝水记录/多语言/菜单搬 overlay 67 项断言 |
-| `tests/unit/*.test.js` | 182 例 | `npm run unit`（`node:test`，零依赖）：`bubble-model` 19 · `placement` 16 · `weather` 24 · `cutout-math` 15 · `water-log` 15 · `nudges` 11 · `boot-candidates` 5 · `update-check` 13 · `privacy` 5 · `cutout-model` 10 · `cutout-eval` 13 · `i18n` 18（P1-3/P1-7/P2-1/P2-3/P2-5/P2-6/P2-8） |
+| `tests/unit/*.test.js` | 185 例 | `npm run unit`（`node:test`，零依赖）：`bubble-model` 19 · `placement` 16 · `weather` 24 · `cutout-math` 15 · `water-log` 15 · `nudges` 11 · `boot-candidates` 5 · `update-check` 13 · `privacy` 5 · `cutout-model` 10 · `cutout-eval` 13 · `i18n` 18 · `sound-protocol` 3（P1-3/P1-7/P2-1/P2-3/P2-5/P2-6/P2-8/0.6.14） |
 | `docs/USER-GUIDE.md` | 123 | 用户手册：三分钟上手 + 9 条 FAQ（0.6.6 / ROADMAP P0-4） |
 | `docs/PRIVACY.md`（新） | 84 | 隐私说明：不发遥测、照片不外传、联网三处、数据目录、一键清理（P2-8） |
 
@@ -230,7 +230,7 @@ token 表上限 3，窗口关闭即清空。
 | 语法 | 51 个 JS 文件 | `npm run check` | ✅ |
 | `tools/smoke.js` | 存储/角色/天气码/`advice`/气泡模型/几何不变量/文案/首次引导/托盘兜底/诊断导出/主进程模块拆分/窗口状态机/预留-可见性分离/天气泵回退/提醒限流与勿扰/设置搜索与按页恢复默认/喝水记录与延后/主动说话/气泡独立窗口/菜单搬 overlay/多语言骨架与桌宠窗口 | `npm test` | ✅ 67 项 |
 | `tools/check-i18n.js` | 语言包键名对齐、空串、每个文件的内联中文数不得高于基线（剥注释后计数） | `node tools/check-i18n.js` | ✅ 30 文件 / 0 处 |
-| `tests/unit/` | 纯函数单测：气泡模型归一化/取值、多显示器放置与吸附、天气文案与 AQI、抠图数学、喝水记录、主动说话决策、便携数据目录候选、版本比较与更新决策、隐私清理边界、抠图模型解析与评测指标、多语言计数与静态覆盖 | `npm run unit` | ✅ 182 例 |
+| `tests/unit/` | 纯函数单测：气泡模型归一化/取值、多显示器放置与吸附、天气文案与 AQI、抠图数学、喝水记录、主动说话决策、便携数据目录候选、版本比较与更新决策、隐私清理边界、抠图模型解析与评测指标、多语言计数与静态覆盖、音效协议 CORS 与 content-type | `npm run unit` | ✅ 185 例 |
 | `tools/check-a11y.js` | 静态无障碍断言（对比度数学、24px、reduced-motion、forced-colors 分支、回流、aria、`lang`、引导卡、托盘/诊断行、搜索框与恢复默认确认层） | `node tools/check-a11y.js` | ✅ 95 项 |
 | `tools/a11y-audit.js` | 真实 DOM 审计（AX 名称、对比度、目标尺寸、焦点、320px 回流、forced-colors、reduced-motion） | `--port <调试端口>` | ✅ 86 项 / 0 失败 |
 | `tools/a11y-keyboard.js` | 键盘-only 抠图全流程 | `node tools/a11y-keyboard.js` | ✅ 6 项 |
@@ -427,8 +427,8 @@ node node_modules/electron-builder/cli.js --win nsis --x64   # → dist\DeskPet-
 ## 10. 新对话开场白（直接粘贴）
 
 > 继续 `D:\project\deskpet` 的 Windows 桌面宠物项目，先读 `HANDOFF.md`（§0 速览、§4 不变量、§6 坑）
-> 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.13`，`main` 已同步，tag 到 `v0.6.13`。
-> 验证基线：`npm run check`（51 个 JS）+ `npm test`（smoke 67 项 + unit 182 例）+ `node tools/check-a11y.js`（95 项）全部通过；
+> 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.14`，`main` 已同步，tag 到 `v0.6.14`。
+> 验证基线：`npm run check`（51 个 JS）+ `npm test`（smoke 67 项 + unit 185 例）+ `node tools/check-a11y.js`（95 项）全部通过；
 > 带界面的还要跑 `npm run test:e2e`（4 用例）、`a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
 > 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。
 
