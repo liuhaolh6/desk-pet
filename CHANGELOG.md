@@ -20,6 +20,15 @@
   (`overlay:action` → `bubble:action` → `drinkDone`)，现在点「喝完了」会真的记一杯。
 - `app:status` 的 `window` 字段带上窗口真实矩形（`bounds`），以后这类“看不见/点不到”的 bug 报告可以自证。
 
+### 已知问题
+
+- **安装器可能在“DeskPet 无法关闭”上僵住**（electron-builder 26.15.3 自带模板）：模板的进程检查用 PowerShell 判断
+  “有没有进程路径以 `$INSTDIR` 开头”，`$INSTDIR` 为空时它会把所有进程都算成命中，于是即使一个 DeskPet 都没跑、
+  甚至安装目录不存在，也会弹出“DeskPet 无法关闭。请手动关闭它，然后单击重试”。已在 0.6.11 上复现（GUI 与静默两种模式）。
+  临时绕法：直接用便携版（`DeskPet-<版本>-portable.exe`），或先手动删掉 `%LOCALAPPDATA%\Programs\desk-pet` 再装；
+  修法（已记入 ROADMAP）是接管 `customCheckAppRunning`，用 `tasklist` 精确匹配镜像名，不再依赖 `$INSTDIR` 前缀比较。
+- 升级安装时若旧版仍在运行，安装器会先尝试结束它；结束失败时请手动退出托盘里的桌宠再点“重试”。
+
 ## [0.6.10] - 2026-10-24
 
 ### 新增
