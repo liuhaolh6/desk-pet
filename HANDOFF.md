@@ -1,6 +1,6 @@
 # 交接文档（HANDOFF）
 
-> 版本 `0.6.10` · 最后更新 2026-10-24 · 给下一个接手的人（或下一个对话的我）。
+> 版本 `0.6.11` · 最后更新 2026-10-24 · 给下一个接手的人（或下一个对话的我）。
 > 目标：读完这一份就能**安全地改代码、跑验证、出包**，不必重新摸索。
 > 想先知道"这东西现在还差在哪、下一步做什么"，看 [`ROADMAP.md`](ROADMAP.md)。
 
@@ -428,4 +428,20 @@ node node_modules/electron-builder/cli.js --win nsis --x64   # → dist\DeskPet-
 > 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.6`，`main` 已同步，tag 到 `v0.6.6`。
 > 验证基线：`npm run check`（62 个 JS）+ `npm test`（smoke 67 项 + unit 182 例）+ `node tools/check-a11y.js`（95 项）全部通过；
 > 带界面的还要跑 `npm run test:e2e`（4 用例）、`a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
-> 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。
+> 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。## 9. 当前未完成的一件事（P2-4 阶段二，接手请从这里继续）
+
+P2 其余各项均已完成（P2-1/2/3/5/6/7/8），只剩 **P2-4 阶段二的最后一步：把悬停菜单搬进 overlay 窗口**。
+
+**已完成的部分（commit `12e2837`）**：桌宠窗口已退回纯宠物尺寸，不再为气泡预留 54px strip；气泡由 overlay 自己定位、自己定高（`3b0b0b6` 起还会随内容变高）。
+
+**没做的部分**：`app/pet.html:19-26` 的 `#petMenu` 仍在桌宠窗口里。目前靠“打开菜单时按菜单尺寸重算命中区域”绕开窗口边缘剪裁——这是绕，不是解。
+
+**做法（按此顺序）**：
+1. `app/overlay.html` 增加菜单容器（复用现有按钮与 `data-action`）；overlay 支持“气泡卡 / 菜单”两种内容。
+2. `app/pet.js:380-430` 的开关逻辑改为只算锚点、把菜单矩形交给主进程；DOM 与点击留在 overlay。
+3. `app/main/window-layout.js` 去掉“菜单撑大命中区域”的特例，桌宠窗口恒定宠物尺寸。
+4. `app/main/overlay.js` 按 `hasBubble || hasMenu` 决定显隐；菜单关且无气泡则整窗隐藏。
+
+**验收**：CDP 实测「点菜单按钮 → 设置/布置/喝水/隐藏/退出都能触发」「菜单不再被窗口剪」「桌宠窗口尺寸不随菜单变化」；门禁 smoke 67 / unit 166 / check-a11y 绿。
+
+**注意**：仓库多为 CRLF，`ops_edit_file` 的 oldText 要带 `\r\n`；气泡与菜单都在 overlay 窗口，CDP 要连 overlay target，不是 `#pet` 页。
