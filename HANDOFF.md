@@ -13,12 +13,12 @@
 | 是什么 | Windows x64 桌面宠物（Electron 44 + 离线 ONNX 人像抠图），悬浮在桌面上，点击看天气 / 喝水 / 温馨话 |
 | 本地目录 | `D:\project\deskpet` |
 | 仓库 | `ssh://git@ssh.github.com:443/liuhaolh6/desk-pet.git`，分支 `main`，**当前是私有仓库** |
-| 版本 | 代码 = 已出包 = `0.6.10`（主题包 P2-7 完成、0.6.9 的更新提示与隐私页一并带上）：`dist\DeskPet-0.6.10-setup.exe`（165,605,153 B ≈ 157.9 MiB，安装器，未签名，SHA-256 `a92bfa52…cf8a5d2`）与 `dist\DeskPet-0.6.10-portable.exe`（153,927,095 B ≈ 146.8 MiB，便携版，SHA-256 `228227a2…b018678`）；tag `v0.6.10` |
-| 最近提交 | 0.6.12 = 本提交（P2-4 阶段二收尾：悬停菜单搬进 overlay 窗口、桌宠窗口不再被菜单撑大、Win11 透明窗框差自标定；见 `M32-NOTES.md`）；0.6.11 = 菜单临时长高窗口 + 气泡随内容放大 + 喝水按钮可点；0.6.10 = P2-7 主题包（打包补上 `locales/**` `themes/**` 两条 files 规则）；0.6.9 = P2-3 更新提示 + P2-8 隐私文档；`dba1115` P2-1 安装器 · `58f94b4` P2-2 签名准备；P1 全部落地：`e2952ca` P1-9 e2e 入库 · `6c7a4fb` P1-8 真机 a11y · `94358ae` P1-7 主动说话 · `cdb3531` P1-6 天气增强 · `469d343` P1-5 喝水记录 · `b106382` P1-4 设置可用性 · `6342b75` P1-3 单测 · `01de0b2` P1-2 状态机 · `80332c7` P1-1 完成；0.6.6 收尾 = `e01c1cb`/`12176d2`/`5be8c4d`；再往前 `adbe033` 0.6.5 首次引导 |
+| 版本 | 代码与便携版 = `0.6.12`（P2-4 阶段二收尾）：`dist\DeskPet-0.6.12-portable.exe`（153,930,573 B ≈ 146.8 MiB，未签名，SHA-256 `08a5af4a…332c11`），tag `v0.6.12`；**安装器自 0.6.12 起本机产不出**：杀软拦截 electron-builder 运行刚生成的安装器来生成卸载器（`ERR_ELECTRON_BUILDER_CANNOT_EXECUTE`，见 `docs/SELF-SIGNING.md` §9），最后可用安装器 = `0.6.11` |
+| 最近提交 | 0.6.12 = `a245a8c` 代码 + 本次文档提交（P2-4 阶段二收尾：悬停菜单搬进 overlay 窗口、桌宠窗口不再被菜单撑大、Win11 透明窗框差自标定；见 `M32-NOTES.md`）；0.6.11 = 菜单临时长高窗口 + 气泡随内容放大 + 喝水按钮可点；0.6.10 = P2-7 主题包（打包补上 `locales/**` `themes/**` 两条 files 规则）；0.6.9 = P2-3 更新提示 + P2-8 隐私文档；`dba1115` P2-1 安装器 · `58f94b4` P2-2 签名准备；P1 全部落地：`e2952ca` P1-9 e2e 入库 · `6c7a4fb` P1-8 真机 a11y · `94358ae` P1-7 主动说话 · `cdb3531` P1-6 天气增强 · `469d343` P1-5 喝水记录 · `b106382` P1-4 设置可用性 · `6342b75` P1-3 单测 · `01de0b2` P1-2 状态机 · `80332c7` P1-1 完成；0.6.6 收尾 = `e01c1cb`/`12176d2`/`5be8c4d`；再往前 `adbe033` 0.6.5 首次引导 |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js`（`npm test` = smoke + `npm run unit`）；带窗口的再加 `npm run test:e2e` |
 | 自动化基线 | smoke **67 项** · unit **182 例** · check-a11y **95 项** · check-i18n **30 文件 / 0 处** · a11y-audit **86 项 / 0 失败** · a11y-keyboard **6 项** · a11y-tree **4 窗口 / 0 无名** · e2e **4 用例**，全部通过 |
-| 最新产物 | 安装器 `dist/DeskPet-0.6.8-setup.exe` 165,558,348 字节，SHA-256 `2d5dfe47eb809af9e762b41b367d53da83c21d5634cfa31c9bfb0a82c9fff89c`；便携版 `dist/DeskPet-0.6.8-portable.exe` 153,882,861 字节，SHA-256 `668ba228f9f6c700a93fd1c48c0bfcabdefa910b21a74291c3c89ba62e777a16` |
+| 最新产物 | 便携版 `dist/DeskPet-0.6.12-portable.exe` 153,930,573 字节，SHA-256 `08a5af4aa7d1525402371135ffe2b3522de3fd76448e9cede36180e3f4332c11`（未签名；本机无法启动校验打包后的二进制——Lenovo/Huorong 静默拦截，改用 `@electron/asar` 校验 `app.asar`：599 文件、版本 0.6.12、含 `overlay-menu.js`/`overlay-ipc.js`）；安装器最后可用 `dist/DeskPet-0.6.11-setup.exe` 165,634,808 字节 |
 
 **能做什么**：换形象（照片抠图 / 导入 PNG）、点击看天气和喝水进度、按时提醒喝水、24 条内置温柔提示语、
 气泡内容自己排版（28 种模块）、音效可换、多显示器记忆与贴边吸附、托盘、开机自启、便携运行（数据跟着文件夹走）。

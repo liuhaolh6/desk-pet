@@ -31,7 +31,9 @@
 
 ### 打包
 
-- 便携版 `dist/DeskPet-0.6.12-portable.exe`、安装器 `dist/DeskPet-0.6.12-setup.exe`（均未签名；安装器可能被杀软拦解包，见 `docs/SELF-SIGNING.md` §9）。
+- 便携版 `dist/DeskPet-0.6.12-portable.exe`（153,930,573 B ≈ 146.8 MiB，未签名，SHA-256 `08a5af4a…332c11`）。
+- 安装器 0.6.12 **未产出**：electron-builder 26.15.3 生成 NSIS 时要运行刚产出的 `setup.exe` 做卸载器，本机杀软（Lenovo/Huorong）直接把它杀掉，报 `ERR_ELECTRON_BUILDER_CANNOT_EXECUTE`（Exit code: null），只留 400 KB 残包（已删）；带签名与 `CSC_IDENTITY_AUTO_DISCOVERY=false` 重试均同样失败，与 `docs/SELF-SIGNING.md` §9 完全一致。最后可用安装器 = 0.6.11。
+- 本机也无法启动校验打包后的二进制：便携版与 `dist/win-unpacked/DeskPet.exe` 启动后进程立即消失（未创建数据目录、不开调试端口）。改用 `@electron/asar` 校验 `app.asar`：599 文件、`package.json` 版本 0.6.12、含 `app/overlay-menu.js`、`app/main/overlay-menu.js`、`app/main/overlay-ipc.js`。开发实例（`node_modules/electron`）的运行时验收见 §5。
 
 ## [0.6.11] - 2026-10-24
 

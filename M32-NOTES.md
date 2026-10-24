@@ -93,3 +93,9 @@ w.setBounds({ x: next.x - frame.x, y: next.y - frame.y,
 4. `tools/smoke.js` 里有断言盯着「菜单在 overlay.html」「`applyBubbleHeight` 恒 0」「桌宠 html 不出现 data-action」——
    改结构时先跑 smoke，别先改断言。
 5. 仓库多数文件是 CRLF，`ops_edit_file` 的 `oldText` 要带 `\r\n`；CDP 验收连 overlay target，不是 `#pet` 页。
+
+## 7. 出包（2026-10-24）
+
+- 便携版：`dist/DeskPet-0.6.12-portable.exe`，153,930,573 B，SHA-256 `08a5af4aa7d1525402371135ffe2b3522de3fd76448e9cede36180e3f4332c11`。构建前必须先清掉 `dist/win-unpacked`：残留的 `DeskPet.exe` 会被 8 个旧进程锁住，`npm run dist` 报 `EPERM: unlink dist\win-unpacked\DeskPet.exe`（`Get-Process DeskPet | Stop-Process -Force` 后再删目录即可）。
+- 安装器：两次构建（默认签名 / `CSC_IDENTITY_AUTO_DISCOVERY=false`）都失败在「运行刚产出的 setup.exe 生成卸载器」这一步，退出码 null = 被 Lenovo/Huorong 杀软杀掉，只留 400,743 B 残包（已删）。该现象与 `docs/SELF-SIGNING.md` §9 一致，不是本次改动引入。
+- 本机无法双击/启动校验打包产物：便携版与 `dist/win-unpacked/DeskPet.exe` 启动后无进程/无数据目录/无调试端口（被静默拦截）。可用的替代校验：`@electron/asar` 读 `dist/win-unpacked/resources/app.asar`，确认 599 文件、版本 0.6.12、新模块齐全；运行时行为以开发实例 + CDP 证据（§5）为准。
