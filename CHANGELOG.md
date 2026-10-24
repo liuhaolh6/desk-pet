@@ -29,6 +29,11 @@
   修法（已记入 ROADMAP）是接管 `customCheckAppRunning`，用 `tasklist` 精确匹配镜像名，不再依赖 `$INSTDIR` 前缀比较。
 - 升级安装时若旧版仍在运行，安装器会先尝试结束它；结束失败时请手动退出托盘里的桌宠再点“重试”。
 
+### 试验（非正式发布）
+
+- **自签名试用版**：用自造根证书给 `DeskPet.exe`、便携版、安装器签名，验证了完整链路（信任根证书后 `Get-AuthenticodeSignature` 三个产物都是 `Valid`）。
+  这只是让朋友能看到发布者名字、把分发流程跑通，**不等于消除 SmartScreen 提示**；流程、实测与风险见 [`docs/SELF-SIGNING.md`](docs/SELF-SIGNING.md)。
+
 ## [0.6.10] - 2026-10-24
 
 ### 新增
