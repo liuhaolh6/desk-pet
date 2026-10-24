@@ -7,7 +7,7 @@
 ## 1. 做了什么
 
 ### 1.1 形象与图标来自指定照片
-- 源图曾是 `assets/source/portrait.png`（打包时用 `!assets/source/**` 排除）；2026-10-24 公开仓库前已用 `git filter-repo` 从全部历史移除，本地副本保留在 `D:\project\.tmp\portrait-source.png`。
+- 源图曾是 `assets/source/portrait.png`（打包时用 `!assets/source/**` 排除）；2026-10-24 公开仓库前已用 `git filter-repo` 从全部历史移除，原图与 `.cutout-eval` 里的副本已移到项目外：`D:\deskpet-private\portrait.png`。
 - `tools/make-assets.py --photo`：**预乘 alpha 还原**（`rgb/a`）→ `assets/default.png`（610 默认形象）；
   圆形徽标（渐变底 + 粉色描边 + 柔和阴影）→ `assets/icon.png`(256) / `tray.png`(32) / `tray@2x.png`(64) / `build/icon.ico`(16–256)。
 - 两个坑：① 按「白底抠图」反解会把柔边压黑（边缘像素均值掉到 <60），必须按预乘还原；

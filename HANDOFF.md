@@ -12,7 +12,7 @@
 |---|---|
 | 是什么 | Windows x64 桌面宠物（Electron 44 + 离线 ONNX 人像抠图），悬浮在桌面上，点击看天气 / 喝水 / 温馨话 |
 | 本地目录 | `D:\project\deskpet` |
-| 仓库 | `ssh://git@ssh.github.com:443/liuhaolh6/desk-pet.git`，分支 `main`，**已公开（MIT，2026-10-24）**；公开前已用 `git filter-repo` 从全部历史移除原始照片素材，旧 commit 已 404，本地备份在 `D:\project\.tmp\deskpet-pre-filter-*.bundle` |
+| 仓库 | `ssh://git@ssh.github.com:443/liuhaolh6/desk-pet.git`，分支 `main`，**已公开（MIT，2026-10-24）**；公开前已用 `git filter-repo` 从全部历史移除原始照片素材，旧 commit 已 404，本地备份在 `D:\project\.tmp\deskpet-pre-filter-*.bundle`；项目内已无原始照片，原图存放在项目外 `D:\deskpet-private\`（见该目录 `README.txt`） |
 | 版本 | 代码与便携版 = `0.6.13`（图标贴纸化）：`dist\DeskPet-0.6.13-portable.exe`（153,834,291 B ≈ 146.7 MiB，未签名，SHA-256 `d50851e1…c87161`），tag `v0.6.13`；**安装器自 0.6.12 起本机产不出**：杀软拦截 electron-builder 运行刚生成的安装器来生成卸载器（`ERR_ELECTRON_BUILDER_CANNOT_EXECUTE`，见 `docs/SELF-SIGNING.md` §9），最后可用安装器 = `0.6.11` |
 | 最近提交 | 0.6.13 = `8939d07` 应用/托盘图标改抠图贴纸（去圆环）+ 公开前 `git filter-repo` 清历史（原始照片已从所有 commit 移除，仓库转公开 MIT）+ 本次文档；0.6.12 = `2aa29a1` 代码 + `083af41` 文档（P2-4 阶段二收尾：悬停菜单搬进 overlay 窗口、桌宠窗口不再被菜单撑大、Win11 透明窗框差自标定；见 `M32-NOTES.md`）；0.6.11 = `360c76d` 菜单临时长高窗口 + 气泡随内容放大 + 喝水按钮可点；0.6.10 = P2-7 主题包（打包补上 `locales/**` `themes/**` 两条 files 规则）；0.6.9 = P2-3 更新提示 + P2-8 隐私文档；`dba1115` P2-1 安装器 · `58f94b4` P2-2 签名准备；P1 全部落地：`e2952ca` P1-9 e2e 入库 · `6c7a4fb` P1-8 真机 a11y · `94358ae` P1-7 主动说话 · `cdb3531` P1-6 天气增强 · `469d343` P1-5 喝水记录 · `b106382` P1-4 设置可用性 · `6342b75` P1-3 单测 · `01de0b2` P1-2 状态机 · `80332c7` P1-1 完成；0.6.6 收尾 = `e01c1cb`/`12176d2`/`5be8c4d`；再往前 `adbe033` 0.6.5 首次引导 |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
