@@ -77,6 +77,19 @@ jobs:
           npm ci 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\npm-ci.log"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      # 和 release.yml 一样：electron 的 postinstall 偶尔被跳过，
+      # 缺了 node_moduleselectrondist 时 electron-builder 直接报 electronDist 不存在。
+      - name: Verify Electron binary
+        shell: pwsh
+        run: |
+          $electron = 'node_moduleselectrondistelectron.exe'
+          if (-not (Test-Path $electron) -and (Test-Path 'node_moduleselectroninstall.js')) {
+            Write-Host 'electron binary missing after npm ci; running install.js'
+            node node_moduleselectroninstall.js
+          }
+          if (-not (Test-Path $electron)) { throw "electron binary missing: $electron" }
+          & $electron --version
+
       - name: Build installer
         shell: pwsh
         run: |
