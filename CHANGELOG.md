@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+（下一轮从这里开始记）
+
+## [0.6.16] - 2026-10-25
+
 ### 修复
 
 - **CI 徽章常红**：`e2e` job 在 `windows-latest`（en-US 系统）上挂掉——种子设置没写 `locale`，
@@ -16,11 +20,24 @@
   `tools/e2e/annotate.js`：失败时把 `FAIL` 行 / 断言行与 `app.log` 尾巴用 `::error::` 写成 check-run
   注解（公开仓库匿名可读），e2e 输出同时 `tee` 到 `e2e.log`；`DESKPET_E2E_KEEP=1` 保留 `.e2e-data/`
   供注解步骤读取。
+- **Release 的「Build installer」必挂**：electron-builder 会从 `repository` 字段推断出 GitHub 发布源，
+  构建收尾自动 `publish`；CI 上没有 `GH_TOKEN`，于是 `GitHub Personal Access Token is not set` 退出 1
+  （tag `v0.6.15` 的 Release 就挂在这一步，日志里安装器其实已经构建出来了）。`dist` / `dist:installer`
+  改成显式 `--publish never`——发布只由 `release.yml` 的 `gh release` 步骤负责。
+- **Release 失败时新建的 Issue 正文是字面量 `System.Object[]`**：`@("…", "", $tail, $fence)` 把数组当普通元素
+  拼进去，改成 `@(…) + $tail + @($fence)`。之后 Issue #7/#8 正文才是可读的日志尾巴。
 
 ### 文档
 
-- HANDOFF §0/§6/§10 同步：CI 已绿（公开仓库、匿名可看注解）、开场白版本改 0.6.15。
+- HANDOFF §0/§6/§10 同步：CI 已绿（公开仓库、匿名可看注解）、开场白版本改 0.6.16。
 
+### 打包
+
+- **安装器重回 CI**：新增 `installer-probe.yml`（只跑安装器构建，约 3~5 分钟，失败时把日志写成 check-run 注解）
+  与 `tools/ci-annotate.js`（挑 `error/failed/cannot/ERR_` 等关键词转 `::error::`，公开仓库匿名可读）。
+  本机杀软仍拦安装器解包（`ERR_ELECTRON_BUILDER_CANNOT_EXECUTE`，见 `docs/SELF-SIGNING.md` §9），CI 不受影响；
+  `v0.6.16` 的 Release 同时产出便携版与安装器。
+- **探针里的路径被 YAML 吞掉**：`node_modules` 下的 electron 目录写成了 `node_moduleselectron`，统一改正斜杠。
 
 ## [0.6.15] - 2026-10-25
 

@@ -188,7 +188,7 @@ build/
 
 ## Code signing policy
 
-Planned free code signing via [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org); fallback route is Azure Trusted Signing (paid, own identity). The repository is public (MIT, since 2026-10-24), so the free OSS route is now applicable — application pending. Both routes are wired in `sign-release.yml` but stay dormant until credentials are configured — **current releases (up to 0.6.15) are unsigned**. See [`SIGNING.md`](SIGNING.md) for the route comparison, blockers and verification steps.
+Planned free code signing via [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org); fallback route is Azure Trusted Signing (paid, own identity). The repository is public (MIT, since 2026-10-24), so the free OSS route is now applicable — application pending. Both routes are wired in `sign-release.yml` but stay dormant until credentials are configured — **current releases (up to 0.6.16) are unsigned**. See [`SIGNING.md`](SIGNING.md) for the route comparison, blockers and verification steps.
 
 - Committers and reviewers: [@liuhaolh6](https://github.com/liuhaolh6)
 - Approvers: [@liuhaolh6](https://github.com/liuhaolh6)
