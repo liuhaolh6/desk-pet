@@ -1,0 +1,90 @@
+name: Installer probe
+
+# 只跑安装器（NSIS）构建，用来诊断 release.yml 里 "Build installer" 的失败。
+# 没有独立触发入口时，tag 推送才是唯一入口，诊断一次就得发一版，不划算；
+# 所以这里给一条 push 即跑的窄通道：改本文件或 ci-annotate.js 才会触发。
+#
+# 失败时用 ::error:: 写 check-run 注解（公开仓库免登录可读，job 日志要鉴权）。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/installer-probe.yml'
+      - 'tools/ci-annotate.js'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NSIS_AMD64_VERSION: 'v3.13.7507.353'
+  NSIS_AMD64_ASSET: 'nsis-3.13.7507.353-negrutiu-amd64.exe'
+  NSIS_BUNDLE_URL: 'https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis%401.2.1/nsis-bundle-3.12.tar.gz'
+  CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+jobs:
+  probe:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Cache 64-bit NSIS
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}\nsis64
+          key: nsis-amd64-${{ env.NSIS_AMD64_VERSION }}-elevate-1
+
+      - name: Prepare 64-bit NSIS
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $nsis = Join-Path $env:RUNNER_TEMP 'nsis64'
+          if (-not (Test-Path (Join-Path $nsis 'Bin\makensis.exe'))) {
+            $work = Join-Path $env:RUNNER_TEMP 'nsis-dl'
+            New-Item -ItemType Directory -Force -Path $nsis, $work | Out-Null
+            $setup = Join-Path $work 'nsis-amd64.exe'
+            Invoke-WebRequest "https://github.com/negrutiu/nsis/releases/download/$env:NSIS_AMD64_VERSION/$env:NSIS_AMD64_ASSET" -OutFile $setup
+            $sevenZip = (Get-Command 7z -ErrorAction SilentlyContinue).Source
+            if (-not $sevenZip) { $sevenZip = 'C:\Program Files\7-Zip\7z.exe' }
+            & $sevenZip x $setup "-o$nsis" -y | Out-Null
+            $bundle = Join-Path $work 'nsis-bundle.tar.gz'
+            Invoke-WebRequest $env:NSIS_BUNDLE_URL -OutFile $bundle
+            $expected = '56997fdefe25e7928a1a68b4583d08b240b66cf660234053b20131a74cc082f4'
+            $actual = (Get-FileHash $bundle -Algorithm SHA256).Hash.ToLower()
+            if ($actual -ne $expected) { throw "nsis bundle checksum mismatch: $actual" }
+            tar -xzf $bundle -C $work nsis-bundle/elevate.exe
+            Copy-Item (Join-Path $work 'nsis-bundle\elevate.exe') (Join-Path $nsis 'elevate.exe') -Force
+            Add-Content (Join-Path $nsis 'nsisconf.nsh') "`nTarget x86-unicode"
+          }
+          "ELECTRON_BUILDER_NSIS_DIR=$nsis" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          npm ci 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\npm-ci.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          npm run dist:installer 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\build-installer.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: List artifacts
+        if: success()
+        shell: pwsh
+        run: Get-ChildItem dist | Select-Object Name, Length
+
+      - name: Annotate failure
+        if: failure()
+        shell: bash
+        run: |
+          node tools/ci-annotate.js "$RUNNER_TEMP/build-installer.log" 8 || true
+          node tools/ci-annotate.js "$RUNNER_TEMP/npm-ci.log" 4 || true

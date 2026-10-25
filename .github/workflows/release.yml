@@ -191,12 +191,10 @@ jobs:
           if (Test-Path $setupLog) { $tail += '--- npm run dist:installer (tail) ---'; $tail += (Get-Content $setupLog -Tail 60) }
           if ($tail.Count -eq 0) { $tail = @('no logs captured') }
           $fence = '```'
+          # 注意：$tail 是数组，直接放进 @() 会被拼成字面量 "System.Object[]"。
           $lines = @(
             "Run: $env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID",
-            '',
-            $fence,
-            $tail,
-            $fence
-          )
+            ''
+          ) + $tail + @($fence)
           $lines -join [Environment]::NewLine | Out-File -FilePath "$env:RUNNER_TEMP\issue-body.md" -Encoding utf8
           gh issue create --title $title --body-file "$env:RUNNER_TEMP\issue-body.md"
