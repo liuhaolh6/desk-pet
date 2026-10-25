@@ -46,7 +46,7 @@ jobs:
           cache: npm
 
       - name: Cache 64-bit NSIS
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ runner.temp }}\nsis64
           key: nsis-amd64-${{ env.NSIS_AMD64_VERSION }}-elevate-1
