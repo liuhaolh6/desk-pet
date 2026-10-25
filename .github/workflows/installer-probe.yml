@@ -45,6 +45,9 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
+          # Transcript 会把错误文本也写进文件；失败时注解步骤靠它说话。
+          Start-Transcript -Path (Join-Path $env:RUNNER_TEMP 'prepare-nsis.log') -Force | Out-Null
+          try {
           $nsis = Join-Path $env:RUNNER_TEMP 'nsis64'
           if (-not (Test-Path (Join-Path $nsis 'Bin\makensis.exe'))) {
             $work = Join-Path $env:RUNNER_TEMP 'nsis-dl'
@@ -64,6 +67,9 @@ jobs:
             Add-Content (Join-Path $nsis 'nsisconf.nsh') "`nTarget x86-unicode"
           }
           "ELECTRON_BUILDER_NSIS_DIR=$nsis" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          } finally {
+            Stop-Transcript | Out-Null
+          }
 
       - name: Install dependencies
         shell: pwsh
@@ -86,5 +92,6 @@ jobs:
         if: failure()
         shell: bash
         run: |
+          node tools/ci-annotate.js "$RUNNER_TEMP/prepare-nsis.log" 6 || true
           node tools/ci-annotate.js "$RUNNER_TEMP/build-installer.log" 8 || true
           node tools/ci-annotate.js "$RUNNER_TEMP/npm-ci.log" 4 || true
