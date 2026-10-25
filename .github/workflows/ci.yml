@@ -58,9 +58,20 @@ jobs:
         run: npm ci
 
       - name: Headless Electron e2e (noresize / collapse / city)
-        run: npm run test:e2e
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run test:e2e 2>&1 | tee e2e.log
         env:
           DESKPET_E2E_PORT: '9333'
+          # 失败时别删临时数据目录：下面的注解步骤要读 app.log
+          DESKPET_E2E_KEEP: '1'
+
+      # 失败信息进 check-run 注解：公开仓库免登录就能查到（job 日志要鉴权）。
+      - name: Surface e2e failures as annotations
+        if: failure()
+        shell: bash
+        run: node tools/e2e/annotate.js e2e.log
 
       - name: Upload e2e data dir on failure
         if: failure()
@@ -69,4 +80,5 @@ jobs:
           name: e2e-data
           path: .e2e-data/
           if-no-files-found: ignore
+          include-hidden-files: true
           retention-days: 3

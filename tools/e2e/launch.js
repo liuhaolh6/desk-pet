@@ -41,6 +41,8 @@ async function launch(options = {}) {
   // seed=false：保留上一次进程写下的 settings.json（i18n 用例要验「改完重开生效」，
   // 必须真的重启一次同一个数据目录）。keepData=true：close() 不删目录。
   if (options.seed !== false) seedSettings(dataDir, options.settings)
+  // CI 失败时要把 app.log 留下来（check-run 注解只能读得到磁盘上的东西）。
+  const keepData = options.keepData === true || process.env.DESKPET_E2E_KEEP === '1'
 
   const args = [
     '.',
@@ -103,7 +105,7 @@ async function launch(options = {}) {
         }
       }
       try {
-        if (!options.keepData) fs.rmSync(dataDir, { recursive: true, force: true })
+        if (!keepData) fs.rmSync(dataDir, { recursive: true, force: true })
       } catch (err) {
         /* Windows 上偶发占用，留个目录没关系 */
       }
