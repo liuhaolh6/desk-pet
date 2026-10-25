@@ -51,7 +51,7 @@ jobs:
 
       - name: Upload unsigned artifact
         id: unsigned
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: deskpet-unsigned
           path: dist/DeskPet-*-portable.exe
@@ -75,7 +75,7 @@ jobs:
           skip-decompress: true
 
       - name: Upload signed artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: deskpet-signed
           path: signed/*.exe
@@ -190,7 +190,7 @@ jobs:
           }
 
       - name: Upload signed artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: deskpet-signed-azure
           path: signed/*
