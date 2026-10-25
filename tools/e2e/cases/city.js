@@ -19,14 +19,22 @@ async function run(ctx) {
   await settings.send('Runtime.enable')
   await sleep(800)
 
-  const wentToWeather = await settings.evaluate(
-    `(() => {
-      const item = Array.from(document.querySelectorAll('.nav-item')).find((x) => /天气/.test(x.textContent || ''))
-      if (!item) return false
-      item.click()
-      return true
-    })()`
-  )
+  // 分类按钮用 data-panel 找（文字随语言变，data-panel 不变）；
+  // CI 上设置页渲染比本地慢，给 5 秒等待窗口。
+  let wentToWeather = false
+  for (let i = 0; i < 25 && !wentToWeather; i += 1) {
+    wentToWeather = await settings.evaluate(
+      `(() => {
+        const item =
+          document.querySelector('.nav-item[data-panel="weather"]') ||
+          Array.from(document.querySelectorAll('.nav-item')).find((x) => /天气|weather/i.test(x.textContent || ''))
+        if (!item) return false
+        item.click()
+        return true
+      })()`
+    )
+    if (!wentToWeather) await sleep(200)
+  }
   check(wentToWeather, '设置页应当有「天气」分类')
   await sleep(300)
 

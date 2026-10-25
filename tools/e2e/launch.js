@@ -26,6 +26,9 @@ function seedSettings(dir, patch = {}) {
     // 不写 city：天气用例自己填。避开启动时的网络请求。
     weather: { city: '', cityNow: '' },
     mode: 'quiet',
+    // 固定中文界面：CI 的 windows-latest 是 en-US 系统，不写这一行，
+    // 设置页分类会显示成 Weather/Bubble，按文字找分类的用例就会挂。
+    locale: 'zh-CN',
   }
   fs.rmSync(dir, { recursive: true, force: true })
   fs.mkdirSync(dir, { recursive: true })
