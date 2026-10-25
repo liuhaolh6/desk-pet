@@ -78,18 +78,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       # 和 release.yml 一样：electron 的 postinstall 偶尔被跳过，
-      # 缺了 node_moduleselectrondist 时 electron-builder 直接报 electronDist 不存在。
+      # 缺了 node_modules/electron/dist 时 electron-builder 直接报 electronDist 不存在。
       - name: Verify Electron binary
         shell: pwsh
         run: |
           Start-Transcript -Path (Join-Path $env:RUNNER_TEMP 'verify-electron.log') -Force | Out-Null
           try {
-            $electron = 'node_moduleselectrondistelectron.exe'
+            $electron = 'node_modules/electron/dist/electron.exe'
             Write-Host "dist listing:"
-            Get-ChildItem 'node_moduleselectron' | Select-Object Name | Out-String | Write-Host
+            Get-ChildItem 'node_modules/electron' | Select-Object Name | Out-String | Write-Host
             if (-not (Test-Path $electron)) {
               Write-Host 'electron binary missing after npm ci; running install.js'
-              node node_moduleselectroninstall.js
+              node node_modules/electron/install.js
               Write-Host "install.js exit: $LASTEXITCODE"
             }
             if (-not (Test-Path $electron)) { throw "electron binary missing: $electron" }
