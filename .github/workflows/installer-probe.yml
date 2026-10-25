@@ -113,7 +113,8 @@ jobs:
         if: failure()
         shell: bash
         run: |
-          node tools/ci-annotate.js "$RUNNER_TEMP/prepare-nsis.log" 4 || true
-          node tools/ci-annotate.js "$RUNNER_TEMP/verify-electron.log" 8 || true
+          # 先报构建日志：注解每步上限 10 条，别让前面的成功步骤把名额占光。
           node tools/ci-annotate.js "$RUNNER_TEMP/build-installer.log" 8 || true
+          node tools/ci-annotate.js "$RUNNER_TEMP/verify-electron.log" 2 || true
+          node tools/ci-annotate.js "$RUNNER_TEMP/prepare-nsis.log" 2 || true
           node tools/ci-annotate.js "$RUNNER_TEMP/npm-ci.log" 4 || true
