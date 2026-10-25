@@ -1,6 +1,6 @@
 # 交接文档（HANDOFF）
 
-> 版本 `0.6.15` · 最后更新 2026-10-25 · 给下一个接手的人（或下一个对话的我）。
+> 版本 `0.6.16` · 最后更新 2026-10-25 · 给下一个接手的人（或下一个对话的我）。
 > 目标：读完这一份就能**安全地改代码、跑验证、出包**，不必重新摸索。
 > 想先知道"这东西现在还差在哪、下一步做什么"，看 [`ROADMAP.md`](ROADMAP.md)。
 
@@ -13,12 +13,12 @@
 | 是什么 | Windows x64 桌面宠物（Electron 44 + 离线 ONNX 人像抠图），悬浮在桌面上，点击看天气 / 喝水 / 温馨话 |
 | 本地目录 | `D:\project\deskpet` |
 | 仓库 | `ssh://git@ssh.github.com:443/liuhaolh6/desk-pet.git`，分支 `main`，**已公开（MIT，2026-10-24）**；公开前已用 `git filter-repo` 从全部历史移除原始照片素材，旧 commit 已 404，本地备份在 `D:\project\.tmp\deskpet-pre-filter-*.bundle`；项目内已无原始照片，原图存放在项目外 `D:\deskpet-private\`（见该目录 `README.txt`） |
-| 版本 | 代码与便携版 = `0.6.15`（悬停菜单被窗口剪修复）：`dist\DeskPet-0.6.15-portable.exe`（153,833,193 B ≈ 146.7 MiB，未签名，SHA-256 `f332c93c…f647d4`），tag `v0.6.15`；**安装器自 0.6.12 起本机产不出**：杀软拦截 electron-builder 运行刚生成的安装器来生成卸载器（`ERR_ELECTRON_BUILDER_CANNOT_EXECUTE`，见 `docs/SELF-SIGNING.md` §9），最后可用安装器 = `0.6.11` |
-| 最近提交 | 0.6.15 = `83152fe` 悬停菜单下缘被窗口裁掉修复（面板按布局尺寸量、窗口 `setContentBounds` + 渲染层实测校正，见 `M34-NOTES.md`）；CI 修复 `26f09fc`（e2e 固定 zh-CN、按 `data-panel` 找分类）+ `839b6d0`（失败信息写 check-run 注解，见 `M36-NOTES.md`）；0.6.14 = `912a409` 导入音效补 CORS（`corsEnabled` + ACAO，含 `sound-protocol` 单测与 smoke 断言、`build.files` 排除临时锁）+ 本次文档（见 `M33-NOTES.md`）；文档提交 `8048eeb`；0.6.13 = `8939d07` 应用/托盘图标改抠图贴纸（去圆环）+ 公开前 `git filter-repo` 清历史（原始照片已从所有 commit 移除，仓库转公开 MIT）+ 本次文档；0.6.12 = `2aa29a1` 代码 + `083af41` 文档（P2-4 阶段二收尾：悬停菜单搬进 overlay 窗口、桌宠窗口不再被菜单撑大、Win11 透明窗框差自标定；见 `M32-NOTES.md`）；0.6.11 = `360c76d` 菜单临时长高窗口 + 气泡随内容放大 + 喝水按钮可点；0.6.10 = P2-7 主题包（打包补上 `locales/**` `themes/**` 两条 files 规则）；0.6.9 = P2-3 更新提示 + P2-8 隐私文档；`dba1115` P2-1 安装器 · `58f94b4` P2-2 签名准备；P1 全部落地：`e2952ca` P1-9 e2e 入库 · `6c7a4fb` P1-8 真机 a11y · `94358ae` P1-7 主动说话 · `cdb3531` P1-6 天气增强 · `469d343` P1-5 喝水记录 · `b106382` P1-4 设置可用性 · `6342b75` P1-3 单测 · `01de0b2` P1-2 状态机 · `80332c7` P1-1 完成；0.6.6 收尾 = `e01c1cb`/`12176d2`/`5be8c4d`；再往前 `adbe033` 0.6.5 首次引导 |
+| 版本 | 代码 = `0.6.16`（CI/Release 修复，产品行为不变）：tag `v0.6.16`，Release 同时产出便携版与安装器（均未签名）；**安装器自 0.6.16 起由 CI 产出**：本机杀软仍拦 electron-builder 运行刚生成的安装器来生成卸载器（`ERR_ELECTRON_BUILDER_CANNOT_EXECUTE`，见 `docs/SELF-SIGNING.md` §9），本机最后可用安装器仍是 `0.6.11` |
+| 最近提交 | 0.6.16 = `1a2bac5` 版本与文档 + `7e76498` 打包脚本加 `--publish never` + `e16b99d` 探针触发路径（Release 安装器恢复，见 `M37-NOTES.md`）；0.6.15 = `83152fe` 悬停菜单下缘被窗口裁掉修复（面板按布局尺寸量、窗口 `setContentBounds` + 渲染层实测校正，见 `M34-NOTES.md`）；CI 修复 `26f09fc`（e2e 固定 zh-CN、按 `data-panel` 找分类）+ `839b6d0`（失败信息写 check-run 注解，见 `M36-NOTES.md`）；0.6.14 = `912a409` 导入音效补 CORS（`corsEnabled` + ACAO，含 `sound-protocol` 单测与 smoke 断言、`build.files` 排除临时锁）+ 本次文档（见 `M33-NOTES.md`）；文档提交 `8048eeb`；0.6.13 = `8939d07` 应用/托盘图标改抠图贴纸（去圆环）+ 公开前 `git filter-repo` 清历史（原始照片已从所有 commit 移除，仓库转公开 MIT）+ 本次文档；0.6.12 = `2aa29a1` 代码 + `083af41` 文档（P2-4 阶段二收尾：悬停菜单搬进 overlay 窗口、桌宠窗口不再被菜单撑大、Win11 透明窗框差自标定；见 `M32-NOTES.md`）；0.6.11 = `360c76d` 菜单临时长高窗口 + 气泡随内容放大 + 喝水按钮可点；0.6.10 = P2-7 主题包（打包补上 `locales/**` `themes/**` 两条 files 规则）；0.6.9 = P2-3 更新提示 + P2-8 隐私文档；`dba1115` P2-1 安装器 · `58f94b4` P2-2 签名准备；P1 全部落地：`e2952ca` P1-9 e2e 入库 · `6c7a4fb` P1-8 真机 a11y · `94358ae` P1-7 主动说话 · `cdb3531` P1-6 天气增强 · `469d343` P1-5 喝水记录 · `b106382` P1-4 设置可用性 · `6342b75` P1-3 单测 · `01de0b2` P1-2 状态机 · `80332c7` P1-1 完成；0.6.6 收尾 = `e01c1cb`/`12176d2`/`5be8c4d`；再往前 `adbe033` 0.6.5 首次引导 |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js`（`npm test` = smoke + `npm run unit`）；带窗口的再加 `npm run test:e2e` |
 | 自动化基线 | smoke **67 项** · unit **185 例** · check-a11y **95 项** · check-i18n **30 文件 / 0 处** · a11y-audit **86 项 / 0 失败** · a11y-keyboard **6 项** · a11y-tree **4 窗口 / 0 无名** · e2e **4 用例**，全部通过 |
-| 最新产物 | 便携版 `dist/DeskPet-0.6.15-portable.exe` 153,833,193 字节，SHA-256 `f332c93cecfb43d32e972c8ec8a1a4bd8d7967757e1e878e91f0c37f02f647d4`（未签名；本机无法启动校验打包后的二进制——Lenovo/Huorong 静默拦截，改用 `@electron/asar` 校验 `app.asar`：549 文件、版本 0.6.14、`main.js` 含 `corsEnabled`、`catalog.js` 含 ACAO 头、无 `.dsh-ops` 锁文件）；安装器最后可用 `dist/DeskPet-0.6.11-setup.exe` 165,634,808 字节 |
+| 最新产物 | `v0.6.16` Release（CI 构建，未签名）：便携版 `DeskPet-0.6.16-portable.exe` 153,726,229 字节，SHA-256 `927ed7b0df0e747be67567c0cd6cbef0d933a18bd0fc58aabb2ed6e327a65e3e`；安装器 `DeskPet-0.6.16-setup.exe` 165,403,926 字节，SHA-256 `e781ed00e9ac0d4cf6b5ae28fd4eeb257967e9065e84842837bdbb0fd14e1faf`；`SHA256SUMS.txt` 在同一 Release。本机仍无法启动校验打包后的二进制（Lenovo/Huorong 静默拦截），改用 `@electron/asar` 校验 `app.asar`；本机安装器构建仍被杀软拦，本地产物只留便携版 |
 
 **能做什么**：换形象（照片抠图 / 导入 PNG）、点击看天气和喝水进度、按时提醒喝水、24 条内置温柔提示语、
 气泡内容自己排版（28 种模块）、音效可换、多显示器记忆与贴边吸附、托盘、开机自启、便携运行（数据跟着文件夹走）。
@@ -315,6 +315,10 @@ Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
     `breadcrumb()` 会回退到 `os.tmpdir()\desk-pet-boot.log`；排查“双击没反应”先看那里。
 15. **卸载是异步的**：`Uninstall DeskPet.exe /S` 退出码返回后文件还要再删几秒；脚本里要轮询而不是刚退出就断言失败。
 16. `dist\` 会累积十几版旧包（2GB+），每次出包前跑 `node tools/clean-dist.js`（保留当前版本与 `win-unpacked`）。
+17. **Release 与安装器交给 CI**：本机杀软拦安装器（见上一条与 `docs/SELF-SIGNING.md` §9），但 CI 能完整构建；
+    `installer-probe.yml` 只跑安装器（3~5 分钟）用来验证打包改动，失败日志由 `tools/ci-annotate.js` 写成 check-run 注解。
+    所有 electron-builder 调用必须带 `--publish never`——它会从 `repository` 字段推断发布源，CI 上没有 token 就
+    `GitHub Personal Access Token is not set` 退出 1（0.6.15 的 Release 就挂在这一步，见 `M37-NOTES.md`）。
 
 ### 6.3 测试与环境细节
 12. **按下即收起气泡只在真正拖动（>4px）时发生**，否则第二次点击永远回到第一张卡。
@@ -428,7 +432,7 @@ node node_modules/electron-builder/cli.js --win nsis --x64   # → dist\DeskPet-
 ## 10. 新对话开场白（直接粘贴）
 
 > 继续 `D:\project\deskpet` 的 Windows 桌面宠物项目，先读 `HANDOFF.md`（§0 速览、§4 不变量、§6 坑）
-> 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.15`，`main` 已同步，tag 到 `v0.6.15`。
+> 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.16`，`main` 已同步，tag 到 `v0.6.16`。
 > 验证基线：`npm run check`（51 个 JS）+ `npm test`（smoke 67 项 + unit 185 例）+ `node tools/check-a11y.js`（95 项）全部通过；
 > 带界面的还要跑 `npm run test:e2e`（4 用例）、`a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
 > 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。

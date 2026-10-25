@@ -36,7 +36,8 @@
 - **安装器重回 CI**：新增 `installer-probe.yml`（只跑安装器构建，约 3~5 分钟，失败时把日志写成 check-run 注解）
   与 `tools/ci-annotate.js`（挑 `error/failed/cannot/ERR_` 等关键词转 `::error::`，公开仓库匿名可读）。
   本机杀软仍拦安装器解包（`ERR_ELECTRON_BUILDER_CANNOT_EXECUTE`，见 `docs/SELF-SIGNING.md` §9），CI 不受影响；
-  `v0.6.16` 的 Release 同时产出便携版与安装器。
+  `v0.6.16` 的 Release 同时产出便携版与安装器：便携版 153,726,229 B（SHA-256 `927ed7b0…65e3e`）、
+  安装器 165,403,926 B（SHA-256 `e781ed00…4e1faf`），校验值见 Release 页的 `SHA256SUMS.txt`。
 - **探针里的路径被 YAML 吞掉**：`node_modules` 下的 electron 目录写成了 `node_moduleselectron`，统一改正斜杠。
 
 ## [0.6.15] - 2026-10-25
