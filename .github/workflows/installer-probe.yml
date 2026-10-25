@@ -12,6 +12,8 @@ on:
     paths:
       - '.github/workflows/installer-probe.yml'
       - 'tools/ci-annotate.js'
+      # 打包配置改了就该探一次（package.json 的 scripts/build 段）
+      - 'package.json'
   workflow_dispatch:
 
 permissions:
