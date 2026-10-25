@@ -14,7 +14,7 @@
 | 本地目录 | `D:\project\deskpet` |
 | 仓库 | `ssh://git@ssh.github.com:443/liuhaolh6/desk-pet.git`，分支 `main`，**已公开（MIT，2026-10-24）**；公开前已用 `git filter-repo` 从全部历史移除原始照片素材，旧 commit 已 404，本地备份在 `D:\project\.tmp\deskpet-pre-filter-*.bundle`；项目内已无原始照片，原图存放在项目外 `D:\deskpet-private\`（见该目录 `README.txt`） |
 | 版本 | 代码与便携版 = `0.6.15`（悬停菜单被窗口剪修复）：`dist\DeskPet-0.6.15-portable.exe`（153,833,193 B ≈ 146.7 MiB，未签名，SHA-256 `f332c93c…f647d4`），tag `v0.6.15`；**安装器自 0.6.12 起本机产不出**：杀软拦截 electron-builder 运行刚生成的安装器来生成卸载器（`ERR_ELECTRON_BUILDER_CANNOT_EXECUTE`，见 `docs/SELF-SIGNING.md` §9），最后可用安装器 = `0.6.11` |
-| 最近提交 | 0.6.15 = `83152fe` 悬停菜单下缘被窗口裁掉修复（面板按布局尺寸量、窗口 `setContentBounds` + 渲染层实测校正，见 `M34-NOTES.md`）；0.6.14 = `912a409` 导入音效补 CORS（`corsEnabled` + ACAO，含 `sound-protocol` 单测与 smoke 断言、`build.files` 排除临时锁）+ 本次文档（见 `M33-NOTES.md`）；文档提交 `8048eeb`；0.6.13 = `8939d07` 应用/托盘图标改抠图贴纸（去圆环）+ 公开前 `git filter-repo` 清历史（原始照片已从所有 commit 移除，仓库转公开 MIT）+ 本次文档；0.6.12 = `2aa29a1` 代码 + `083af41` 文档（P2-4 阶段二收尾：悬停菜单搬进 overlay 窗口、桌宠窗口不再被菜单撑大、Win11 透明窗框差自标定；见 `M32-NOTES.md`）；0.6.11 = `360c76d` 菜单临时长高窗口 + 气泡随内容放大 + 喝水按钮可点；0.6.10 = P2-7 主题包（打包补上 `locales/**` `themes/**` 两条 files 规则）；0.6.9 = P2-3 更新提示 + P2-8 隐私文档；`dba1115` P2-1 安装器 · `58f94b4` P2-2 签名准备；P1 全部落地：`e2952ca` P1-9 e2e 入库 · `6c7a4fb` P1-8 真机 a11y · `94358ae` P1-7 主动说话 · `cdb3531` P1-6 天气增强 · `469d343` P1-5 喝水记录 · `b106382` P1-4 设置可用性 · `6342b75` P1-3 单测 · `01de0b2` P1-2 状态机 · `80332c7` P1-1 完成；0.6.6 收尾 = `e01c1cb`/`12176d2`/`5be8c4d`；再往前 `adbe033` 0.6.5 首次引导 |
+| 最近提交 | 0.6.15 = `83152fe` 悬停菜单下缘被窗口裁掉修复（面板按布局尺寸量、窗口 `setContentBounds` + 渲染层实测校正，见 `M34-NOTES.md`）；CI 修复 `26f09fc`（e2e 固定 zh-CN、按 `data-panel` 找分类）+ `839b6d0`（失败信息写 check-run 注解，见 `M36-NOTES.md`）；0.6.14 = `912a409` 导入音效补 CORS（`corsEnabled` + ACAO，含 `sound-protocol` 单测与 smoke 断言、`build.files` 排除临时锁）+ 本次文档（见 `M33-NOTES.md`）；文档提交 `8048eeb`；0.6.13 = `8939d07` 应用/托盘图标改抠图贴纸（去圆环）+ 公开前 `git filter-repo` 清历史（原始照片已从所有 commit 移除，仓库转公开 MIT）+ 本次文档；0.6.12 = `2aa29a1` 代码 + `083af41` 文档（P2-4 阶段二收尾：悬停菜单搬进 overlay 窗口、桌宠窗口不再被菜单撑大、Win11 透明窗框差自标定；见 `M32-NOTES.md`）；0.6.11 = `360c76d` 菜单临时长高窗口 + 气泡随内容放大 + 喝水按钮可点；0.6.10 = P2-7 主题包（打包补上 `locales/**` `themes/**` 两条 files 规则）；0.6.9 = P2-3 更新提示 + P2-8 隐私文档；`dba1115` P2-1 安装器 · `58f94b4` P2-2 签名准备；P1 全部落地：`e2952ca` P1-9 e2e 入库 · `6c7a4fb` P1-8 真机 a11y · `94358ae` P1-7 主动说话 · `cdb3531` P1-6 天气增强 · `469d343` P1-5 喝水记录 · `b106382` P1-4 设置可用性 · `6342b75` P1-3 单测 · `01de0b2` P1-2 状态机 · `80332c7` P1-1 完成；0.6.6 收尾 = `e01c1cb`/`12176d2`/`5be8c4d`；再往前 `adbe033` 0.6.5 首次引导 |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js`（`npm test` = smoke + `npm run unit`）；带窗口的再加 `npm run test:e2e` |
 | 自动化基线 | smoke **67 项** · unit **185 例** · check-a11y **95 项** · check-i18n **30 文件 / 0 处** · a11y-audit **86 项 / 0 失败** · a11y-keyboard **6 项** · a11y-tree **4 窗口 / 0 无名** · e2e **4 用例**，全部通过 |
@@ -238,7 +238,7 @@ token 表上限 3，窗口关闭即清空。
 | `tools/a11y-real.js` | 真机留证：四窗口截图 + 横向溢出计数 + 高对比度计算色（`docs/a11y-shots/`） | `node tools/a11y-real.js 9229 [outDir] [tag]` | ✅ 200% 缩放 0 溢出 |
 | `tools/cutout-diag.js` | 合成图 alpha/背景/主体/边缘指标 | `npm run diag:fixtures` | ✅ |
 | `tools/e2e/` | 真窗口 e2e：无 resize / 气泡与预留 / 城市搜索与存盘 / 语言切换重启生效（自带本地桩，不依赖外网） | `npm run test:e2e` | ✅ 4 用例 |
-| CI | `ci.yml`：`test` job（check + a11y 静态 + test + 合成图 + 真模型正/负例）+ `e2e` job（真 Electron，headless） | push / PR | 配置在库，**私有仓库无法匿名查看** |
+| CI | `ci.yml`：`test` job（check + a11y 静态 + test + 合成图 + 真模型正/负例）+ `e2e` job（真 Electron，headless，固定 `locale=zh-CN`，失败写 check-run 注解） | push / PR | ✅ 公开仓库，run 页与注解匿名可看 |
 
 起一个可被 CDP 连的开发实例：
 
@@ -304,7 +304,8 @@ Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
    本机测试用 `dist\win-unpacked\DeskPet.exe` 更省事。
 9. **未签名 exe 会触发 SmartScreen**；不要在任何文档/回复里声称"已签名"。
 10. **一次推超过 3 个 tag 不会触发任何 workflow**（GitHub 限制）；要发版就单独推那个 tag。
-11. **仓库私有**：匿名 API/网页一律 404，CI/Release 结果只能网页登录看或用 token。
+11. **仓库已公开（MIT）**：匿名可读 API/网页/check-run 注解；但 Actions 的 job 日志接口仍要鉴权（403），
+    失败原因靠 `tools/e2e/annotate.js` 写的 `::error::` 注解看，别再去网页登录折腾。
 12. **安装器别再改回向导式**：`nsis.oneClick: false` 在静默安装（CI、`/S`）时没有向导页，`$INSTDIR` 为空，
     electron-builder 模板里的 `CHECK_APP_RUNNING` 会拿空路径匹配进程、误判「应用正在运行」而以成功码退出。
     现在固定 `oneClick: true` + `perMachine: false` + `createDesktopShortcut`，不要再用 `oneClick:false`。
@@ -427,7 +428,7 @@ node node_modules/electron-builder/cli.js --win nsis --x64   # → dist\DeskPet-
 ## 10. 新对话开场白（直接粘贴）
 
 > 继续 `D:\project\deskpet` 的 Windows 桌面宠物项目，先读 `HANDOFF.md`（§0 速览、§4 不变量、§6 坑）
-> 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.14`，`main` 已同步，tag 到 `v0.6.14`。
+> 和 `ROADMAP.md`（不足与优先级）。当前版本 `0.6.15`，`main` 已同步，tag 到 `v0.6.15`。
 > 验证基线：`npm run check`（51 个 JS）+ `npm test`（smoke 67 项 + unit 185 例）+ `node tools/check-a11y.js`（95 项）全部通过；
 > 带界面的还要跑 `npm run test:e2e`（4 用例）、`a11y-audit`（86 项）与 `a11y-keyboard`（6 项）。
 > 记住：运行中不要改透明窗口尺寸、气泡永远在桌宠上方、alpha 只走自有管线、a11y 基线不许退。

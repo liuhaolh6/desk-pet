@@ -6,6 +6,22 @@
 
 ## [Unreleased]
 
+### 修复
+
+- **CI 徽章常红**：`e2e` job 在 `windows-latest`（en-US 系统）上挂掉——种子设置没写 `locale`，
+  设置页分类渲染成 Weather/Bubble，`city` 用例按 `/天气/` 找分类按钮自然找不到。现在 e2e 种子固定
+  `locale: 'zh-CN'`，用例改用 `data-panel="weather"` 定位并给 5 秒等待窗口。`ci.yml` 两个 job 全绿，
+  README 徽章 passing。
+- **CI 失败原因查不到**：Actions 的 job 日志接口未鉴权返回 403，只能登录网页看。新增
+  `tools/e2e/annotate.js`：失败时把 `FAIL` 行 / 断言行与 `app.log` 尾巴用 `::error::` 写成 check-run
+  注解（公开仓库匿名可读），e2e 输出同时 `tee` 到 `e2e.log`；`DESKPET_E2E_KEEP=1` 保留 `.e2e-data/`
+  供注解步骤读取。
+
+### 文档
+
+- HANDOFF §0/§6/§10 同步：CI 已绿（公开仓库、匿名可看注解）、开场白版本改 0.6.15。
+
+
 ## [0.6.15] - 2026-10-25
 
 ### 修复
