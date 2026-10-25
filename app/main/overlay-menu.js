@@ -87,48 +87,61 @@ function createMenuController({ screen, getLayout, getPetWin, ensureWindow, getW
   /* ---------------------------------------------- 面板内容区 -> 窗口矩形 */
 
   /**
-   * 窗框差：渲染层量的是内容区（getBoundingClientRect），而 `setBounds` 管的是
-   * 整窗。Win11 的透明无边框窗口，整窗比内容区宽 6px、高 7px，客户区还整体
-   * 偏几个 px；不补这一手，面板底边会被窗口裁掉。
-   * 这些差值只跟窗口样式有关，第一次打开时向渲染层要一次真实尺寸即可。
+   * 把窗口的内容区精确设成 `next`，并向渲染层核对，差多少补多少。
+   *
+   * 不能直接用 setBounds 加固定「窗框差」常量：Win11 的透明无边框窗口，整窗
+   * 比内容区宽 6px、高 7px；更麻烦的是窗口从隐藏到显示之后，高差会变成 17px
+   * （见 M32-NOTES §3），固定常量补正会差出 10px——菜单底边就被窗口剪掉。
+   * 所以先让窗口可见，再用 setContentBounds 交给 Electron 换算窗框，最后向
+   * 渲染层要真实 innerWidth/innerHeight 与 screenX/Y，按差值再校一次，
+   * 最多三轮，容忍 1px 舍入。
    */
-  const frame = { x: 0, y: 0, width: 0, height: 0 }
-  let calibrated = false
+  function apply(next, attempt) {
+    const w = getWindow()
+    if (!w || w.isDestroyed()) return
+    w.setContentBounds({ x: next.x, y: next.y, width: next.width, height: next.height })
+    verify(next, attempt)
+  }
 
-  function calibrate(w) {
-    if (calibrated || !w || w.webContents.isLoading()) return
-    const c = w.getContentBounds()
-    w.webContents
-      .executeJavaScript('JSON.stringify([innerWidth, innerHeight, screenX, screenY])', true)
-      .then((raw) => {
-        const [iw, ih, sx, sy] = JSON.parse(raw)
-        if (!iw || !ih) return
-        frame.width = c.width - iw
-        frame.height = c.height - ih
-        frame.x = c.x - sx
-        frame.y = c.y - sy
-        calibrated = true
-        if (shown) place()
-      })
-      .catch(() => {})
+  function verify(next, attempt) {
+    if (attempt > 2) return
+    setTimeout(() => {
+      if (!shown) return
+      const w = getWindow()
+      if (!w || w.isDestroyed()) return
+      w.webContents
+        .executeJavaScript('JSON.stringify([innerWidth, innerHeight, screenX, screenY])', true)
+        .then((raw) => {
+          if (!shown) return
+          const w2 = getWindow()
+          if (!w2 || w2.isDestroyed()) return
+          const [iw, ih, sx, sy] = JSON.parse(raw)
+          if (!iw || !ih) return
+          const dw = next.width - iw
+          const dh = next.height - ih
+          const dx = next.x - sx
+          const dy = next.y - sy
+          if (Math.abs(dw) <= 1 && Math.abs(dh) <= 1 && Math.abs(dx) <= 1 && Math.abs(dy) <= 1) return
+          const c = w2.getContentBounds()
+          w2.setContentBounds({
+            x: c.x + dx,
+            y: c.y + dy,
+            width: Math.max(80, c.width + dw),
+            height: Math.max(80, c.height + dh),
+          })
+          verify(next, attempt + 1)
+        })
+        .catch(() => {})
+    }, attempt === 0 ? 50 : 70)
   }
 
   function place() {
     const w = getWindow()
-    if (!w) return
+    if (!w || w.isDestroyed()) return
     const next = panelRect()
     if (!next) return
     setSide(next.side)
-    calibrate(w)
-    const target = {
-      x: next.x - frame.x,
-      y: next.y - frame.y,
-      width: next.width + frame.width,
-      height: next.height + frame.height,
-    }
-    const b = w.getBounds()
-    if (b.x === target.x && b.y === target.y && b.width === target.width && b.height === target.height) return
-    w.setBounds(target)
+    apply(next, 0)
   }
 
   function send(open) {
@@ -145,13 +158,11 @@ function createMenuController({ screen, getLayout, getPetWin, ensureWindow, getW
     anchor = next && Number.isFinite(next.x) && Number.isFinite(next.y)
       ? { x: Number(next.x), y: Number(next.y) }
       : null
+    // 必须先让窗口可见，再算内容区：Windows 在隐藏态报的窗框是不准的。
+    syncVisibility()
     place()
     // 菜单只在打开期间可聚焦：键盘用户可以 Tab 进菜单、按 Esc 退出。
     try { w.setFocusable(true) } catch (err) {}
-    syncVisibility()
-    // 窗口隐藏时 Windows 还不报真实窗框（显示后高差从 7px 变 17px），
-    // 所以显示完再校正一次内容区，否则面板底边会被窗口裁掉 1~5px。
-    place()
     try { w.focus() } catch (err) {}
     send(true)
   }

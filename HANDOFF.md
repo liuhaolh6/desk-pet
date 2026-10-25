@@ -1,6 +1,6 @@
 # 交接文档（HANDOFF）
 
-> 版本 `0.6.14` · 最后更新 2026-10-24 · 给下一个接手的人（或下一个对话的我）。
+> 版本 `0.6.15` · 最后更新 2026-10-25 · 给下一个接手的人（或下一个对话的我）。
 > 目标：读完这一份就能**安全地改代码、跑验证、出包**，不必重新摸索。
 > 想先知道"这东西现在还差在哪、下一步做什么"，看 [`ROADMAP.md`](ROADMAP.md)。
 
@@ -13,12 +13,12 @@
 | 是什么 | Windows x64 桌面宠物（Electron 44 + 离线 ONNX 人像抠图），悬浮在桌面上，点击看天气 / 喝水 / 温馨话 |
 | 本地目录 | `D:\project\deskpet` |
 | 仓库 | `ssh://git@ssh.github.com:443/liuhaolh6/desk-pet.git`，分支 `main`，**已公开（MIT，2026-10-24）**；公开前已用 `git filter-repo` 从全部历史移除原始照片素材，旧 commit 已 404，本地备份在 `D:\project\.tmp\deskpet-pre-filter-*.bundle`；项目内已无原始照片，原图存放在项目外 `D:\deskpet-private\`（见该目录 `README.txt`） |
-| 版本 | 代码与便携版 = `0.6.14`（导入音效无声修复）：`dist\DeskPet-0.6.14-portable.exe`（153,830,942 B ≈ 146.7 MiB，未签名，SHA-256 `fcc661cc…7204b6`），tag `v0.6.14`；**安装器自 0.6.12 起本机产不出**：杀软拦截 electron-builder 运行刚生成的安装器来生成卸载器（`ERR_ELECTRON_BUILDER_CANNOT_EXECUTE`，见 `docs/SELF-SIGNING.md` §9），最后可用安装器 = `0.6.11` |
+| 版本 | 代码与便携版 = `0.6.15`（悬停菜单被窗口剪修复）：`dist\DeskPet-0.6.15-portable.exe`（153,833,193 B ≈ 146.7 MiB，未签名，SHA-256 `f332c93c…f647d4`），tag `v0.6.15`；**安装器自 0.6.12 起本机产不出**：杀软拦截 electron-builder 运行刚生成的安装器来生成卸载器（`ERR_ELECTRON_BUILDER_CANNOT_EXECUTE`，见 `docs/SELF-SIGNING.md` §9），最后可用安装器 = `0.6.11` |
 | 最近提交 | 0.6.14 = `912a409` 导入音效补 CORS（`corsEnabled` + ACAO，含 `sound-protocol` 单测与 smoke 断言、`build.files` 排除临时锁）+ 本次文档（见 `M33-NOTES.md`）；文档提交 `8048eeb`；0.6.13 = `8939d07` 应用/托盘图标改抠图贴纸（去圆环）+ 公开前 `git filter-repo` 清历史（原始照片已从所有 commit 移除，仓库转公开 MIT）+ 本次文档；0.6.12 = `2aa29a1` 代码 + `083af41` 文档（P2-4 阶段二收尾：悬停菜单搬进 overlay 窗口、桌宠窗口不再被菜单撑大、Win11 透明窗框差自标定；见 `M32-NOTES.md`）；0.6.11 = `360c76d` 菜单临时长高窗口 + 气泡随内容放大 + 喝水按钮可点；0.6.10 = P2-7 主题包（打包补上 `locales/**` `themes/**` 两条 files 规则）；0.6.9 = P2-3 更新提示 + P2-8 隐私文档；`dba1115` P2-1 安装器 · `58f94b4` P2-2 签名准备；P1 全部落地：`e2952ca` P1-9 e2e 入库 · `6c7a4fb` P1-8 真机 a11y · `94358ae` P1-7 主动说话 · `cdb3531` P1-6 天气增强 · `469d343` P1-5 喝水记录 · `b106382` P1-4 设置可用性 · `6342b75` P1-3 单测 · `01de0b2` P1-2 状态机 · `80332c7` P1-1 完成；0.6.6 收尾 = `e01c1cb`/`12176d2`/`5be8c4d`；再往前 `adbe033` 0.6.5 首次引导 |
 | 当前状态 | 功能闭环、可日常使用；**未签名**、未上架、仅 Windows x64 |
 | 一条命令自检 | `npm run check && npm test && node tools/check-a11y.js`（`npm test` = smoke + `npm run unit`）；带窗口的再加 `npm run test:e2e` |
 | 自动化基线 | smoke **67 项** · unit **185 例** · check-a11y **95 项** · check-i18n **30 文件 / 0 处** · a11y-audit **86 项 / 0 失败** · a11y-keyboard **6 项** · a11y-tree **4 窗口 / 0 无名** · e2e **4 用例**，全部通过 |
-| 最新产物 | 便携版 `dist/DeskPet-0.6.14-portable.exe` 153,830,942 字节，SHA-256 `fcc661cc7a46a1598f8222e3ddd18c67a36b0eef6719421a3a7374328bdf04b6`（未签名；本机无法启动校验打包后的二进制——Lenovo/Huorong 静默拦截，改用 `@electron/asar` 校验 `app.asar`：549 文件、版本 0.6.14、`main.js` 含 `corsEnabled`、`catalog.js` 含 ACAO 头、无 `.dsh-ops` 锁文件）；安装器最后可用 `dist/DeskPet-0.6.11-setup.exe` 165,634,808 字节 |
+| 最新产物 | 便携版 `dist/DeskPet-0.6.15-portable.exe` 153,833,193 字节，SHA-256 `f332c93cecfb43d32e972c8ec8a1a4bd8d7967757e1e878e91f0c37f02f647d4`（未签名；本机无法启动校验打包后的二进制——Lenovo/Huorong 静默拦截，改用 `@electron/asar` 校验 `app.asar`：549 文件、版本 0.6.14、`main.js` 含 `corsEnabled`、`catalog.js` 含 ACAO 头、无 `.dsh-ops` 锁文件）；安装器最后可用 `dist/DeskPet-0.6.11-setup.exe` 165,634,808 字节 |
 
 **能做什么**：换形象（照片抠图 / 导入 PNG）、点击看天气和喝水进度、按时提醒喝水、24 条内置温柔提示语、
 气泡内容自己排版（28 种模块）、音效可换、多显示器记忆与贴边吸附、托盘、开机自启、便携运行（数据跟着文件夹走）。
@@ -99,10 +99,10 @@ main (Node)  ── BrowserWindow ×4 ──►  pet.html   桌宠 + 气泡 + �
 | `app/main/catalog.js`（新） | 106 | 角色与声音目录、`pet-role://`与`pet-sound://`协议、设置/角色广播 |
 | `app/main/boot.js`（新） | 81 | 数据目录候选与可写探测、日志落盘、单实例锁（不碰 `userData`） |
 | `app/main/ipc.js`（新） | 495 | 全部 `ipcMain` 通道（state/app/settings/roles/sounds/weather/cutout/pet/onboard），依赖全部注入；喝水四通道在 `water-ipc.js`，overlay 窗口通道在 `overlay-ipc.js` |
-| `app/main/overlay-menu.js`（新，0.6.12） | 198 | 悬停菜单的窗口侧：按渲染层报的面板尺寸与锚点算窗口矩形（上方优先、放不下翻下方、夹在工作区），`open/close/place/follow/setSize`，并自标定 Win11 透明窗框差（整窗比内容区 +6×+7px） |
+| `app/main/overlay-menu.js`（新，0.6.12；0.6.15 改） | 209 | 悬停菜单的窗口侧：按渲染层报的面板尺寸与锚点算窗口矩形（上方优先、放不下翻下方、夹在工作区），`open/close/place/follow/setSize`；0.6.15 起用 `setContentBounds` 开窗、再向渲染层要 `innerWidth/innerHeight/screenX/screenY` 实测校正（不再依赖窗框常量） |
 | `app/main/overlay-ipc.js`（新，0.6.12） | 60 | overlay 窗口的 IPC 面：`bubble:render|hide`、`overlay:grow|click|action`、`overlay:menu-size|menu-action|menu-close`，把菜单动作转发回桌宠窗口 |
-| `app/main/overlay.js`（新） | 266 | 气泡独立窗口：懒创建、贴宠物上方/翻下方、跟随、`showInactive` 不抢焦点；按「气泡 || 菜单」决定显隐；`registerOverlayIpc` 已拆到 `overlay-ipc.js` |
-| `app/overlay.html` / `overlay.css` / `overlay.js`（新） | 34 / 272 / 274 | 气泡 + 悬停菜单渲染层：气泡只画行与按钮，超框收缩到 0.6 再截断；菜单复用 `#petMenu` 五项 `data-action`，量尺寸上报、点项/点空白/Esc 转发 | 全部 `ipcMain` 通道（state/app/settings/roles/sounds/weather/cutout/pet/onboard），依赖全部注入；喝水四通道在 `water-ipc.js` |
+| `app/main/overlay.js`（新；0.6.15 改） | 272 | 气泡独立窗口：懒创建、贴宠物上方/翻下方、跟随、`showInactive` 不抢焦点；按「气泡 || 菜单」决定显隐；`registerOverlayIpc` 已拆到 `overlay-ipc.js` |
+| `app/overlay.html` / `overlay.css` / `overlay.js`（新；0.6.15 改） | 34 / 272 / 279 | 气泡 + 悬停菜单渲染层：气泡只画行与按钮，超框收缩到 0.6 再截断；菜单复用 `#petMenu` 五项 `data-action`，量尺寸上报、点项/点空白/Esc 转发 | 全部 `ipcMain` 通道（state/app/settings/roles/sounds/weather/cutout/pet/onboard），依赖全部注入；喝水四通道在 `water-ipc.js` |
 | `app/main/weather-pump.js`（新） | 81 | 天气取数/缓存回退/定时刷新，时钟可注入；`refresh/schedule/current` |
 | `app/main/reminder.js`（新） | 69 | 喝水提醒：勿扰/勿扰时段/`snoozeUntil` 延后/间隔/10 分钟限流，`tick()` 返回本次判定 |
 | `app/main/cutout-service.js`（新） | 232 | 抠图：解码、输入令牌、utilityProcess、进程内回退、`cutout-trace.jsonl` |
@@ -436,7 +436,7 @@ node node_modules/electron-builder/cli.js --win nsis --x64   # → dist\DeskPet-
 
 > 这一节原来写的是「唯一剩下的任务」，现在做完了，保留要点方便以后改菜单。
 
-- 活动代码：`app/main/overlay-menu.js`（窗口矩形 + 自标定）、`app/main/overlay-ipc.js`（菜单通道）、`app/overlay.html` 的 `#petMenu`（五项 `data-action`）、
+- 活动代码：`app/main/overlay-menu.js`（窗口矩形 + `setContentBounds` 实测校正）、`app/main/overlay-ipc.js`（菜单通道）、`app/overlay.html` 的 `#petMenu`（五项 `data-action`）、
   `app/pet.js` 只报锚点、`app/main/window-layout.js` 的 `applyBubbleHeight` 恒 `{reserve: 0, side: 'above'}`。
 - 验收证据：CDP（连 overlay target）五项动作 10/10 到达桌宠页；菜单完整落在窗口内（面板 196×187、窗口 208×216）；
   桌宠窗口 330×222 开合前后不变；Esc/点空白/失焦都能收起；「退出」动作让进程真的退出。

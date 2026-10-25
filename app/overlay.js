@@ -173,8 +173,10 @@
   function menuSize() {
     const wasHidden = menu.hidden
     menu.hidden = false
-    const rect = menu.getBoundingClientRect()
-    const size = { width: Math.ceil(rect.width), height: Math.ceil(rect.height) }
+    // 用 offsetWidth/Height 而不是 getBoundingClientRect：后者会把过渡态
+    // `transform: scale(0.96)` 算进去，报出去的尺寸小 4%，窗口就跟着小一圈，
+    // 菜单右边/下边被剪。offsetWidth/Height 是布局尺寸，不受 transform 影响。
+    const size = { width: menu.offsetWidth, height: menu.offsetHeight }
     menu.hidden = wasHidden
     return size
   }
@@ -195,6 +197,9 @@
     requestAnimationFrame(() => {
       if (!menuOpen) return
       menu.classList.add('open')
+      // 打开后再量一次：加载时字体/多语言可能还没落定，尺寸会变；
+      // 报给主进程后由 setSize → place 重新摆窗口。
+      reportMenuSize()
       const first = menu.querySelector('button')
       if (first) {
         try { first.focus() } catch (err) {}

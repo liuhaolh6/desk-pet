@@ -57,7 +57,13 @@ function createOverlay({ BrowserWindow, screen, store, getPetWin, getLayout, log
     getPetWin,
     ensureWindow: () => create(),
     getWindow: () => (win && !win.isDestroyed() ? win : null),
-    setSide: (next) => { side = next },
+    // 菜单翻到桌宠下方时要换一侧：渲染层的展开方向、尾巴朝向都看 side，
+    // 所以侧别一变就推给窗口，否则菜单在下方却按「上方」的动画展开。
+    setSide: (next) => {
+      if (side === next) return
+      side = next
+      syncSide()
+    },
     syncVisibility: () => syncVisibility(),
   })
 

@@ -1556,6 +1556,7 @@ const PAD = 54
   const ipcP24 = fs.readFileSync(path.join(root, 'app', 'main', 'ipc.js'), 'utf8')
   const ovIpc = fs.readFileSync(path.join(root, 'app', 'main', 'overlay-ipc.js'), 'utf8')
   const ovMenu = fs.readFileSync(path.join(root, 'app', 'main', 'overlay-menu.js'), 'utf8')
+  const ovJsP24 = fs.readFileSync(path.join(root, 'app', 'overlay.js'), 'utf8')
   const mainP24 = fs.readFileSync(path.join(root, 'app', 'main.js'), 'utf8')
 
   assert.ok(/function createOverlay/.test(ovMain) && /showInactive/.test(ovMain), 'overlay 窗口：独立、不抢焦点')
@@ -1576,6 +1577,8 @@ const PAD = 54
   assert.ok(/overlay:menu-size/.test(ovIpc) && /overlay:menu-action/.test(ovIpc) && /overlay:menu-close/.test(ovIpc), '菜单尺寸/点击/收起通道在 overlay-ipc')
   assert.ok(/overlay = createOverlay\(/.test(mainP24), 'main.js 创建 overlay 实例')
   assert.ok(/inset: 0/.test(ovCss), 'overlay.css 铺满整窗')
+  assert.ok(/menu.offsetWidth/.test(ovJsP24) && /menu.offsetHeight/.test(ovJsP24) && !/Math.ceil(rect.width)/.test(ovJsP24), '菜单尺寸用布局尺寸量（展开动画的 scale(0.96) 不算进来）')
+  assert.ok(/setContentBounds/.test(ovMenu) && /innerWidth/.test(ovMenu) && /attempt/.test(ovMenu), '窗口内容区按渲染层实测校正，不用固定窗框常量')
   ok('P2-4 气泡独立窗口：懒建、不抢焦点、跟随、首帧补发、点击转发')
 }
 
